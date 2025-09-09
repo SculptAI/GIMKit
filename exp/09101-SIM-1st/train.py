@@ -1,9 +1,30 @@
 from unsloth import FastModel  # noqa: I001
-from trl import SFTConfig, SFTTrainer
-from unsloth.chat_templates import get_chat_template, train_on_responses_only
-from transformers import TextStreamer
+
+import logging
+import os
+
+import configs
 
 from datasets import concatenate_datasets, load_dataset
+from trl import SFTConfig, SFTTrainer
+from unsloth.chat_templates import get_chat_template, train_on_responses_only
+
+
+# ─── General Setup ────────────────────────────────────────────────────────────
+
+os.environ["SWANLAB_EXP_NAME"] = configs.EXP_DIR.name
+
+logging.basicConfig(
+    filename=configs.EXP_DIR / "training.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logging.info("Training configurations:")
+for key, value in vars(configs).items():
+    if not key.startswith("__"):
+        logging.info(f"{key} = {value}")
 
 # ─── Load Model And Tokenizer ─────────────────────────────────────────────────
 
@@ -33,7 +54,7 @@ model = FastModel.get_peft_model(
     bias="none",  # Supports any, but = "none" is optimized
     # [NEW] "unsloth" uses 30% less VRAM, fits 2x larger batch sizes!
     use_gradient_checkpointing="unsloth",  # True or "unsloth" for very long context
-    random_state=3407,
+    random_state=configs.RANDOM_SEED,
     use_rslora=False,  # We support rank stabilized LoRA
     loftq_config=None,  # And LoftQ
 )
@@ -48,8 +69,8 @@ tokenizer = get_chat_template(
 dataset = load_dataset("Ki-Seki/MaskedIO")
 dataset = concatenate_datasets(list(dataset.values()))
 dataset = (
-    dataset.shuffle(seed=0)
-    .select(range(1000))
+    dataset.shuffle(seed=configs.RANDOM_SEED)
+    .select(range(configs.DATASET_LEN))
     .map(
         lambda example: {
             "text": tokenizer.apply_chat_template(
@@ -70,21 +91,23 @@ dataset = (
 trainer = SFTTrainer(
     model=model,
     tokenizer=tokenizer,
-    train_dataset=dataset.select(range(800)),
-    eval_dataset=dataset.select(range(800, 1000)),
+    train_dataset=dataset.select(range(configs.TRAIN_SIZE)),
+    eval_dataset=dataset.select(range(configs.TRAIN_SIZE, configs.DATASET_LEN)),
     args=SFTConfig(
+        output_dir=configs.OUTPUT_DIR,
         dataset_text_field="text",
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=4,  # Use GA to mimic batch size!
-        warmup_steps=5,
+        per_device_train_batch_size=configs.MICRO_BSZ,
+        gradient_accumulation_steps=configs.GRAD_ACCUM,
+        warmup_steps=configs.WARMUP_STEPS,
         num_train_epochs=1,  # Set this for 1 full training run.
         max_steps=-1,
         learning_rate=2e-4,  # Reduce to 2e-5 for long training runs
         logging_steps=1,
+        save_steps=configs.SAVE_STEPS,
         optim="adamw_8bit",
         weight_decay=0.01,
         lr_scheduler_type="linear",
-        seed=3407,
+        seed=configs.RANDOM_SEED,
         report_to="swanlab",
     ),
 )
@@ -108,14 +131,14 @@ text = tokenizer.apply_chat_template(
 
 response = model.generate(
     **tokenizer(text, return_tensors="pt").to("cuda"),
-    max_new_tokens=1000,  # Increase for longer outputs!
+    max_new_tokens=256,  # Increase for longer outputs!
     temperature=0.7,
     top_p=0.8,
     top_k=20,  # For non thinking
-    streamer=TextStreamer(tokenizer, skip_prompt=True),
 )
-print("\n\n" + tokenizer.decode(response[0]))
+logging.info("Request: " + text)
+logging.info("Response: " + tokenizer.decode(response[0]))
 
 # ─── Save Model ───────────────────────────────────────────────────────────────
 
-model.save_pretrained_merged("MaskedLLM", tokenizer, save_method="merged_16bit")
+model.save_pretrained_merged(configs.OUTPUT_DIR / "SIM", tokenizer, save_method="merged_16bit")

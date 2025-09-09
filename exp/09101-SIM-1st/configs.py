@@ -1,0 +1,22 @@
+import pathlib
+
+import torch
+
+
+EXP_DIR = pathlib.Path(__file__).resolve().parent
+OUTPUT_DIR = EXP_DIR / "output"
+
+RANDOM_SEED = 0
+
+DATASET_LEN = 100  # 00
+TRAIN_SPLIT = 0.8
+TRAIN_SIZE = int(DATASET_LEN * TRAIN_SPLIT)
+
+NUM_GPUS = torch.cuda.device_count()
+MICRO_BSZ = 4
+GRAD_ACCUM = 4
+GLOBAL_BSZ = MICRO_BSZ * GRAD_ACCUM * NUM_GPUS
+
+ESTIMATED_STEPS = (TRAIN_SIZE // GLOBAL_BSZ) * 1
+WARMUP_STEPS = max(1, ESTIMATED_STEPS // 20)
+SAVE_STEPS = max(1, ESTIMATED_STEPS // 10)
