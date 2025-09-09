@@ -1,10 +1,8 @@
 [tool.ruff]
 fix = true
-line-length = 120
+line-length = 100
 target-version = "py312"
-
-[tool.ruff.lint]
-extend-select = [
+lint.extend-select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "ERA", # flake8-eradicate/eradicate
@@ -14,18 +12,13 @@ extend-select = [
     "PGH", # pygrep
     "RUF", # ruff checks
     "SIM", # flake8-simplify
-    "TCH", # flake8-type-checking
+    "TC", # flake8-type-checking
     "TID", # flake8-tidy-imports
     "UP",  # pyupgrade
 ]
-ignore = [
-    "TID252",  # relative-imports,
-    "N999",  # invalid-module-name
-    "RUF002",  # ambiguous-unicode-character-docstring
+lint.ignore = [
     "RUF001", # ambiguous-unicode-character-string
-    "RUF003",  # ambiguous-unicode-character-comment
+    "PGH003", # blanket-type-ignore
 ]
-
-[tool.ruff.lint.isort]
-lines-between-types = 1
-lines-after-imports = 2
+lint.isort.lines-between-types = 1
+lint.isort.lines-after-imports = 2
