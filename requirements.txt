@@ -1,0 +1,4 @@
+unsloth  # Fine-tuning LLMs
+transformers==4.55.4  # unsloth currently works best with this version for now
+datasets==3.6.0  # Great compatibility, useful for creating datasets. v4.0.0 has bad backwards compatibility for now
+swanlab  # For experiment tracking
