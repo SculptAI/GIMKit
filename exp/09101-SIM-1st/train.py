@@ -122,7 +122,7 @@ trainer_stats = trainer.train()
 
 # ─── Inference ────────────────────────────────────────────────────────────────
 
-messages = [{"role": "user", "content": "<|M_INPUT|>Nothing<|/M_INPUT|>"}]
+messages = [{"role": "user", "content": '<|M_INPUT|>This is an <|MASKED id="m_1"|><|/MASKED|> text.<|/M_INPUT|>'}]
 text = tokenizer.apply_chat_template(
     messages,
     tokenize=False,
