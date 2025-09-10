@@ -1,8 +1,9 @@
 import random
 
-from utils import MaskedTag, validate_wrapped_masked_io, wrap_masked_io
-
 from datasets import load_dataset
+from utils import wrap_masked_io
+
+from simfill import MaskedTag, validate_wrapped_masked_io
 
 
 random.seed(0)

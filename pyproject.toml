@@ -1,3 +1,31 @@
+[project]
+name = "simfill"
+version = "0.1.0"
+description = "Structured Infilling Modeling"
+readme = "README.md"
+authors = [
+    { name = "Shichao Song", email = "song.shichao@outlook.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dataset = [
+    "datasets==3.6.0",  # The next version, v4.0.0 has bad backward compatibility for now
+]
+dev = [
+    "pre-commit>=4.3.0",
+]
+training = [
+    "swanlab>=0.6.9",
+    "transformers==4.55.4",  # unsloth currently works best with this version for now
+    "unsloth>=2025.9.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.16,<0.9.0"]
+build-backend = "uv_build"
+
 [tool.ruff]
 fix = true
 line-length = 100

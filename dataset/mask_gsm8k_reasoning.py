@@ -1,8 +1,9 @@
 import re
 
-from utils import MaskedTag, validate_wrapped_masked_io, wrap_masked_io
-
 from datasets import load_dataset
+from utils import wrap_masked_io
+
+from simfill import MaskedTag, validate_wrapped_masked_io
 
 
 TAG2DESC = {
@@ -21,7 +22,7 @@ def _extract_tags_content(example: dict) -> dict:
     Example:
     `‹thinking>Thinking goes here.</thinking><reasoning>Reasoning goes here.</reasoning>` ->
     `{'thinking': 'Thinking goes here.', 'reasoning': 'Reasoning goes here.'}`
-    """
+    """  # noqa: RUF002
     if example["generation"] is None:
         example["generation"] = ""
 
