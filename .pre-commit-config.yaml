@@ -8,12 +8,9 @@ repos:
         exclude: ^.*\.egg-info/|tests/repositories/fixtures/pypi.org/metadata/.*\.metadata
       - id: check-merge-conflict
       - id: check-case-conflict
-      - id: check-json
       - id: check-toml
         exclude: tests/fixtures/invalid_lock/poetry\.lock
       - id: check-yaml
-      - id: pretty-format-json
-        args: [--autofix, --no-ensure-ascii, --no-sort-keys]
       - id: check-ast
       - id: debug-statements
       - id: check-docstring-first
@@ -42,3 +39,9 @@ repos:
         minimum_pre_commit_version: 2.9.2
         require_serial: true
         types_or: [python, pyi]
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.8.16
+    hooks:
+      - id: uv-lock

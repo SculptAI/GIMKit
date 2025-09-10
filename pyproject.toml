@@ -13,6 +13,9 @@ dependencies = []
 dataset = [
     "datasets==3.6.0",  # The next version, v4.0.0 has bad backward compatibility for now
 ]
+dev = [
+    "pre-commit>=4.3.0",
+]
 training = [
     "swanlab>=0.6.9",
     "transformers==4.55.4",  # unsloth currently works best with this version for now
