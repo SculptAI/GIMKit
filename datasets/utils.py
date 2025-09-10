@@ -93,7 +93,9 @@ def validate_wrapped_masked_io(input: str, output: str):
     if not (len(i_open_matches) == len(i_end_tags) == len(o_open_matches) == len(o_end_tags)):
         raise ValueError("Mismatched number of masked tags between input and output.")
 
-    for idx, (i_open_tag, o_open_tag) in enumerate(zip(i_open_matches, o_open_matches, strict=False), start=1):
+    for idx, (i_open_tag, o_open_tag) in enumerate(
+        zip(i_open_matches, o_open_matches, strict=False), start=1
+    ):
         i_idx = int(i_open_tag.group(1)) if i_open_tag.group(1) is not None else idx
         o_idx = int(o_open_tag.group(1)) if o_open_tag.group(1) is not None else idx
         if i_idx != o_idx:
@@ -128,7 +130,11 @@ def gen_possion_masked(text: str, lam: int) -> tuple[str, str]:
         last_end = 0
         for idx, (start, end) in enumerate(ranges):
             input += text[last_end:start] + random.choice(
-                [MaskedTag(id=idx + 1), MaskedTag(), MaskedTag(desc="Fill in with appropriate text")]
+                [
+                    MaskedTag(id=idx + 1),
+                    MaskedTag(),
+                    MaskedTag(desc="Fill in with appropriate text"),
+                ]
             )
             output += MaskedTag(id=idx + 1, content=text[start:end])
             last_end = end

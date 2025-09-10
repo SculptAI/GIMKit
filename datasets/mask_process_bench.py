@@ -44,7 +44,9 @@ def _mask_process(example: dict) -> dict:
             ]
         )
     )
-    m_output = "".join([str(MaskedTag(id=idx + 1, content=step)) for idx, step in enumerate(example["steps"])])
+    m_output = "".join(
+        [str(MaskedTag(id=idx + 1, content=step)) for idx, step in enumerate(example["steps"])]
+    )
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)
     return {"m_input": m_input, "m_output": m_output}

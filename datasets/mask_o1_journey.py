@@ -27,7 +27,9 @@ def _mask_cot_and_answer(example: dict) -> dict:
             "The short answer to the question",
         ]
     )
-    m_input = question + "\n\n" + MaskedTag(desc=long_cot_desc) + "\n\n" + MaskedTag(desc=answer_desc)
+    m_input = (
+        question + "\n\n" + MaskedTag(desc=long_cot_desc) + "\n\n" + MaskedTag(desc=answer_desc)
+    )
     m_output = str(MaskedTag(id=1, content=long_cot)) + str(MaskedTag(id=2, content=answer))
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)

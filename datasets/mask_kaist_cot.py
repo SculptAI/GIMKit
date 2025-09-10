@@ -27,7 +27,9 @@ def _mask_rationale_and_target(example: dict) -> dict:
             ]
         )
     )
-    m_output = str(MaskedTag(id=1, content=example["rationale"])) + str(MaskedTag(id=2, content=example["target"]))
+    m_output = str(MaskedTag(id=1, content=example["rationale"])) + str(
+        MaskedTag(id=2, content=example["target"])
+    )
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)
     return {"m_input": m_input, "m_output": m_output}

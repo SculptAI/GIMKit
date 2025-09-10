@@ -18,13 +18,21 @@ def _mask_internal_thinking(example: dict) -> dict:
     )
     m_input = random.choice(
         [
-            (f"问题：{example['prompt'].strip()}\n" f'思考：{MaskedTag(desc=desc)}\n' f"回答：{example['answer']}"),
+            (
+                f"问题：{example['prompt'].strip()}\n"
+                f"思考：{MaskedTag(desc=desc)}\n"
+                f"回答：{example['answer']}"
+            ),
             (
                 f"## 问题\n\n{example['prompt'].strip()}\n\n"
-                f'## 思考\n\n{MaskedTag(desc=desc)}\n\n'
+                f"## 思考\n\n{MaskedTag(desc=desc)}\n\n"
                 f"## 回答\n\n{example['answer']}"
             ),
-            (f"{example['prompt'].strip()}\n\n---\n\n" f'{MaskedTag(desc=desc)}\n\n---\n\n' f"{example['answer']}"),
+            (
+                f"{example['prompt'].strip()}\n\n---\n\n"
+                f"{MaskedTag(desc=desc)}\n\n---\n\n"
+                f"{example['answer']}"
+            ),
         ]
     )
     m_output = str(MaskedTag(id=1, content=example["thinking"]))
