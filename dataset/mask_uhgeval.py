@@ -2,9 +2,10 @@ import random
 
 import numpy as np
 
-from utils import gen_possion_masked, validate_wrapped_masked_io, wrap_masked_io
-
 from datasets import load_dataset
+from utils import gen_possion_masked, wrap_masked_io
+
+from simfill import validate_wrapped_masked_io
 
 
 random.seed(0)
