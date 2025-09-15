@@ -3,7 +3,7 @@ import re
 from datasets import load_dataset
 from utils import wrap_masked_io
 
-from simfill import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag, validate_wrapped_masked_io
 
 
 TAG2DESC = {

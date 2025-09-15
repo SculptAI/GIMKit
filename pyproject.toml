@@ -1,7 +1,7 @@
 [project]
-name = "simfill"
-version = "0.1.0"
-description = "Structured Infilling Modeling"
+name = "gimkit"
+version = "0.0.1"
+description = "Guided Infilling Modeling"
 readme = "README.md"
 authors = [
     { name = "Shichao Song", email = "song.shichao@outlook.com" }
