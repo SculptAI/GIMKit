@@ -1,4 +1,4 @@
-"""Defines the schema for the structured infilling model. Some examples are given below.
+"""Defines the schema for GIM. Some examples are given below.
 
 >>> tag = MaskedTag(id=1, desc="Fill in with appropriate text")
 >>> print(tag)

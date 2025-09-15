@@ -148,4 +148,4 @@ logging.info("Response: " + tokenizer.decode(response[0]))
 
 # ─── Save Model ───────────────────────────────────────────────────────────────
 
-model.save_pretrained_merged(configs.OUTPUT_DIR / "SIM", tokenizer, save_method="merged_16bit")
+model.save_pretrained_merged(configs.OUTPUT_DIR / "GIM", tokenizer, save_method="merged_16bit")

@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 
-from simfill import MaskedTag
+from gimkit import MaskedTag
 
 
 def wrap_masked_io(masked_input: str, masked_output: str) -> tuple[str, str]:

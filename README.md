@@ -1,1 +1,1 @@
-# Structured Infilling Modeling
+# Guided Infilling Modeling
