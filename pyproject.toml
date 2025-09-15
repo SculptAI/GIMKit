@@ -16,6 +16,9 @@ dataset = [
 dev = [
     "pre-commit>=4.3.0",
 ]
+eval = [
+    "vllm>=0.10.1.1",
+]
 training = [
     "swanlab>=0.6.9",
     "transformers==4.55.4",  # unsloth currently works best with this version for now
