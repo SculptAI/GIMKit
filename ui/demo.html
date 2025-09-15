@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gradient-to-br from-gray-100 to-gray-200 bg-fixed">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Guided Infilling</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <!-- SimpleMDE CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css" />
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+
+    <style>
+        html,
+        body {
+            font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        #consoleOutput {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body class="h-full flex flex-col font-sans">
+
+
+    <!-- Header -->
+    <header class="py-6 text-center">
+        <h1 class="text-3xl font-bold text-gray-700">Guided Infilling</h1>
+        <p class="text-gray-500">Predict masked contents as you wish 🎁</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex justify-center items-start px-4">
+        <div class="w-full max-w-4xl mx-auto mb-10 bg-white rounded-lg shadow p-6 flex flex-col space-y-6">
+            <!-- Toolbar -->
+            <div
+                class="bg-gradient-to-r from-blue-500 to-indigo-500 p-4 rounded-lg flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                <!-- Model Selection -->
+                <div class="flex items-center space-x-2">
+                    <label for="model-select" class="text-white font-medium">Select Model:</label>
+                    <select id="model-select" class="px-2 py-1 rounded focus:outline-none text-gray-700"></select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    <button id="maskBtn"
+                        class="bg-white text-blue-600 font-semibold px-4 py-2 rounded shadow hover:bg-blue-50 transition">Mask</button>
+                    <button id="runBtn"
+                        class="bg-white text-blue-600 font-semibold px-4 py-2 rounded shadow hover:bg-blue-50 transition">Run</button>
+                    <div id="loading-spinner" class="loading-spinner hidden"></div>
+                </div>
+            </div>
+
+            <!-- Editor -->
+            <div>
+                <textarea id="editorTextarea"></textarea>
+            </div>
+
+            <!-- Preset Examples -->
+            <div class="opacity-80">
+                <p class="mb-2">Examples:</p>
+                <div id="preset-buttons" class="flex flex-wrap gap-2">
+                    <!-- Buttons will be generated dynamically -->
+                </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="opacity-70">
+                <p class="mb-2">Logs:</p>
+                <div id="consoleOutput" class="whitespace-pre-wrap"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Preset Examples
+        const PRESET_EXAMPLES = {
+            "Default": `Some simple examples:
+
+* 2 + <MASKED desc="Please use English numbers"></MASKED> + 6 / 3 = 7
+* Mixing red and blue results in<MASKED desc="Please use hex representation"></MASKED>
+* The growing impact of <MASKED desc="five words"></MASKED> the need for accurate and reliable weather forecasting.
+* The growing impact of <MASKED desc="six words only"></MASKED> the need for accurate and reliable weather forecasting.
+* <MASKED desc="Einstein's birth year"></MASKED>-<MASKED desc="Newton's birth year"></MASKED>=<MASKED desc="number"></MASKED>
+`,
+            "Reasoning 1": `From the perspective of floating-point storage, what is the probability that random.random() > random.random() holds true?
+
+Let's reason step by step:
+1. <MASKED></MASKED>
+2. <MASKED></MASKED>
+3. <MASKED></MASKED>
+4. <MASKED></MASKED>
+5. <MASKED></MASKED>
+6. <MASKED></MASKED>
+7. <MASKED></MASKED>
+8. <MASKED></MASKED>
+9. <MASKED></MASKED>
+10. <MASKED></MASKED>
+
+Final Answer: <MASKED></MASKED>`,
+            "Reasoning 2": `2<MASKED desc="math operator"></MASKED>6<MASKED desc="math operator"></MASKED>6<MASKED desc="math operator"></MASKED>2=24
+
+Your Reasoning: <MASKED></MASKED>`,
+            "Table Completion": `| Application Scenario     | Description                                                   |
+|--------------------------|-------------------------------------------------------------|
+| <MASKED></MASKED>       | Achieve automated lighting control through protocols like Wi-Fi or Zigbee, enhancing convenience and energy efficiency. |
+| Smart City - Traffic Management | Optimize traffic flow using 5G networks and AI video analysis, improving traffic safety and efficiency. |
+| Industrial IoT - Maintenance    | Use IIoT platforms and machine learning for predictive maintenance, reducing downtime and maintenance costs. |
+| Agriculture - Precision Farming  | <MASKED></MASKED>|
+| Healthcare - Remote Monitoring   | Real-time monitoring of patient health status through wearable devices, supporting telemedicine and personalized treatment. |
+|<MASKED desc="Scenario"></MASKED>|<MASKED desc="Description"></MASKED>|
+| Environmental Protection - Air Quality | Deploy miniature air quality sensors to monitor and warn of air pollution events, protecting public health. |`,
+            "Data Synthesis": `Complete the algorithm profile in TOML:
+
+[algorithm_profile]
+name = "Topological Sort"
+type = <MASKED desc="list[str] type; 4 items"></MASKED>
+performance.time_complexity: <MASKED desc="str type; use LaTeX expression"></MASKED>,
+performance.space_complexity: <MASKED desc="str type; use LaTeX expression"></MASKED>
+`,
+            "KG Extraction": `## Content
+
+We were both young when I first saw you
+I close my eyes and the flashback starts
+I'm standin' there
+On a balcony in summer air
+See the lights, see the party, the ball gowns
+See you make your way through the crowd
+And say, "Hello"
+Little did I know
+That you were Romeo, you were throwin' pebbles
+And my daddy said, "Stay away from Juliet"
+And I was cryin' on the staircase
+Beggin' you, "Please don't go, " and I said
+Romeo, take me somewhere we can be alone
+I'll be waiting, all there's left to do is run
+You'll be the prince and I'll be the princess
+It's a love story, baby, just say, "Yes"
+
+## Extraction
+
+Extract knowledge graph triplets (head, relation, tail) from the content.
+
+1. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+2. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+3. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+4. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+5. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+6. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+7. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+8. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+9. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)
+10. (<MASKED></MASKED>, <MASKED></MASKED>, <MASKED></MASKED>)`,
+        };
+
+        // Model Information
+        const MODELS = {
+            xxx: {},
+        };
+
+        // Populate model select dropdown dynamically
+        document.addEventListener("DOMContentLoaded", () => {
+            const modelSelect = document.getElementById("model-select");
+            for (const [key, value] of Object.entries(MODELS)) {
+                const option = document.createElement("option");
+                option.value = key;
+                option.textContent = key;
+                modelSelect.appendChild(option);
+            }
+
+            // Generate preset buttons dynamically
+            const presetButtonsContainer = document.getElementById("preset-buttons");
+            for (const [key, value] of Object.entries(PRESET_EXAMPLES)) {
+                const button = document.createElement("button");
+                button.className = "preset-btn bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition";
+                button.setAttribute("data-preset-key", key);
+                button.textContent = key;
+                button.addEventListener("click", () => {
+                    const presetContent = PRESET_EXAMPLES[key];
+                    if (presetContent) {
+                        simplemde.value(presetContent);
+                    }
+                });
+                presetButtonsContainer.appendChild(button);
+            }
+        });
+
+        // Fetch Chat Completion
+        const fetchChatCompletion = async (query, { model, api_key, base_url }) => {
+            const response = await fetch(`${base_url}/chat/completions`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${api_key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: query }],
+                    stream: false,
+                    temperature: 0.0,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || "";
+        };
+
+        // Add masked_id to <MASKED> Tags
+        const addID = (str) => {
+            const regex = /<MASKED(?:\s+[^>]*)?>/g;
+            let id = 1;
+            return str.replace(regex, (match) => {
+                return match.replace("<MASKED", `<MASKED id="masked_${id++}"`);
+            });
+        };
+
+        // Replace <MASKED></MASKED> Content
+        const replaceMaskedText = (query, response) => {
+            const responseRegex = /<MASKED(?:\s+[^>]*)?>([\s\S]*?)<\/MASKED>/g;
+            const replacements = [];
+            let match;
+            while ((match = responseRegex.exec(response)) !== null) {
+                replacements.push(match[1] || "");
+            }
+
+            const queryRegex = /<MASKED(?:\s+[^>]*)?>[\s\S]*?<\/MASKED>/g;
+            let replacementIndex = 0;
+            return query.replace(queryRegex, () => replacements[replacementIndex++] || "");
+        };
+
+        // Initialize Editor
+        const simplemde = new SimpleMDE({
+            element: document.getElementById("editorTextarea"),
+            spellChecker: false,
+            autosave: {
+                enabled: false,
+                unique_id: "demo",
+            },
+            status: ["autosave", "lines", "words", "cursor"],
+            toolbar: false,
+            tabSize: 4,
+            initialValue: PRESET_EXAMPLES["Default"],
+        });
+
+        // maskBtn Handler
+        document.getElementById("maskBtn").addEventListener("click", () => {
+            const cm = simplemde.codemirror;
+            const selection = cm.getSelection();
+            cm.replaceSelection(`<MASKED desc=""></MASKED>`);
+        });
+
+        // runBtn Handler
+        document.getElementById("runBtn").addEventListener("click", async () => {
+            document.getElementById("loading-spinner").classList.remove("hidden");
+            const query = simplemde.value();
+            const queryWithID = addID(query);
+            const modelKey = document.getElementById("model-select").value;
+            const modelVal = MODELS[modelKey];
+
+            try {
+                console.log("Query: ", queryWithID);
+                const response = await fetchChatCompletion(queryWithID, modelVal);
+                console.log(`Response: ${response}`);
+                const replaced = replaceMaskedText(queryWithID, response);
+                console.log(`Model: ${modelVal["model"]}`);
+
+                // Unescape HTML entities
+                const unescaped = replaced
+                    .replace(/&lt;/g, "<")
+                    .replace(/&gt;/g, ">")
+                    .replace(/&amp;/g, "&")
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#39;/g, "'");
+
+                simplemde.value(unescaped);
+            } catch (error) {
+                console.error("Error fetching chat completion:", error);
+                alert("An error occurred.");
+            } finally {
+                document.getElementById("loading-spinner").classList.add("hidden");
+            }
+        });
+
+        // Redirect console.log and console.error to the console output div with timestamp
+        (function () {
+            const originalLog = console.log;
+            const originalError = console.error;
+            const consoleOutput = document.getElementById("consoleOutput");
+
+            // Helper function to escape HTML
+            const escapeHTML = (str) => {
+                return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            };
+
+            console.log = function (...args) {
+                originalLog.apply(console, args);
+                const timestamp = new Date().toLocaleTimeString();
+                const message = args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : arg)).join(" ");
+                const escapedMessage = escapeHTML(message);
+                const messageElement = document.createElement("div");
+                messageElement.innerHTML = `<span class="text-yellow-500">[${timestamp}]</span> ${escapedMessage}`;
+                consoleOutput.appendChild(messageElement);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            };
+
+            console.error = function (...args) {
+                originalError.apply(console, args);
+                const timestamp = new Date().toLocaleTimeString();
+                const message = args
+                    .map((arg) => {
+                        if (arg instanceof Error) {
+                            return `${arg.message}\n${arg.stack}`;
+                        }
+                        return typeof arg === "object" ? JSON.stringify(arg, null, 2) : arg;
+                    })
+                    .join(" ");
+                const escapedMessage = escapeHTML(message);
+                const messageElement = document.createElement("div");
+                messageElement.innerHTML = `<span class="text-red-500">[${timestamp}]</span> ${escapedMessage}`;
+                consoleOutput.appendChild(messageElement);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            };
+        })();
+    </script>
+</body>
+
+</html>
