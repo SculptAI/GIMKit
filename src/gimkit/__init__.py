@@ -1,4 +1,4 @@
-from gimkit.mask_schema import MaskedTag, validate_wrapped_masked_io
+from gimkit.schemas import MaskedTag, guide, validate_wrapped_masked_io
 
 
-__all__ = ["MaskedTag", "validate_wrapped_masked_io"]
+__all__ = ["MaskedTag", "guide", "validate_wrapped_masked_io"]
