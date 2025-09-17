@@ -33,13 +33,13 @@ def gen_possion_masked(text: str, lam: int) -> tuple[str, str]:
         <|MASKED id="m_1"|>example<|/MASKED|><|MASKED id="m_2"|>r masking<|/MASKED|>
     """
 
-    def gen_mask_ranges(text: str, mask_num: int) -> list[tuple[int]]:
+    def gen_mask_ranges(text: str, mask_num: int) -> list[tuple[int, int]]:
         indices = random.sample(range(len(text)), mask_num * 2)
         indices.sort()
         ranges = [(indices[i], indices[i + 1]) for i in range(0, len(indices), 2)]
         return ranges
 
-    def gen_mask_io(text: str, ranges: list[tuple[int]]) -> tuple[str, str]:
+    def gen_mask_io(text: str, ranges: list[tuple[int, int]]) -> tuple[str, str]:
         input, output = "", ""
         last_end = 0
         for idx, (start, end) in enumerate(ranges):
