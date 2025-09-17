@@ -1,7 +1,8 @@
 from gimkit import guide
 
 
-def llm_request(query: str) -> str: ...
+def llm_request(query: str) -> str:
+    return query
 
 
 g = guide()
@@ -10,7 +11,7 @@ prompt = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}
 
 ## Bio
 
-{g(name="bio", desc="No more than four sentences.", regex="^([A-Za-z][^.!?]*[.!?]\s*){4}$")}
+{g(name="bio", desc="No more than four sentences.", regex=r"^([A-Za-z][^.!?]*[.!?]\s*){4}$")}
 
 ## Contact
 
