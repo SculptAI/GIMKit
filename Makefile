@@ -5,19 +5,19 @@ install:
 	uv pip install -e .
 
 lint:
-	uvx ruff check src tests
-	uvx ruff format src tests --diff
-	uvx mypy src
+	uv run ruff check src tests
+	uv run ruff format src tests --diff
+	uv run mypy src
 
 lint-fix:
-	uvx ruff check src tests --fix
-	uvx ruff format src tests
+	uv run ruff check src tests --fix
+	uv run ruff format src tests
 
 test:
-	uvx pytest tests
+	uv run pytest tests
 
 pre-commit:
-	uvx pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 clean:
 	rm -rf dist
