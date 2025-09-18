@@ -29,7 +29,7 @@ def _mask_one_remark_in_conversation(example: dict) -> dict:
 
     # Randomly mask one remark
     masked_id = random.randint(0, conv_len - 1)
-    m_output = str(MaskedTag(id=1, content=conversations[masked_id]))
+    m_output = str(MaskedTag(id=0, content=conversations[masked_id]))
     conversations[masked_id] = str(MaskedTag())
 
     # Format the conversations
