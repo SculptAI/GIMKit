@@ -1,17 +1,18 @@
 from gimkit import guide
 
 
-def llm_request(query: str) -> str:
-    return query
-
+# ─── 1. Construct ─────────────────────────────────────────────────────────────
 
 g = guide()
 
-prompt = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}!
+# Define the query with masked tags
+raw_query = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}!
+
+My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
 
 ## Bio
 
-{g(name="bio", desc="No more than four sentences.", regex=r"^([A-Za-z][^.!?]*[.!?]\s*){4}$")}
+{g(name="bio", desc="No more than four sentences.")}
 
 ## Contact
 
@@ -19,23 +20,44 @@ prompt = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}
 * E-mail: {g.e_mail(name="email")}
 """
 
-# Setter; Raise error or wanring or just standardize it and save it to its attr
-g.query = prompt
+# Add extra prefix/suffix
+query = g.standardize(raw_query)
+print(query)
 
-# Setter; Get response, validate its completeness
-g.response = llm_request(prompt)
+# ─── 2. Request ───────────────────────────────────────────────────────────────
 
-# Iterate all results
-for result in g.results:
-    print(result)
 
-# Visit results by int id or str name
-print(g[0])
-print(g["bio"])
-assert g[0] == g["sub"]
+# A mock LLM request function
+def llm_request(query: str) -> str:
+    return (
+        "<|M_OUTPUT|>"
+        '<|MASKED id="m_0"|>Alice<|/MASKED|>'
+        '<|MASKED id="m_1"|>World<|/MASKED|>'
+        '<|MASKED id="m_2"|>reading<|/MASKED|>'
+        '<|MASKED id="m_3"|>Alice is a software engineer with 5 years of experience. She loves hiking and photography. She graduated from MIT with a degree in Computer Science. In her free time, she volunteers at local animal shelters.<|/MASKED|>'
+        '<|MASKED id="m_4"|>123-456-7890<|/MASKED|>'
+        '<|MASKED id="m_5"|>alice@example.com<|/MASKED|>'
+        "<|/M_OUTPUT|>"
+    )
 
-# Change the value maybe
-g[0].content = g[0].content.capitalize() if g[0].content else "hi"
 
-# Infill the masked contents with predications
-print(g.infill(g.results))
+response = llm_request(query)
+
+# ─── 3. Parse ─────────────────────────────────────────────────────────────────
+
+# Parse the query and response to get the predicated tags
+result = g.parse(query, response)
+
+# Visit results by iteration
+for tag in result.tags:
+    print(tag)
+
+# Or visit results by id/name
+assert result.tags[0] == result.tags["sub"]
+
+# Change the content of a tag
+result.tags["phone"].content = "PRIVATE"
+
+# Infill the original query with the predicted contents
+infilled = result.infill()
+print(infilled)
