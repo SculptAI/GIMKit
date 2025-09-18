@@ -188,11 +188,11 @@ def validate_wrapped_masked_io(inp: str | None, outp: str | None):
     if inp is not None and outp is not None:
         if len(inp_tags) != len(outp_tags):
             raise InvalidFormatError("Mismatched number of masked tags between input and output.")
-        for i_tag, o_tag in zip(inp_tags, outp_tags, strict=False):
-            if i_tag.id != o_tag.id:
-                raise InvalidFormatError(
-                    f"Mismatched masked tag ids between input and output: {i_tag.id} != {o_tag.id}"
-                )
+        for idx, (i_tag, o_tag) in enumerate(zip(inp_tags, outp_tags, strict=False)):
+            if i_tag.id is not None and i_tag.id != idx:
+                raise InvalidFormatError(f"Input tag id should be {idx}, got {i_tag.id}.")
+            if o_tag.id is not None and o_tag.id != idx:
+                raise InvalidFormatError(f"Output tag id should be {idx}, got {o_tag.id}.")
 
 
 class Guide:
