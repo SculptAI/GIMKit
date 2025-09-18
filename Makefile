@@ -5,13 +5,13 @@ install:
 	uv pip install -e .
 
 lint:
-	uv run ruff check src tests
-	uv run ruff format src tests --diff
-	uv run mypy src
+	uv run ruff check src tests examples
+	uv run ruff format src tests examples --diff
+	uv run mypy src tests examples
 
 lint-fix:
-	uv run ruff check src tests --fix
-	uv run ruff format src tests
+	uv run ruff check src tests examples --fix
+	uv run ruff format src tests examples
 
 test:
 	uv run pytest tests
