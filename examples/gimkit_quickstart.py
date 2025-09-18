@@ -23,6 +23,7 @@ My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "
 # Add extra prefix/suffix
 query = g.standardize(raw_query)
 print(query)
+print()
 
 # ─── 2. Request ───────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ result = g.parse(query, response)
 # Visit results by iteration
 for tag in result.tags:
     print(tag)
+print()
 
 # Or visit results by id/name
 assert result.tags[0] == result.tags["sub"]
