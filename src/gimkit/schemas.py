@@ -145,7 +145,7 @@ def parse_inp_or_outp(s: str, prefix: str, suffix: str) -> list[MaskedTag]:
     open_mathes = list(re.finditer(OPEN_TAG_PATTERN, s))
     end_matches = list(re.finditer(END_TAG_PATTERN, s))
     full_matches = list(re.finditer(FULL_TAG_PATTERN, s))
-    if len(open_mathes) != len(end_matches) != len(full_matches):
+    if not (len(open_mathes) == len(end_matches) == len(full_matches)):
         raise InvalidFormatError(f"Mismatched or nested masked tags in {prefix}...{suffix}.")
 
     returned = []
@@ -215,9 +215,10 @@ class Guide:
         return tag
 
     def standardize(self, raw_query: str) -> str:
-        if not raw_query.startswith(INPUT_PREFIX):
-            query = INPUT_PREFIX + raw_query
-        if not raw_query.endswith(INPUT_SUFFIX):
+        query = raw_query
+        if not query.startswith(INPUT_PREFIX):
+            query = INPUT_PREFIX + query
+        if not query.endswith(INPUT_SUFFIX):
             query = query + INPUT_SUFFIX
         validate_wrapped_masked_io(query, None)
         return query
@@ -225,7 +226,7 @@ class Guide:
     def parse(self, query: str, response: str) -> ParsedResult:
         validate_wrapped_masked_io(query, response)
         result_tags = parse_inp_or_outp(response, OUTPUT_PREFIX, OUTPUT_SUFFIX)
-        for inp_tag, outp_tag in zip(self._tags, result_tags, strict=False):
+        for inp_tag, outp_tag in zip(self._tags, result_tags, strict=True):
             outp_tag.name = inp_tag.name
         return ParsedResult(query, result_tags)
 
