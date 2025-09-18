@@ -36,6 +36,6 @@ def _mask_rationale_and_target(example: dict) -> dict:
     return {"m_input": m_input, "m_output": m_output}
 
 
-ds = load_dataset("kaist-ai/CoT-Collection", split="train")
+ds = load_dataset("kaist-ai/CoT-Collection", split="train", trust_remote_code=True)
 ds = ds.map(_mask_rationale_and_target).select_columns(["m_input", "m_output"])
 ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
