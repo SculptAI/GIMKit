@@ -1,3 +1,6 @@
+# Trained models
+artifacts/
+
 # UnSloth generated
 unsloth_compiled_cache/
 

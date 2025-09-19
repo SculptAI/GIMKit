@@ -13,7 +13,7 @@ from unsloth.chat_templates import get_chat_template, train_on_responses_only
 # ─── General Setup ────────────────────────────────────────────────────────────
 
 os.environ["SWANLAB_EXP_NAME"] = configs.EXP_NAME
-os.environ["SWANLAB_DESCRIPTION"] = configs.EXP_DESC
+os.environ["SWANLAB_LOG_DIR"] = str(configs.ARTIFACTS_DIR / "swanlog")
 
 logging.basicConfig(
     filename=configs.ARTIFACTS_DIR / "training.log",
