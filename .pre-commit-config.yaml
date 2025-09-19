@@ -32,6 +32,7 @@ repos:
     rev: 'v1.18.1'
     hooks:
       - id: mypy
+        exclude: runs
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
