@@ -82,7 +82,8 @@ dataset = (
                 tokenize=False,
                 add_generation_prompt=False,
             )
-        }
+        },
+        num_proc=os.cpu_count()
     )
     .select_columns(["text"])
 )
