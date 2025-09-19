@@ -3,10 +3,11 @@ import random
 import numpy as np
 
 from gimkit import MaskedTag
+from gimkit.schemas import INPUT_PREFIX, INPUT_SUFFIX, OUTPUT_PREFIX, OUTPUT_SUFFIX
 
 
 def wrap_masked_io(masked_input: str, masked_output: str) -> tuple[str, str]:
-    """Wrap the masked output with <|M_INPUT|> and <|M_OUTPUT|> tags.
+    """Wrap the masked output with surrounding tags.
 
     Args:
         masked_input (str): The masked input string to be wrapped.
@@ -15,7 +16,7 @@ def wrap_masked_io(masked_input: str, masked_output: str) -> tuple[str, str]:
     Returns:
         tuple: The wrapped masked input and output strings.
     """
-    return f"<|M_INPUT|>{masked_input}<|/M_INPUT|>", f"<|M_OUTPUT|>{masked_output}<|/M_OUTPUT|>"
+    return INPUT_PREFIX + masked_input + INPUT_SUFFIX, OUTPUT_PREFIX + masked_output + OUTPUT_SUFFIX
 
 
 def gen_possion_masked(text: str, lam: int) -> tuple[str, str]:
@@ -45,12 +46,12 @@ def gen_possion_masked(text: str, lam: int) -> tuple[str, str]:
         for idx, (start, end) in enumerate(ranges):
             input += text[last_end:start] + random.choice(
                 [
-                    MaskedTag(id=idx + 1),
+                    MaskedTag(id=idx),
                     MaskedTag(),
                     MaskedTag(desc="Fill in with appropriate text"),
                 ]
             )
-            output += MaskedTag(id=idx + 1, content=text[start:end])
+            output += MaskedTag(id=idx, content=text[start:end])
             last_end = end
         input += text[last_end:]
         return input, output

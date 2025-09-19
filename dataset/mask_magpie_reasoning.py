@@ -40,7 +40,7 @@ FIELD2DESC = {
 
 def _mask_some_fields(example: dict) -> dict:
     m_input_dict, m_output = {}, ""
-    idx = 1
+    idx = 0
     for field in FIELD2DESC:
         if random.random() < 0.5:
             m_input_dict[field] = str(MaskedTag(id=idx, desc=FIELD2DESC[field]))

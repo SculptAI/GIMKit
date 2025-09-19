@@ -28,14 +28,14 @@ def _mask_rationale_and_target(example: dict) -> dict:
             ]
         )
     )
-    m_output = str(MaskedTag(id=1, content=example["rationale"])) + str(
-        MaskedTag(id=2, content=example["target"])
+    m_output = str(MaskedTag(id=0, content=example["rationale"])) + str(
+        MaskedTag(id=1, content=example["target"])
     )
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)
     return {"m_input": m_input, "m_output": m_output}
 
 
-ds = load_dataset("kaist-ai/CoT-Collection", split="train")
+ds = load_dataset("kaist-ai/CoT-Collection", split="train", trust_remote_code=True)
 ds = ds.map(_mask_rationale_and_target).select_columns(["m_input", "m_output"])
 ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)

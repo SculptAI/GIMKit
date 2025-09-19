@@ -36,7 +36,7 @@ def _mask_internal_thinking(example: dict) -> dict:
             ),
         ]
     )
-    m_output = str(MaskedTag(id=1, content=example["thinking"]))
+    m_output = str(MaskedTag(id=0, content=example["thinking"]))
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)
     return {"m_input": m_input, "m_output": m_output}

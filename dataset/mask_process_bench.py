@@ -36,7 +36,7 @@ def _mask_process(example: dict) -> dict:
             [
                 random.choice(
                     [
-                        "\n\n" + MaskedTag(id=idx + 1, desc=desc),
+                        "\n\n" + MaskedTag(id=idx, desc=desc),
                         "\n\n" + MaskedTag(desc=desc),
                         "\n\n" + MaskedTag(),
                     ]
@@ -46,7 +46,7 @@ def _mask_process(example: dict) -> dict:
         )
     )
     m_output = "".join(
-        [str(MaskedTag(id=idx + 1, content=step)) for idx, step in enumerate(example["steps"])]
+        [str(MaskedTag(id=idx, content=step)) for idx, step in enumerate(example["steps"])]
     )
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)
