@@ -1,5 +1,7 @@
 {
     "python.testing.pytestArgs": [
+        "--cov=gimkit",
+        "--cov-report=term-missing:skip-covered",
         "tests"
     ],
     "python.testing.unittestEnabled": false,
