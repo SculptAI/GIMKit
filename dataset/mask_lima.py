@@ -29,7 +29,7 @@ def _mask_one_remark_in_conversation(example: dict) -> dict:
 
     # Randomly mask one remark
     masked_id = random.randint(0, conv_len - 1)
-    m_output = str(MaskedTag(id=1, content=conversations[masked_id]))
+    m_output = str(MaskedTag(id=0, content=conversations[masked_id]))
     conversations[masked_id] = str(MaskedTag())
 
     # Format the conversations
@@ -42,6 +42,6 @@ def _mask_one_remark_in_conversation(example: dict) -> dict:
     return {"m_input": m_input, "m_output": m_output}
 
 
-ds = load_dataset("GAIR/lima", split="train")
+ds = load_dataset("Ki-Seki/GAIR_lima", split="train")
 ds = ds.map(_mask_one_remark_in_conversation).select_columns(["m_input", "m_output"])
 ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)

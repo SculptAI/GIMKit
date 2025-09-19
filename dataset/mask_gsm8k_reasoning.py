@@ -47,10 +47,7 @@ def _mask_tags_content(example: dict) -> dict:
         [f"\n\n{MaskedTag(desc=TAG2DESC[tag])}" for tag in TAGS]
     )
     m_output = "".join(
-        [
-            str(MaskedTag(id=idx + 1, content=example["generation"][tag]))
-            for idx, tag in enumerate(TAGS)
-        ]
+        [str(MaskedTag(id=idx, content=example["generation"][tag])) for idx, tag in enumerate(TAGS)]
     )
     m_input, m_output = wrap_masked_io(m_input, m_output)
     validate_wrapped_masked_io(m_input, m_output)
