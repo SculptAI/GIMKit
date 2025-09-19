@@ -14,12 +14,13 @@ lint-fix:
 	uv run ruff format src tests examples
 
 test:
-	uv run pytest tests
+	uv run pytest --cov=gimkit --cov-report=term-missing:skip-covered tests
 
 pre-commit:
 	uv run pre-commit run --all-files
 
 clean:
+	rm -rf .coverage
 	rm -rf dist
 	rm -rf .mypy_cache
 	rm -rf .pytest_cache

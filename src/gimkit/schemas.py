@@ -73,7 +73,7 @@ class MaskedTag:
         masked_tag_str += "<|/MASKED|>"
         return masked_tag_str
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return self.__str__()
 
     def __add__(self, other: str) -> str:
@@ -185,14 +185,8 @@ def validate_wrapped_masked_io(inp: str | None, outp: str | None):
         inp_tags = parse_inp_or_outp(inp, INPUT_PREFIX, INPUT_SUFFIX)
     if outp is not None:
         outp_tags = parse_inp_or_outp(outp, OUTPUT_PREFIX, OUTPUT_SUFFIX)
-    if inp is not None and outp is not None:
-        if len(inp_tags) != len(outp_tags):
-            raise InvalidFormatError("Mismatched number of masked tags between input and output.")
-        for idx, (i_tag, o_tag) in enumerate(zip(inp_tags, outp_tags, strict=False)):
-            if i_tag.id is not None and i_tag.id != idx:
-                raise InvalidFormatError(f"Input tag id should be {idx}, got {i_tag.id}.")
-            if o_tag.id is not None and o_tag.id != idx:
-                raise InvalidFormatError(f"Output tag id should be {idx}, got {o_tag.id}.")
+    if inp is not None and outp is not None and len(inp_tags) != len(outp_tags):
+        raise InvalidFormatError("Mismatched number of masked tags between input and output.")
 
 
 class Guide:
@@ -200,15 +194,13 @@ class Guide:
         self._tags: list[MaskedTag] = []
 
     def _append_tag(self, tag: MaskedTag):
-        if tag.id != len(self._tags):
-            raise ValueError(f"Tag id should be {len(self._tags)}, got {tag.id}")
         for existing_tag in self._tags:
             if tag.name is not None and existing_tag.name == tag.name:
                 raise ValueError(f"Tag name '{tag.name}' already exists.")
         self._tags.append(tag)
 
     def __call__(
-        self, name: str, desc: str | None = None, content: str | None = None, **kwargs
+        self, name: str | None = None, desc: str | None = None, content: str | None = None, **kwargs
     ) -> MaskedTag:
         tag = MaskedTag(id=len(self._tags), name=name, desc=desc, content=content)
         self._append_tag(tag)
@@ -231,7 +223,7 @@ class Guide:
         return ParsedResult(query, result_tags)
 
 
-class guide(Guide):  # noqa: N801
+class guide(Guide):  # noqa: N801  # pragma: no cover
     def person_name(self, name: str) -> MaskedTag:
         """A person's name, e.g., John Doe, Alice, Bob, Charlie Brown, etc."""
         return self(name=name, desc=self.person_name.__doc__)
