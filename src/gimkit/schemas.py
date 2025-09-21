@@ -134,6 +134,7 @@ class ParsedResult:
 
 
 def parse_inp_or_outp(s: str, prefix: str, suffix: str) -> list[MaskedTag]:
+    s = s.strip()
     if not s.startswith(prefix) or not s.endswith(suffix):
         raise InvalidFormatError(f"Missing {prefix} or {suffix} tags.")
 
