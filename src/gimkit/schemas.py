@@ -67,7 +67,7 @@ class MaskedTag:
             if isinstance(attr_val, str):
                 setattr(self, attr, MaskedTag.unescape_in_attr_val(attr_val))
             elif attr_val is not None:
-                raise ValueError(f"{type(attr)=}, {attr=}, should be str or None")
+                raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
         if isinstance(self.content, str):
             special_marks = MaskedTag._template.split("{}")
