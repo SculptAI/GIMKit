@@ -3,7 +3,20 @@ import random
 import numpy as np
 
 from gimkit import MaskedTag
-from gimkit.schemas import INPUT_PREFIX, INPUT_SUFFIX, OUTPUT_PREFIX, OUTPUT_SUFFIX
+from gimkit.schemas import QUERY_PREFIX, QUERY_SUFFIX, RESPONSE_PREFIX, RESPONSE_SUFFIX, INPUT_PREFIX, INPUT_SUFFIX, OUTPUT_PREFIX, OUTPUT_SUFFIX
+
+
+def wrap_masked_qr(masked_query: str, masked_response: str) -> tuple[str, str]:
+    """Wrap the masked query and response with surrounding tags.
+
+    Args:
+        masked_query (str): The masked query string to be wrapped.
+        masked_response (str): The masked response string to be wrapped.
+
+    Returns:
+        tuple: The wrapped masked query and response strings.
+    """
+    return QUERY_PREFIX + masked_query + QUERY_SUFFIX, RESPONSE_PREFIX + masked_response + RESPONSE_SUFFIX
 
 
 def wrap_masked_io(masked_input: str, masked_output: str) -> tuple[str, str]:

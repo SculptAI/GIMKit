@@ -9,10 +9,10 @@ from typing import Literal
 from gimkit.exceptions import InvalidFormatError
 
 
-INPUT_PREFIX = "<|M_INPUT|>"
-INPUT_SUFFIX = "<|/M_INPUT|>"
-OUTPUT_PREFIX = "<|M_OUTPUT|>"
-OUTPUT_SUFFIX = "<|/M_OUTPUT|>"
+QUERY_PREFIX = "<|M_QUERY|>"
+QUERY_SUFFIX = "<|/M_QUERY|>"
+RESPONSE_PREFIX = "<|M_RESPONSE|>"
+RESPONSE_SUFFIX = "<|/M_RESPONSE|>"
 OPEN_TAG_PATTERN = re.compile(
     r'<\|MASKED(?: id="m_(\d+)")?(?: name="(.*?)")?(?: desc="(.*?)")?\|>', re.DOTALL
 )
@@ -179,8 +179,30 @@ def parse_tags(s: str, prefix: str | None = None, suffix: str | None = None) -> 
     return tags
 
 
+def validate_wrapped_masked_qr(query: str | None, response: str | None):
+    """Validate the wrapped masked query or/and response strings.
+
+    Args:
+        query (str): The wrapped masked query string to be validated.
+        response (str): The wrapped masked response string to be validated.
+
+    Raises:
+        ValueError: If both query and response are None.
+        InvalidFormatError: If the format of query or response is invalid, or if the number of masked tags
+            or their ids do not match between query and response.
+    """
+    if query is None and response is None:
+        raise ValueError("At least one of query or response must be provided.")
+    if query is not None:
+        query_tags = parse_tags(query, QUERY_PREFIX, QUERY_SUFFIX)
+    if response is not None:
+        response_tags = parse_tags(response, RESPONSE_PREFIX, RESPONSE_SUFFIX)
+    if query is not None and response is not None and len(query_tags) != len(response_tags):
+        raise InvalidFormatError("Mismatched number of masked tags between query and response.")
+
+
 def validate_wrapped_masked_io(inp: str | None, outp: str | None):
-    """Validate the wrapped masked input or/and output strings.
+    """Validate the wrapped masked input or/and output strings (legacy format).
 
     Args:
         inp (str): The wrapped masked input string to be validated.
@@ -194,8 +216,23 @@ def validate_wrapped_masked_io(inp: str | None, outp: str | None):
     if inp is None and outp is None:
         raise ValueError("At least one of inp or outp must be provided.")
     if inp is not None:
-        inp_tags = parse_tags(inp, INPUT_PREFIX, INPUT_SUFFIX)
+        # Check if it's old format (M_INPUT) or new format (M_QUERY)
+        if inp.strip().startswith("<|M_INPUT|>"):
+            inp_tags = parse_tags(inp, "<|M_INPUT|>", "<|/M_INPUT|>")
+        else:
+            inp_tags = parse_tags(inp, QUERY_PREFIX, QUERY_SUFFIX)
     if outp is not None:
-        outp_tags = parse_tags(outp, OUTPUT_PREFIX, OUTPUT_SUFFIX)
+        # Check if it's old format (M_OUTPUT) or new format (M_RESPONSE)
+        if outp.strip().startswith("<|M_OUTPUT|>"):
+            outp_tags = parse_tags(outp, "<|M_OUTPUT|>", "<|/M_OUTPUT|>")
+        else:
+            outp_tags = parse_tags(outp, RESPONSE_PREFIX, RESPONSE_SUFFIX)
     if inp is not None and outp is not None and len(inp_tags) != len(outp_tags):
         raise InvalidFormatError("Mismatched number of masked tags between input and output.")
+
+
+# Backward compatibility aliases - these point to the old constants for legacy support
+INPUT_PREFIX = "<|M_INPUT|>"
+INPUT_SUFFIX = "<|/M_INPUT|>"
+OUTPUT_PREFIX = "<|M_OUTPUT|>"
+OUTPUT_SUFFIX = "<|/M_OUTPUT|>"

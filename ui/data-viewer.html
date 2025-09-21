@@ -54,7 +54,7 @@
                 <div class="mb-3">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
                     <h5>Click to select or drag & drop JSONL file</h5>
-                    <p class="text-muted small">Supports m_input/m_output or messages format</p>
+                    <p class="text-muted small">Supports m_input/m_output, m_query/m_response, or messages format</p>
                 </div>
                 <input type="file" ref="fileInput" @change="loadFile" accept=".jsonl" class="d-none">
             </div>
@@ -88,8 +88,19 @@
             <!-- Data Card -->
             <div class="card" v-if="currentItem">
                 <div class="card-body">
-                    <!-- Check if it's the new format (m_input/m_output) -->
-                    <div v-if="currentItem.m_input && currentItem.m_output">
+                    <!-- Check if it's the new query/response format (m_query/m_response) -->
+                    <div v-if="currentItem.m_query && currentItem.m_response">
+                        <div class="mb-3">
+                            <strong style="color: #dc3545;">QUERY</strong>
+                            <div v-html="formatContent(currentItem.m_query)" class="message-content"></div>
+                        </div>
+                        <div class="mb-3">
+                            <strong style="color: #198754;">RESPONSE</strong>
+                            <div v-html="formatContent(currentItem.m_response)" class="message-content"></div>
+                        </div>
+                    </div>
+                    <!-- Check if it's the legacy format (m_input/m_output) -->
+                    <div v-else-if="currentItem.m_input && currentItem.m_output">
                         <div class="mb-3">
                             <strong style="color: #dc3545;">INPUT</strong>
                             <div v-html="formatContent(currentItem.m_input)" class="message-content"></div>

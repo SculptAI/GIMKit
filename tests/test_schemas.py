@@ -6,9 +6,14 @@ from gimkit.schemas import (
     INPUT_SUFFIX,
     OUTPUT_PREFIX,
     OUTPUT_SUFFIX,
+    QUERY_PREFIX,
+    QUERY_SUFFIX,
+    RESPONSE_PREFIX,
+    RESPONSE_SUFFIX,
     MaskedTag,
     parse_tags,
     validate_wrapped_masked_io,
+    validate_wrapped_masked_qr,
 )
 
 
@@ -131,3 +136,33 @@ def test_validate_wrapped_masked_io():
         InvalidFormatError, match=r"Mismatched number of masked tags between input and output."
     ):
         validate_wrapped_masked_io(m_input, m_output_mismatch)
+
+
+def test_validate_wrapped_masked_qr_yes():
+    # Valid: simple case with new query/response format
+    m_query = '<|M_QUERY|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/M_QUERY|>'
+    m_response = '<|M_RESPONSE|><|MASKED id="m_0"|>example<|/MASKED|><|/M_RESPONSE|>'
+    validate_wrapped_masked_qr(m_query, m_response)
+
+    # Valid: no id in query, id in response
+    m_query = "<|M_QUERY|>This is an <|MASKED|><|/MASKED|> text.<|/M_QUERY|>"
+    m_response = '<|M_RESPONSE|><|MASKED id="m_0"|>example<|/MASKED|><|/M_RESPONSE|>'
+    validate_wrapped_masked_qr(m_query, m_response)
+
+    # Valid: empty query and response
+    m_query = "<|M_QUERY|><|/M_QUERY|>"
+    m_response = "<|M_RESPONSE|><|/M_RESPONSE|>"
+    validate_wrapped_masked_qr(m_query, m_response)
+
+
+def test_validate_wrapped_masked_qr_no():
+    # Invalid: mismatched number of tags between query and response
+    m_query = f'{QUERY_PREFIX}<|MASKED id="m_0"|><|/MASKED|>{QUERY_SUFFIX}'
+    m_response_mismatch = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|><|/MASKED|><|MASKED id="m_1"|><|/MASKED|>{RESPONSE_SUFFIX}'
+    with pytest.raises(
+        InvalidFormatError, match=r"Mismatched number of masked tags between query and response."
+    ):
+        validate_wrapped_masked_qr(m_query, m_response_mismatch)
+
+    with pytest.raises(ValueError):
+        validate_wrapped_masked_qr(None, None)
