@@ -4,7 +4,7 @@ from gimkit import guide as g
 
 # ─── 1. Construct ─────────────────────────────────────────────────────────────
 
-# Define the query with masked tags
+# Define the query with guides
 raw_query = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}!
 
 My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
@@ -43,9 +43,9 @@ def llm_request(query: str) -> str:
 
 raw_response = llm_request(str(query))
 
-# ─── 3. Parse ─────────────────────────────────────────────────────────────────
+# ─── 3. Infill ────────────────────────────────────────────────────────────────
 
-# Parse the response to get the predicated tags
+# Infill predicted tags back to the original query
 response = query.infill(raw_response)
 print(response)
 print("=" * 80)
