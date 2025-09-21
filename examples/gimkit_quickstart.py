@@ -1,11 +1,10 @@
-from gimkit import guide
+from gimkit import Query
+from gimkit import guide as g
 
 
 # ─── 1. Construct ─────────────────────────────────────────────────────────────
 
-g = guide()
-
-# Define the query with masked tags
+# Define the query with guides
 raw_query = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}!
 
 My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
@@ -20,10 +19,10 @@ My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "
 * E-mail: {g.e_mail(name="email")}
 """
 
-# Add extra prefix/suffix
-query = g.standardize(raw_query)
+# Query() adds necessary tags and standardizes format
+query = Query(raw_query)
 print(query)
-print()
+print("=" * 80)
 
 # ─── 2. Request ───────────────────────────────────────────────────────────────
 
@@ -42,24 +41,23 @@ def llm_request(query: str) -> str:
     )
 
 
-response = llm_request(query)
+raw_response = llm_request(str(query))
 
-# ─── 3. Parse ─────────────────────────────────────────────────────────────────
+# ─── 3. Infill ────────────────────────────────────────────────────────────────
 
-# Parse the query and response to get the predicated tags
-result = g.parse(query, response)
+# Infill predicted tags back to the original query
+response = query.infill(raw_response)
+print(response)
+print("=" * 80)
 
-# Visit results by iteration
-for tag in result.tags:
+# You can also visit the tags
+for tag in response.tags:
     print(tag)
-print()
+print("=" * 80)
 
-# Or visit results by id/name
-assert result.tags[0] == result.tags["sub"]
+# Or visit tags by id/name
+assert response.tags[0] == response.tags["sub"]
 
 # Change the content of a tag
-result.tags["phone"].content = "PRIVATE"
-
-# Infill the original query with the predicted contents
-infilled = result.infill()
-print(infilled)
+response.tags["email"].content = "PRIVATE"
+print(str(response)[-40:])
