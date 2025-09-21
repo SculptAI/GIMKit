@@ -242,7 +242,7 @@ class guide(Guide):  # noqa: N801  # pragma: no cover
 
     def options(self, name: str | None = None, choices: list[str] | None = None) -> MaskedTag:
         """Choose one from the given options."""
-        if choices is None or len(choices) == 0:
+        if not choices:
             raise ValueError("choices must be a non-empty list of strings.")
         desc = f"Choose one from the following options: {', '.join(choices)}."
         return self(name=name, desc=desc)
