@@ -1,18 +1,10 @@
-"""Defines the schema for GIM. Some examples are given below.
+"""Defines the schema for GIM."""
 
->>> tag = MaskedTag(id=0, desc="Fill in with appropriate text")
->>> print(tag)
-<|MASKED id="m_0" desc="Fill in with appropriate text"|><|/MASKED|>
-
->>> m_input = '<|M_INPUT|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/M_INPUT|>'
->>> m_output = '<|M_OUTPUT|><|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>'
->>> validate_wrapped_masked_io(m_input, m_output)  # No exception means valid
-"""
-
+import html
 import re
 
 from dataclasses import dataclass
-from typing import overload
+from typing import Literal
 
 from gimkit.exceptions import InvalidFormatError
 
@@ -31,14 +23,6 @@ FULL_TAG_PATTERN = re.compile(
 )
 
 
-def escape_in_attr_val(value: str) -> str:
-    return value.replace('"', '\\"')
-
-
-def unescape_in_attr_val(value: str) -> str:
-    return value.replace('\\"', '"')
-
-
 @dataclass
 class MaskedTag:
     id: int | None = None
@@ -46,35 +30,59 @@ class MaskedTag:
     desc: str | None = None
     content: str | None = None
 
+    _attrs = ("name", "desc")
+    _template = "<|MASKED{}|>{}<|/MASKED|>"
+
+    def to_string(
+        self, fields: list[Literal["id", "name", "desc", "content"]] | Literal["all"] = "all"
+    ) -> str:
+        attr_part = ""
+        if fields == "all":
+            fields = ["id", "name", "desc", "content"]
+        if "id" in fields and self.id is not None:
+            attr_part += f' id="m_{self.id}"'
+        for attr in self._attrs:
+            if attr in fields and getattr(self, attr) is not None:
+                escaped_val = self.escape_in_attr_val(getattr(self, attr))
+                attr_part += f' {attr}="{escaped_val}"'
+        content_part = ""
+        if "content" in fields and self.content is not None:
+            content_part = f"{self.content}"
+        return MaskedTag._template.format(attr_part, content_part)
+
+    @classmethod
+    def escape_in_attr_val(cls, value: str) -> str:
+        return html.escape(value)
+
+    @classmethod
+    def unescape_in_attr_val(cls, value: str) -> str:
+        return html.unescape(value)
+
     def __post_init__(self):
-        if self.id is not None and not isinstance(self.id, int):
+        if not (self.id is None or isinstance(self.id, int)):
             raise ValueError(f"{type(self.id)=}, {self.id=}, should be int or None")
-        if self.name is not None and not isinstance(self.name, str):
-            raise ValueError(f"{type(self.name)=}, {self.name=}, should be str or None")
-        if self.desc is not None and not isinstance(self.desc, str):
-            raise ValueError(f"{type(self.desc)=}, {self.desc=}, should be str or None")
-        if self.content is not None and not isinstance(self.content, str):
+
+        for attr in self._attrs:
+            attr_val = getattr(self, attr)
+            if isinstance(attr_val, str):
+                setattr(self, attr, MaskedTag.unescape_in_attr_val(attr_val))
+            elif attr_val is not None:
+                raise ValueError(f"{type(attr)=}, {attr=}, should be str or None")
+
+        if isinstance(self.content, str):
+            special_marks = MaskedTag._template.split("{}")
+            if any(special_mark in self.content for special_mark in special_marks):
+                raise ValueError(
+                    f"content should not contain special marks like {' or '.join(f'`{x}`' for x in special_marks)}"
+                )
+        elif self.content is not None:
             raise ValueError(f"{type(self.content)=}, {self.content=}, should be str or None")
 
     def __str__(self):
-        masked_tag_str = "<|MASKED"
+        return self.to_string()
 
-        if self.id is not None:
-            masked_tag_str += f' id="m_{self.id}"'
-        if self.desc is not None:
-            escaped_desc = escape_in_attr_val(self.desc)
-            masked_tag_str += f' desc="{escaped_desc}"'
-
-        masked_tag_str += "|>"
-
-        if self.content is not None:
-            masked_tag_str += f"{self.content}"
-
-        masked_tag_str += "<|/MASKED|>"
-        return masked_tag_str
-
-    def __repr__(self):  # pragma: no cover
-        return self.__str__()
+    def __repr__(self):
+        return self.to_string()
 
     def __add__(self, other: str) -> str:
         if isinstance(other, str):
@@ -87,85 +95,88 @@ class MaskedTag:
         return str(other) + str(self)
 
 
-class MaskedTags:
-    def __init__(self, tags: list[MaskedTag]):
-        self._tags = tags
-        self._index = {tag.name: tag for tag in tags if tag.name is not None}
+def parse_parts(s: str) -> list[str | MaskedTag]:
+    """Parse a string into a list of strings and MaskedTags.
 
-    @overload
-    def __getitem__(self, key: int | str) -> MaskedTag: ...
+    Args:
+        s (str): The string to be parsed. Note it only contains masked tags or plain texts.
+            Tag id may start from any non-negative integer, but must be in order 0, 1, 2, ...
 
-    @overload
-    def __getitem__(self, key: slice) -> list[MaskedTag]: ...
+    Returns:
+        list[str | MaskedTag]: A list of strings and MaskedTags.
 
-    def __getitem__(self, key: int | str | slice) -> MaskedTag | list[MaskedTag]:
-        if isinstance(key, int | slice):
-            return self._tags[key]
-        elif isinstance(key, str):
-            return self._index[key]
-        raise TypeError("Key must be int, slice, or str")
+    Example:
+        >>> parse_parts('Hello, <|MASKED name="sub">Alice</|MASKED|>!')
+        [ "Hello, ", MaskedTag(name="sub", content="Alice"), "!" ]
+    """
+    open_matches = list(OPEN_TAG_PATTERN.finditer(s))
+    end_matches = list(END_TAG_PATTERN.finditer(s))
+    full_matches = list(FULL_TAG_PATTERN.finditer(s))
+    if not (len(open_matches) == len(end_matches) == len(full_matches)):
+        raise InvalidFormatError(f"Mismatched or nested masked tags in {s[:50]}...")
 
-    def __iter__(self):
-        return iter(self._tags)
+    parts: list[str | MaskedTag] = []
+    curr_tag_id = -1
+    last_end = 0
+    for match in full_matches:
+        start, end = match.span()
+        if start > last_end:
+            parts.append(s[last_end:start])
 
-    def __len__(self):
-        return len(self._tags)
-
-
-class ParsedResult:
-    def __init__(self, ori_query: str, tags: list[MaskedTag]):
-        self._ori_query = ori_query
-        self._tags = MaskedTags(tags)
-
-    @property
-    def tags(self) -> MaskedTags:
-        return self._tags
-
-    def infill(self, query: str | None = None) -> str:
-        if query is None:
-            query = self._ori_query
-
-        infilled = query.removeprefix(INPUT_PREFIX).removesuffix(INPUT_SUFFIX)
-        for tag in self._tags:
-            if tag.content is None:
-                raise ValueError(f"Tag {tag} has no content to infill.")
-            infilled = re.sub(FULL_TAG_PATTERN, tag.content, infilled, count=1)
-        return infilled
-
-
-def parse_inp_or_outp(s: str, prefix: str, suffix: str) -> list[MaskedTag]:
-    s = s.strip()
-    if not s.startswith(prefix) or not s.endswith(suffix):
-        raise InvalidFormatError(f"Missing {prefix} or {suffix} tags.")
-
-    s = s[len(prefix) : -len(suffix)]
-
-    if prefix in s or suffix in s:
-        raise InvalidFormatError(f"Nested {prefix} or {suffix} tags are not allowed.")
-
-    open_mathes = list(re.finditer(OPEN_TAG_PATTERN, s))
-    end_matches = list(re.finditer(END_TAG_PATTERN, s))
-    full_matches = list(re.finditer(FULL_TAG_PATTERN, s))
-    if not (len(open_mathes) == len(end_matches) == len(full_matches)):
-        raise InvalidFormatError(f"Mismatched or nested masked tags in {prefix}...{suffix}.")
-
-    returned = []
-    for idx, match in enumerate(full_matches):
         tag_id = match.group(1)
         tag_name = match.group(2)
         tag_desc = match.group(3)
         tag_content = match.group(4)
         if tag_id is not None:
             tag_id = int(tag_id)
-            if tag_id != idx:
+            if curr_tag_id == -1:
+                curr_tag_id = tag_id
+            elif tag_id != curr_tag_id:
                 raise InvalidFormatError(
-                    f"Tag ids should be in order 0, 1, 2, ..., got {tag_id} at position {idx}."
+                    f"Tag ids should be in order, got {tag_id} at position {curr_tag_id}."
                 )
-        if tag_desc is not None:
-            tag_desc = unescape_in_attr_val(tag_desc)
-        returned.append(MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, content=tag_content))
+        parts.append(MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, content=tag_content))
+        curr_tag_id += 1
 
-    return returned
+        last_end = end
+    if last_end < len(s):
+        parts.append(s[last_end:])
+    return parts
+
+
+def parse_tags(s: str, prefix: str | None = None, suffix: str | None = None) -> list[MaskedTag]:
+    """Parse a string with wrapped masked tags into a list of MaskedTags."""
+
+    if prefix is not None:
+        s = s.lstrip()
+        if not s.startswith(prefix):
+            raise InvalidFormatError(f"String must start with the {prefix} tag.")
+
+        s = s[len(prefix) :]
+        if prefix in s:
+            raise InvalidFormatError(f"Nested or duplicate {prefix} tag are not allowed.")
+
+    if suffix is not None:
+        s = s.rstrip()
+        if not s.endswith(suffix):
+            raise InvalidFormatError(f"String must end with the {suffix} tag.")
+
+        s = s[: -len(suffix)]
+        if suffix in s:
+            raise InvalidFormatError(f"Nested or duplicate {suffix} tag are not allowed.")
+
+    parts = parse_parts(s)
+    tags = [part for part in parts if isinstance(part, MaskedTag)]
+
+    if prefix is not None:
+        expected_ids = list(range(len(tags)))
+        actual_ids = [tag.id or idx for idx, tag in enumerate(tags)]
+        if expected_ids != actual_ids:
+            raise InvalidFormatError(
+                f"Tag ids should be in order 0, 1, 2, ..., got {', '.join(map(str, actual_ids))}."
+            )
+
+    return tags
 
 
 def validate_wrapped_masked_io(inp: str | None, outp: str | None):
@@ -183,67 +194,8 @@ def validate_wrapped_masked_io(inp: str | None, outp: str | None):
     if inp is None and outp is None:
         raise ValueError("At least one of inp or outp must be provided.")
     if inp is not None:
-        inp_tags = parse_inp_or_outp(inp, INPUT_PREFIX, INPUT_SUFFIX)
+        inp_tags = parse_tags(inp, INPUT_PREFIX, INPUT_SUFFIX)
     if outp is not None:
-        outp_tags = parse_inp_or_outp(outp, OUTPUT_PREFIX, OUTPUT_SUFFIX)
+        outp_tags = parse_tags(outp, OUTPUT_PREFIX, OUTPUT_SUFFIX)
     if inp is not None and outp is not None and len(inp_tags) != len(outp_tags):
         raise InvalidFormatError("Mismatched number of masked tags between input and output.")
-
-
-class Guide:
-    def __init__(self) -> None:
-        self._tags: list[MaskedTag] = []
-
-    def _append_tag(self, tag: MaskedTag):
-        for existing_tag in self._tags:
-            if tag.name is not None and existing_tag.name == tag.name:
-                raise ValueError(f"Tag name '{tag.name}' already exists.")
-        self._tags.append(tag)
-
-    def __call__(
-        self, name: str | None = None, desc: str | None = None, content: str | None = None, **kwargs
-    ) -> MaskedTag:
-        tag = MaskedTag(id=len(self._tags), name=name, desc=desc, content=content)
-        self._append_tag(tag)
-        return tag
-
-    def standardize(self, raw_query: str) -> str:
-        query = raw_query
-        if not query.startswith(INPUT_PREFIX):
-            query = INPUT_PREFIX + query
-        if not query.endswith(INPUT_SUFFIX):
-            query = query + INPUT_SUFFIX
-        validate_wrapped_masked_io(query, None)
-        return query
-
-    def parse(self, query: str, response: str) -> ParsedResult:
-        validate_wrapped_masked_io(query, response)
-        result_tags = parse_inp_or_outp(response, OUTPUT_PREFIX, OUTPUT_SUFFIX)
-        for inp_tag, outp_tag in zip(self._tags, result_tags, strict=True):
-            outp_tag.name = inp_tag.name
-        return ParsedResult(query, result_tags)
-
-
-class guide(Guide):  # noqa: N801  # pragma: no cover
-    def person_name(self, name: str | None = None) -> MaskedTag:
-        """A person's name, e.g., John Doe, Alice, Bob, Charlie Brown, etc."""
-        return self(name=name, desc=self.person_name.__doc__)
-
-    def phone_number(self, name: str | None = None) -> MaskedTag:
-        """A phone number, e.g., +1-123-456-7890, (123) 456-7890, 123-456-7890, etc."""
-        return self(name=name, desc=self.phone_number.__doc__)
-
-    def e_mail(self, name: str | None = None) -> MaskedTag:
-        """An email address, e.g., john.doe@example.com, alice@example.com, etc."""
-        return self(name=name, desc=self.e_mail.__doc__)
-
-    def single_word(self, name: str | None = None) -> MaskedTag:
-        """A single word without spaces."""
-        return self(name=name, desc=self.single_word.__doc__)
-
-    def options(self, name: str | None = None, choices: list[str] | None = None) -> MaskedTag:
-        """Choose one from the given options."""
-        if not choices:
-            raise ValueError("choices must be a non-empty list of strings.")
-        desc = f"Choose one from the following options: {', '.join(choices)}."
-        return self(name=name, desc=desc)
