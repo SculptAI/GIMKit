@@ -13,17 +13,11 @@ from gimkit.schemas import (
 )
 
 
-def test_some_input_output():
+def test_valid_input_output():
     # Valid: simple case
     m_input = '<|M_INPUT|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/M_INPUT|>'
     m_output = '<|M_OUTPUT|><|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>'
     validate_wrapped_masked_io(m_input, m_output)
-
-    # Invalid: non-sequential ids
-    m_input = '<|M_INPUT|>This is an <|MASKED id="m_1"|><|/MASKED|> text.<|/M_INPUT|>'
-    m_output = '<|M_OUTPUT|><|MASKED id="m_1"|>example<|/MASKED|><|/M_OUTPUT|>'
-    with pytest.raises(InvalidFormatError, match=r"Tag ids should be in order 0, 1, 2, ..."):
-        validate_wrapped_masked_io(m_input, m_output)
 
     # Valid: no id in input, id in output
     m_input = "<|M_INPUT|>This is an <|MASKED|><|/MASKED|> text.<|/M_INPUT|>"
@@ -34,6 +28,19 @@ def test_some_input_output():
     m_input = "<|M_INPUT|><|/M_INPUT|>"
     m_output = "<|M_OUTPUT|><|/M_OUTPUT|>"
     validate_wrapped_masked_io(m_input, m_output)
+
+    # Valid: with whitespaces around
+    m_input = '\n<|M_INPUT|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/M_INPUT|>\n\n \t'
+    m_output = ' \n<|M_OUTPUT|>\n<|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>\n'
+    validate_wrapped_masked_io(m_input, m_output)
+
+
+def test_invalid_input_output():
+    # Invalid: non-sequential ids
+    m_input = '<|M_INPUT|>This is an <|MASKED id="m_1"|><|/MASKED|> text.<|/M_INPUT|>'
+    m_output = '<|M_OUTPUT|><|MASKED id="m_1"|>example<|/MASKED|><|/M_OUTPUT|>'
+    with pytest.raises(InvalidFormatError, match=r"Tag ids should be in order 0, 1, 2, ..."):
+        validate_wrapped_masked_io(m_input, m_output)
 
     # Invalid: no prefix and suffix
     m_input = 'This is an <|MASKED id="m_0"|><|/MASKED|> text.'
