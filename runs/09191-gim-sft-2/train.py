@@ -83,7 +83,7 @@ dataset = (
                 add_generation_prompt=False,
             )
         },
-        num_proc=os.cpu_count()
+        num_proc=os.cpu_count(),
     )
     .select_columns(["text"])
 )
@@ -129,7 +129,7 @@ trainer_stats = trainer.train()
 messages = [
     {
         "role": "user",
-        "content": '<|M_INPUT|>This is an <|MASKED id="m_1"|><|/MASKED|> text.<|/M_INPUT|>',
+        "content": "<|M_INPUT|>This is an <|MASKED|><|/MASKED|> text.<|/M_INPUT|>",
     }
 ]
 text = tokenizer.apply_chat_template(

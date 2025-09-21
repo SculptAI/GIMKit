@@ -134,6 +134,7 @@ class ParsedResult:
 
 
 def parse_inp_or_outp(s: str, prefix: str, suffix: str) -> list[MaskedTag]:
+    s = s.strip()
     if not s.startswith(prefix) or not s.endswith(suffix):
         raise InvalidFormatError(f"Missing {prefix} or {suffix} tags.")
 
@@ -224,23 +225,25 @@ class Guide:
 
 
 class guide(Guide):  # noqa: N801  # pragma: no cover
-    def person_name(self, name: str) -> MaskedTag:
+    def person_name(self, name: str | None = None) -> MaskedTag:
         """A person's name, e.g., John Doe, Alice, Bob, Charlie Brown, etc."""
         return self(name=name, desc=self.person_name.__doc__)
 
-    def phone_number(self, name: str) -> MaskedTag:
+    def phone_number(self, name: str | None = None) -> MaskedTag:
         """A phone number, e.g., +1-123-456-7890, (123) 456-7890, 123-456-7890, etc."""
         return self(name=name, desc=self.phone_number.__doc__)
 
-    def e_mail(self, name: str) -> MaskedTag:
+    def e_mail(self, name: str | None = None) -> MaskedTag:
         """An email address, e.g., john.doe@example.com, alice@example.com, etc."""
         return self(name=name, desc=self.e_mail.__doc__)
 
-    def single_word(self, name: str) -> MaskedTag:
+    def single_word(self, name: str | None = None) -> MaskedTag:
         """A single word without spaces."""
         return self(name=name, desc=self.single_word.__doc__)
 
-    def options(self, name: str, choices: list[str]) -> MaskedTag:
+    def options(self, name: str | None = None, choices: list[str] | None = None) -> MaskedTag:
         """Choose one from the given options."""
+        if not choices:
+            raise ValueError("choices must be a non-empty list of strings.")
         desc = f"Choose one from the following options: {', '.join(choices)}."
         return self(name=name, desc=desc)
