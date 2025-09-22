@@ -9,7 +9,7 @@ serve:
 		echo "make serve model_path=/path/to/model"; \
 		exit 1; \
 	fi
-	vllm serve $(model_path) --max_model_len 10240
+	uv run vllm serve $(model_path) --max_model_len 10240
 
 lint:
 	uv run ruff check src tests examples
