@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Shichao Song", email = "song.shichao@outlook.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = []
 
 [dependency-groups]
@@ -34,10 +34,15 @@ training = [
 requires = ["uv_build>=0.8.16,<0.9.0"]
 build-backend = "uv_build"
 
+# TODO: we can remove this custom PyPI index in the future
+[[tool.uv.index]]
+url="https://pypi.tuna.tsinghua.edu.cn/simple"
+default=true
+
 [tool.ruff]
 fix = true
 line-length = 100
-target-version = "py312"
+target-version = "py310"
 lint.extend-select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
