@@ -33,6 +33,7 @@ training = [
 requires = ["uv_build>=0.8.16,<0.9.0"]
 build-backend = "uv_build"
 
+# TODO: we can remove this custom PyPI index in the future
 [[tool.uv.index]]
 url="https://pypi.tuna.tsinghua.edu.cn/simple"
 default=true
