@@ -4,6 +4,13 @@ build:
 install:
 	uv pip install -e .
 
+serve:
+	@if [ -z "$(model_path)" ]; then \
+		echo "make serve model_path=/path/to/model"; \
+		exit 1; \
+	fi
+	uv run vllm serve $(model_path) --max_model_len 10240
+
 lint:
 	uv run ruff check src tests examples
 	uv run ruff format src tests examples --diff
