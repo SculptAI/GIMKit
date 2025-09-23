@@ -133,7 +133,7 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
         raise InvalidFormatError(f"Mismatched or nested masked tags in {s[:50]}...")
 
     parts: list[str | MaskedTag] = []
-    curr_tag_id = -1
+    curr_tag_id = None
     last_end = 0
     for match in full_matches:
         start, end = match.span()
@@ -146,14 +146,14 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
         tag_content = match.group(4)
         if tag_id is not None:
             tag_id = int(tag_id)
-            if curr_tag_id == -1:
+            if curr_tag_id is None:
                 curr_tag_id = tag_id
             elif tag_id != curr_tag_id:
                 raise InvalidFormatError(
                     f"Tag ids should be in order, got {tag_id} at position {curr_tag_id}."
                 )
         parts.append(MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, content=tag_content))
-        if curr_tag_id != -1:
+        if curr_tag_id is not None:
             curr_tag_id += 1
 
         last_end = end
