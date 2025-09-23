@@ -9,16 +9,38 @@ from typing import Literal
 from gimkit.exceptions import InvalidFormatError
 
 
-INPUT_PREFIX = "<|M_INPUT|>"
-INPUT_SUFFIX = "<|/M_INPUT|>"
-OUTPUT_PREFIX = "<|M_OUTPUT|>"
-OUTPUT_SUFFIX = "<|/M_OUTPUT|>"
-OPEN_TAG_PATTERN = re.compile(
-    r'<\|MASKED(?: id="m_(\d+)")?(?: name="(.*?)")?(?: desc="(.*?)")?\|>', re.DOTALL
+QUERY_PREFIX = "<|GIM_QUERY|>"
+QUERY_SUFFIX = "<|/GIM_QUERY|>"
+RESPONSE_PREFIX = "<|GIM_RESPONSE|>"
+RESPONSE_SUFFIX = "<|/GIM_RESPONSE|>"
+
+TAG_OPEN_LEFT = "<|MASKED"
+TAG_OPEN_RIGHT = "|>"
+TAG_END = "<|/MASKED|>"
+
+MAGIC_STRINGS = {
+    QUERY_PREFIX,
+    QUERY_SUFFIX,
+    RESPONSE_PREFIX,
+    RESPONSE_SUFFIX,
+    TAG_OPEN_LEFT,
+    TAG_OPEN_RIGHT,
+    TAG_END,
+}
+
+_TAG_ATTRS_REGEX = r'(?: id="m_(\d+)")?' + r'(?: name="(.*?)")?' + r'(?: desc="(.*?)")?'
+_TAG_CONTENT_REGEX = r"(.*?)"
+
+TAG_OPEN_PATTERN = re.compile(
+    re.escape(TAG_OPEN_LEFT) + _TAG_ATTRS_REGEX + re.escape(TAG_OPEN_RIGHT), re.DOTALL
 )
-END_TAG_PATTERN = re.compile(r"<\|/MASKED\|>")
-FULL_TAG_PATTERN = re.compile(
-    r'<\|MASKED(?: id="m_(\d+)")?(?: name="(.*?)")?(?: desc="(.*?)")?\|>(.*?)<\|/MASKED\|>',
+TAG_END_PATTERN = re.compile(re.escape(TAG_END))
+TAG_FULL_PATTERN = re.compile(
+    re.escape(TAG_OPEN_LEFT)
+    + _TAG_ATTRS_REGEX
+    + re.escape(TAG_OPEN_RIGHT)
+    + _TAG_CONTENT_REGEX
+    + re.escape(TAG_END),
     re.DOTALL,
 )
 
@@ -31,7 +53,6 @@ class MaskedTag:
     content: str | None = None
 
     _attrs = ("name", "desc")
-    _template = "<|MASKED{}|>{}<|/MASKED|>"
 
     def to_string(
         self, fields: list[Literal["id", "name", "desc", "content"]] | Literal["all"] = "all"
@@ -48,7 +69,7 @@ class MaskedTag:
         content_part = ""
         if "content" in fields and self.content is not None:
             content_part = f"{self.content}"
-        return MaskedTag._template.format(attr_part, content_part)
+        return TAG_OPEN_LEFT + attr_part + TAG_OPEN_RIGHT + content_part + TAG_END
 
     @classmethod
     def escape_in_attr_val(cls, value: str) -> str:
@@ -70,10 +91,10 @@ class MaskedTag:
                 raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
         if isinstance(self.content, str):
-            special_marks = MaskedTag._template.split("{}")
-            if any(special_mark in self.content for special_mark in special_marks):
+            if any(special_mark in self.content for special_mark in MAGIC_STRINGS):
                 raise ValueError(
-                    f"content should not contain special marks like {' or '.join(f'`{x}`' for x in special_marks)}"
+                    "content should not contain special marks like "
+                    + " or ".join(f"`{x}`" for x in MAGIC_STRINGS)
                 )
         elif self.content is not None:
             raise ValueError(f"{type(self.content)=}, {self.content=}, should be str or None")
@@ -104,19 +125,15 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
 
     Returns:
         list[str | MaskedTag]: A list of strings and MaskedTags.
-
-    Example:
-        >>> parse_parts('Hello, <|MASKED name="sub">Alice</|MASKED|>!')
-        [ "Hello, ", MaskedTag(name="sub", content="Alice"), "!" ]
     """
-    open_matches = list(OPEN_TAG_PATTERN.finditer(s))
-    end_matches = list(END_TAG_PATTERN.finditer(s))
-    full_matches = list(FULL_TAG_PATTERN.finditer(s))
+    open_matches = list(TAG_OPEN_PATTERN.finditer(s))
+    end_matches = list(TAG_END_PATTERN.finditer(s))
+    full_matches = list(TAG_FULL_PATTERN.finditer(s))
     if not (len(open_matches) == len(end_matches) == len(full_matches)):
         raise InvalidFormatError(f"Mismatched or nested masked tags in {s[:50]}...")
 
     parts: list[str | MaskedTag] = []
-    curr_tag_id = -1
+    curr_tag_id = None
     last_end = 0
     for match in full_matches:
         start, end = match.span()
@@ -129,14 +146,14 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
         tag_content = match.group(4)
         if tag_id is not None:
             tag_id = int(tag_id)
-            if curr_tag_id == -1:
+            if curr_tag_id is None:
                 curr_tag_id = tag_id
             elif tag_id != curr_tag_id:
                 raise InvalidFormatError(
                     f"Tag ids should be in order, got {tag_id} at position {curr_tag_id}."
                 )
+            curr_tag_id += 1
         parts.append(MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, content=tag_content))
-        curr_tag_id += 1
 
         last_end = end
     if last_end < len(s):
@@ -145,7 +162,17 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
 
 
 def parse_tags(s: str, prefix: str | None = None, suffix: str | None = None) -> list[MaskedTag]:
-    """Parse a string with wrapped masked tags into a list of MaskedTags."""
+    """Parse a string into a list of MaskedTags.
+
+    Args:
+        s (str): The string to be parsed. It may be wrapped with a prefix and suffix.
+            Tag id may start from any non-negative integer, but must be in order 0, 1, 2, ...
+        prefix (str | None): The prefix tag that the string should start with. Default is None.
+        suffix (str | None): The suffix tag that the string should end with. Default is None.
+
+    Returns:
+        list[MaskedTag]: A list of MaskedTags.
+    """
 
     if prefix is not None:
         s = s.lstrip()
@@ -179,23 +206,24 @@ def parse_tags(s: str, prefix: str | None = None, suffix: str | None = None) -> 
     return tags
 
 
-def validate_wrapped_masked_io(inp: str | None, outp: str | None):
-    """Validate the wrapped masked input or/and output strings.
+def validate(query: str | None, response: str | None):
+    """Validate the GIM query or/and GIM response.
 
     Args:
-        inp (str): The wrapped masked input string to be validated.
-        outp (str): The wrapped masked output string to be validated.
+        query (str): Wrapped with query prefix and suffix.
+        response (str): Wrapped with response prefix and suffix.
 
     Raises:
-        ValueError: If both inp and outp are None.
-        InvalidFormatError: If the format of inp or outp is invalid, or if the number of masked tags
-            or their ids do not match between inp and outp.
+        ValueError: If both query and response are None.
+        InvalidFormatError: If the format of query or response is invalid,
+            or if the number of masked tags or their ids do not match
+            between query and response.
     """
-    if inp is None and outp is None:
-        raise ValueError("At least one of inp or outp must be provided.")
-    if inp is not None:
-        inp_tags = parse_tags(inp, INPUT_PREFIX, INPUT_SUFFIX)
-    if outp is not None:
-        outp_tags = parse_tags(outp, OUTPUT_PREFIX, OUTPUT_SUFFIX)
-    if inp is not None and outp is not None and len(inp_tags) != len(outp_tags):
-        raise InvalidFormatError("Mismatched number of masked tags between input and output.")
+    if query is None and response is None:
+        raise ValueError("At least one of query or response must be provided.")
+    if query is not None:
+        query_tags = parse_tags(query, QUERY_PREFIX, QUERY_SUFFIX)
+    if response is not None:
+        response_tags = parse_tags(response, RESPONSE_PREFIX, RESPONSE_SUFFIX)
+    if query is not None and response is not None and len(query_tags) != len(response_tags):
+        raise InvalidFormatError("Mismatched number of masked tags between query and response.")

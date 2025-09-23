@@ -1,9 +1,9 @@
 import random
 
 from datasets import load_dataset
-from utils import wrap_masked_io
+from utils import QUERY_COLUMN, RESPONSE_COLUMN, save_dataset, to_gim_format
 
-from gimkit import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag
 
 
 random.seed(0)
@@ -28,15 +28,11 @@ def _mask_cot_and_answer(example: dict) -> dict:
             "The short answer to the question",
         ]
     )
-    m_input = (
-        question + "\n\n" + MaskedTag(desc=long_cot_desc) + "\n\n" + MaskedTag(desc=answer_desc)
-    )
-    m_output = str(MaskedTag(id=0, content=long_cot)) + str(MaskedTag(id=1, content=answer))
-    m_input, m_output = wrap_masked_io(m_input, m_output)
-    validate_wrapped_masked_io(m_input, m_output)
-    return {"m_input": m_input, "m_output": m_output}
+    query = question + "\n\n" + MaskedTag(desc=long_cot_desc) + "\n\n" + MaskedTag(desc=answer_desc)
+    response = str(MaskedTag(id=0, content=long_cot)) + str(MaskedTag(id=1, content=answer))
+    return to_gim_format(query, response)
 
 
 ds = load_dataset("GAIR/o1-journey", split="train")
-ds = ds.map(_mask_cot_and_answer).select_columns(["m_input", "m_output"])
-ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
+ds = ds.map(_mask_cot_and_answer).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+save_dataset(ds, __file__)

@@ -1,37 +1,28 @@
 import random
 
+from pathlib import Path
+
 import numpy as np
 
-from gimkit import MaskedTag
-from gimkit.schemas import INPUT_PREFIX, INPUT_SUFFIX, OUTPUT_PREFIX, OUTPUT_SUFFIX
+from datasets import Dataset
+
+from gimkit import MaskedTag, validate
+from gimkit.schemas import QUERY_PREFIX, QUERY_SUFFIX, RESPONSE_PREFIX, RESPONSE_SUFFIX
 
 
-def wrap_masked_io(masked_input: str, masked_output: str) -> tuple[str, str]:
-    """Wrap the masked output with surrounding tags.
+QUERY_COLUMN = "gim_query"
+RESPONSE_COLUMN = "gim_response"
 
-    Args:
-        masked_input (str): The masked input string to be wrapped.
-        masked_output (str): The masked output string to be wrapped.
-
-    Returns:
-        tuple: The wrapped masked input and output strings.
-    """
-    return INPUT_PREFIX + masked_input + INPUT_SUFFIX, OUTPUT_PREFIX + masked_output + OUTPUT_SUFFIX
+COLUMNS = [QUERY_COLUMN, RESPONSE_COLUMN]
 
 
 def gen_possion_masked(text: str, lam: int) -> tuple[str, str]:
-    """Generate masked input and output using Poisson distribution.
+    """Generate GIM query and response using Poisson distribution.
+    Note: query and response do not contain prefix and suffix!
 
     Args:
         text (str): The original text to be masked.
         lam (int): The lambda parameter for the Poisson distribution, controlling the average number of masks.
-
-    Example:
-        >>> m_input, m_output = gen_possion_masked("This is an example text for masking.", 2)
-        >>> print(m_input)
-        This is an <|MASKED id="m_1"|><|/MASKED|> text fo<|MASKED id="m_2"|><|/MASKED|>.
-        >>> print(m_output)
-        <|MASKED id="m_1"|>example<|/MASKED|><|MASKED id="m_2"|>r masking<|/MASKED|>
     """
 
     def gen_mask_ranges(text: str, mask_num: int) -> list[tuple[int, int]]:
@@ -40,23 +31,45 @@ def gen_possion_masked(text: str, lam: int) -> tuple[str, str]:
         ranges = [(indices[i], indices[i + 1]) for i in range(0, len(indices), 2)]
         return ranges
 
-    def gen_mask_io(text: str, ranges: list[tuple[int, int]]) -> tuple[str, str]:
-        input, output = "", ""
+    def gen_gim_query_response(text: str, ranges: list[tuple[int, int]]) -> tuple[str, str]:
+        query, response = "", ""
         last_end = 0
         for idx, (start, end) in enumerate(ranges):
-            input += text[last_end:start] + random.choice(
+            query += text[last_end:start] + random.choice(
                 [
                     MaskedTag(id=idx),
                     MaskedTag(),
                     MaskedTag(desc="Fill in with appropriate text"),
+                    MaskedTag(id=idx, desc="Please provide the missing text"),
                 ]
             )
-            output += MaskedTag(id=idx, content=text[start:end])
+            response += MaskedTag(id=idx, content=text[start:end])
             last_end = end
-        input += text[last_end:]
-        return input, output
+        query += text[last_end:]
+        return query, response
 
     mask_nums = np.random.poisson(lam=lam)
     ranges = gen_mask_ranges(text, mask_nums)
-    m_input, m_output = gen_mask_io(text, ranges)
-    return m_input, m_output
+    raw_query, raw_response = gen_gim_query_response(text, ranges)
+    return raw_query, raw_response
+
+
+def to_gim_format(raw_query: str, raw_response: str) -> dict[str, str]:
+    query = QUERY_PREFIX + raw_query + QUERY_SUFFIX
+    response = RESPONSE_PREFIX + raw_response + RESPONSE_SUFFIX
+    validate(query, response)
+    return {QUERY_COLUMN: query, RESPONSE_COLUMN: response}
+
+
+def save_dataset(ds: Dataset, script_path: str, save_dir: str = "data"):
+    # Ensure the ds only has the required columns
+    assert set(ds.column_names) == set(COLUMNS), (
+        f"Dataset columns should be {COLUMNS}, got {ds.column_names}"
+    )
+
+    # Ensure the first row is valid
+    validate(ds[0][QUERY_COLUMN], ds[0][RESPONSE_COLUMN])
+
+    dataset_name = Path(script_path).stem
+    output_path = Path(save_dir) / f"{dataset_name}.jsonl"
+    ds.to_json(output_path.as_posix(), force_ascii=False)

@@ -1,9 +1,9 @@
 import random
 
 from datasets import concatenate_datasets, load_dataset
-from utils import wrap_masked_io
+from utils import QUERY_COLUMN, RESPONSE_COLUMN, save_dataset, to_gim_format
 
-from gimkit import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag
 
 
 random.seed(0)
@@ -29,7 +29,7 @@ def _mask_process(example: dict) -> dict:
             "Write a step in the solution",
         ]
     )
-    m_input = (
+    query = (
         f"## Question\n\n{example['problem'].strip()}"
         + "\n\n## CoT Reasoning"
         + "".join(
@@ -45,15 +45,17 @@ def _mask_process(example: dict) -> dict:
             ]
         )
     )
-    m_output = "".join(
+    response = "".join(
         [str(MaskedTag(id=idx, content=step)) for idx, step in enumerate(example["steps"])]
     )
-    m_input, m_output = wrap_masked_io(m_input, m_output)
-    validate_wrapped_masked_io(m_input, m_output)
-    return {"m_input": m_input, "m_output": m_output}
+    return to_gim_format(query, response)
 
 
 ds = load_dataset("Qwen/ProcessBench")
 ds = concatenate_datasets([ds[split] for split in ds])
-ds = ds.filter(_is_correct_reasoning).map(_mask_process).select_columns(["m_input", "m_output"])
-ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
+ds = (
+    ds.filter(_is_correct_reasoning)
+    .map(_mask_process)
+    .select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+)
+save_dataset(ds, __file__)

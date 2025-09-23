@@ -34,6 +34,9 @@ training = [
 requires = ["uv_build>=0.8.16,<0.9.0"]
 build-backend = "uv_build"
 
+[tool.mypy]
+disable_error_code = ["import-not-found"]
+
 [tool.ruff]
 fix = true
 line-length = 100

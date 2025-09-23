@@ -1,14 +1,14 @@
 import warnings
 
 from copy import deepcopy
-from typing import cast, overload
+from typing import Literal, cast, overload
 
 from gimkit.exceptions import InvalidFormatError
 from gimkit.schemas import (
-    INPUT_PREFIX,
-    INPUT_SUFFIX,
-    OUTPUT_PREFIX,
-    OUTPUT_SUFFIX,
+    QUERY_PREFIX,
+    QUERY_SUFFIX,
+    RESPONSE_PREFIX,
+    RESPONSE_SUFFIX,
     MaskedTag,
     parse_parts,
 )
@@ -101,24 +101,45 @@ class Context:
     def tags(self) -> TagsView:
         return Context.TagsView(self._parts)
 
+    def to_string(
+        self,
+        fields: list[Literal["id", "name", "desc", "content"]] | Literal["all"] | None = None,
+        infill_mode: Literal[True] | None = None,
+    ) -> str:
+        if not ((fields is None) ^ (infill_mode is None)):
+            raise ValueError("Exactly one of fields or infill_mode must be specified.")
+        content = ""
+        if fields is not None:
+            if fields == "all":
+                fields = ["id", "name", "desc", "content"]
+
+            for part in self._parts:
+                if isinstance(part, MaskedTag):
+                    content += part.to_string(fields=fields)
+                else:
+                    content += str(part)
+        if infill_mode is not None:
+            content = ""
+            for part in self._parts:
+                if isinstance(part, MaskedTag) and part.content is not None:
+                    content += part.content
+                else:
+                    content += str(part)
+            content = content[len(self._prefix) : -len(self._suffix)]
+        return content
+
 
 class Response(Context):
     def __init__(self, *args: str | MaskedTag | list[str | MaskedTag]) -> None:
-        super().__init__(OUTPUT_PREFIX, OUTPUT_SUFFIX, *args)
+        super().__init__(RESPONSE_PREFIX, RESPONSE_SUFFIX, *args)
 
     def __str__(self) -> str:
-        content = ""
-        for part in self._parts:
-            if isinstance(part, MaskedTag) and part.content is not None:
-                content += part.content
-            else:
-                content += str(part)
-        return content[len(self._prefix) : -len(self._suffix)]
+        return self.to_string(infill_mode=True)
 
 
 class Query(Context):
     def __init__(self, *args: str | MaskedTag | list[str | MaskedTag]) -> None:
-        super().__init__(INPUT_PREFIX, INPUT_SUFFIX, *args)
+        super().__init__(QUERY_PREFIX, QUERY_SUFFIX, *args)
 
         # Validate and standardize the tags
         tag_count = 0
@@ -169,10 +190,4 @@ class Query(Context):
         return Response(new_parts)
 
     def __str__(self) -> str:
-        content = ""
-        for part in self._parts:
-            if isinstance(part, MaskedTag):
-                content += part.to_string(fields=["id", "desc", "content"])
-            else:
-                content += str(part)
-        return content
+        return self.to_string(fields=["id", "desc", "content"])

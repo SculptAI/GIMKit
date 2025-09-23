@@ -1,9 +1,9 @@
 import random
 
 from datasets import load_dataset
-from utils import wrap_masked_io
+from utils import QUERY_COLUMN, RESPONSE_COLUMN, save_dataset, to_gim_format
 
-from gimkit import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag
 
 
 random.seed(0)
@@ -17,7 +17,7 @@ def _mask_internal_thinking(example: dict) -> dict:
             "如果你是一名香港律师，怎么从问题得到答案的，写出中间的想法",
         ]
     )
-    m_input = random.choice(
+    query = random.choice(
         [
             (
                 f"问题：{example['prompt'].strip()}\n"
@@ -36,12 +36,10 @@ def _mask_internal_thinking(example: dict) -> dict:
             ),
         ]
     )
-    m_output = str(MaskedTag(id=0, content=example["thinking"]))
-    m_input, m_output = wrap_masked_io(m_input, m_output)
-    validate_wrapped_masked_io(m_input, m_output)
-    return {"m_input": m_input, "m_output": m_output}
+    response = str(MaskedTag(id=0, content=example["thinking"]))
+    return to_gim_format(query, response)
 
 
 ds = load_dataset("HKAIR-Lab/HK-O1aw-SFT-16K", split="train")
-ds = ds.map(_mask_internal_thinking).select_columns(["m_input", "m_output"])
-ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
+ds = ds.map(_mask_internal_thinking).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+save_dataset(ds, __file__)
