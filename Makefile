@@ -14,7 +14,7 @@ serve:
 lint:
 	uv run ruff check
 	uv run ruff format --diff
-	uv run mypy src tests examples dataset
+	uv run mypy --config-file pyproject.toml src tests examples dataset
 
 lint-fix:
 	uv run ruff check --fix
