@@ -30,7 +30,7 @@ print("=" * 80)
 # A mock LLM request function
 def llm_request(query: str) -> str:
     return (
-        "<|GIM_QUERY|>"
+        "<|GIM_RESPONSE|>"
         '<|MASKED id="m_0"|>Alice<|/MASKED|>'
         '<|MASKED id="m_1"|>World<|/MASKED|>'
         '<|MASKED id="m_2"|>reading<|/MASKED|>'
