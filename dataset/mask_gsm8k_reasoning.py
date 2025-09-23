@@ -1,9 +1,9 @@
 import re
 
 from datasets import load_dataset
-from utils import wrap_masked_io
+from utils import QUERY_COLUMN, RESPONSE_COLUMN, save_dataset, to_gim_format
 
-from gimkit import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag
 
 
 TAG2DESC = {
@@ -43,15 +43,13 @@ def _is_valid_example(example: dict) -> bool:
 
 
 def _mask_tags_content(example: dict) -> dict:
-    m_input = example["question"].strip() + "".join(
+    query = example["question"].strip() + "".join(
         [f"\n\n{MaskedTag(desc=TAG2DESC[tag])}" for tag in TAGS]
     )
-    m_output = "".join(
+    response = "".join(
         [str(MaskedTag(id=idx, content=example["generation"][tag])) for idx, tag in enumerate(TAGS)]
     )
-    m_input, m_output = wrap_masked_io(m_input, m_output)
-    validate_wrapped_masked_io(m_input, m_output)
-    return {"m_input": m_input, "m_output": m_output}
+    return to_gim_format(query, response)
 
 
 ds = load_dataset("thesven/gsm8k-reasoning", split="train")
@@ -59,6 +57,6 @@ ds = (
     ds.map(_extract_tags_content)
     .filter(_is_valid_example)
     .map(_mask_tags_content)
-    .select_columns(["m_input", "m_output"])
+    .select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
 )
-ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
+save_dataset(ds, __file__)

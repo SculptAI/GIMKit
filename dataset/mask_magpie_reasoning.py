@@ -1,9 +1,9 @@
 import random
 
 from datasets import load_dataset
-from utils import wrap_masked_io
+from utils import QUERY_COLUMN, RESPONSE_COLUMN, save_dataset, to_gim_format
 
-from gimkit import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag
 
 
 random.seed(0)
@@ -39,21 +39,19 @@ FIELD2DESC = {
 
 
 def _mask_some_fields(example: dict) -> dict:
-    m_input_dict, m_output = {}, ""
+    query_dict, response = {}, ""
     idx = 0
     for field in FIELD2DESC:
         if random.random() < 0.5:
-            m_input_dict[field] = str(MaskedTag(id=idx, desc=FIELD2DESC[field]))
-            m_output += str(MaskedTag(id=idx, content=example[field]))
+            query_dict[field] = str(MaskedTag(id=idx, desc=FIELD2DESC[field]))
+            response += str(MaskedTag(id=idx, content=example[field]))
             idx += 1
         else:
-            m_input_dict[field] = example[field]
-    m_input = TEMPLATE.format(**m_input_dict)
-    m_input, m_output = wrap_masked_io(m_input, m_output)
-    validate_wrapped_masked_io(m_input, m_output)
-    return {"m_input": m_input, "m_output": m_output}
+            query_dict[field] = example[field]
+    query = TEMPLATE.format(**query_dict)
+    return to_gim_format(query, response)
 
 
 ds = load_dataset("Magpie-Align/Magpie-Reasoning-150K", split="train")
-ds = ds.map(_mask_some_fields).select_columns(["m_input", "m_output"])
-ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
+ds = ds.map(_mask_some_fields).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+save_dataset(ds, __file__)

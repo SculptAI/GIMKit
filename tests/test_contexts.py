@@ -1,9 +1,35 @@
 import pytest
 
-from gimkit.contexts import Query, Response
+from gimkit.contexts import Context, Query, Response
 from gimkit.exceptions import InvalidFormatError
 from gimkit.guides import guide as g
-from gimkit.schemas import INPUT_PREFIX, INPUT_SUFFIX, OUTPUT_PREFIX, OUTPUT_SUFFIX, MaskedTag
+from gimkit.schemas import QUERY_PREFIX, QUERY_SUFFIX, RESPONSE_PREFIX, RESPONSE_SUFFIX, MaskedTag
+
+
+def test_context_to_str_valid():
+    query = Query(f"Hello, {g(name='obj')}")
+    assert str(query) == f'{QUERY_PREFIX}Hello, <|MASKED id="m_0"|><|/MASKED|>{QUERY_SUFFIX}'
+
+    response = Response(f"Hello, {g(name='obj', content='world')}")
+    assert str(response) == "Hello, world"
+
+    text = Context("prefix", "suffix", "Hello", g(name="xx", content=", world")).to_string(
+        infill_mode=True
+    )
+    assert text == "Hello, world"
+
+    text = Context("prefix", "suffix", "Hello", g(name="xx", content=", world")).to_string(
+        fields="all"
+    )
+    assert text == 'prefixHello<|MASKED name="xx"|>, world<|/MASKED|>suffix'
+
+
+def test_context_to_str_invalid():
+    with pytest.raises(ValueError, match="Exactly one of fields or infill_mode must be specified"):
+        Context("prefix", "suffix", "Hello").to_string()
+
+    with pytest.raises(ValueError, match="Exactly one of fields or infill_mode must be specified"):
+        Context("prefix", "suffix", "Hello").to_string(fields="all", infill_mode=True)
 
 
 def test_query_init():
@@ -15,10 +41,10 @@ def test_query_init():
     assert query1.tags[:] == query2.tags[:]
     assert query1.tags[0] == MaskedTag(id=0, desc="world", name="obj")
     assert query1.parts == [
-        INPUT_PREFIX,
+        QUERY_PREFIX,
         "Hello, ",
         MaskedTag(id=0, name="obj", desc="world"),
-        INPUT_SUFFIX,
+        QUERY_SUFFIX,
     ]
     assert str(query1) == str(query2)
 
@@ -39,11 +65,6 @@ def test_query_init_invalid():
         Query(123)
 
 
-def test_query_str():
-    query = Query(f"Hello, {g(name='obj')}")
-    assert str(query) == f'{INPUT_PREFIX}Hello, <|MASKED id="m_0"|><|/MASKED|>{INPUT_SUFFIX}'
-
-
 def test_query_infill_different_types():
     query = Query(f"Hello, {g(name='obj')}")
     assert str(query.infill(Response(g(name="obj", content="world")))) == "Hello, world"
@@ -61,14 +82,14 @@ def test_query_infill_invalid():
         assert (
             str(
                 Query("string").infill(
-                    f'{OUTPUT_PREFIX}<|MASKED id="m_0"|>content<|/MASKED|>{OUTPUT_SUFFIX}'
+                    f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>content<|/MASKED|>{RESPONSE_SUFFIX}'
                 )
             )
             == "string"
         )
 
     with pytest.raises(InvalidFormatError, match=r"Mismatched or nested masked tags in .+"):
-        Query("<|MASKED|>string").infill(f"{OUTPUT_PREFIX}{OUTPUT_SUFFIX}")
+        Query("<|MASKED|>string").infill(f"{RESPONSE_PREFIX}{RESPONSE_SUFFIX}")
 
     with pytest.raises(
         InvalidFormatError, match=r"Tag ids should be in order, got \d+ at position \d+"

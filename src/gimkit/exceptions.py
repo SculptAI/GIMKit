@@ -3,4 +3,4 @@ class GIMError(Exception):
 
 
 class InvalidFormatError(GIMError):
-    """Exception raised for invalid input/output format."""
+    """Exception raised for invalid GIM query/response format."""

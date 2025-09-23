@@ -1,9 +1,9 @@
 import random
 
 from datasets import load_dataset
-from utils import wrap_masked_io
+from utils import QUERY_COLUMN, RESPONSE_COLUMN, save_dataset, to_gim_format
 
-from gimkit import MaskedTag, validate_wrapped_masked_io
+from gimkit import MaskedTag
 
 
 random.seed(0)
@@ -23,7 +23,7 @@ def _mask_solution(example: dict) -> dict:
             "Give a step-by-step explanation",
         ]
     )
-    m_input = random.choice(
+    query = random.choice(
         [
             f"{problem}\n\n{MaskedTag(desc=desc)}",
             f"{problem}\n\n---\n\n{MaskedTag(desc=desc)}",
@@ -33,12 +33,10 @@ def _mask_solution(example: dict) -> dict:
             f"Question: {problem}\n\nAnswer: {MaskedTag(desc=desc)}",
         ]
     )
-    m_output = str(MaskedTag(id=0, content=example["solution"]))
-    m_input, m_output = wrap_masked_io(m_input, m_output)
-    validate_wrapped_masked_io(m_input, m_output)
-    return {"m_input": m_input, "m_output": m_output}
+    response = str(MaskedTag(id=0, content=example["solution"]))
+    return to_gim_format(query, response)
 
 
 ds = load_dataset("AI-MO/NuminaMath-CoT", split="train")
-ds = ds.map(_mask_solution).select_columns(["m_input", "m_output"])
-ds.to_json("data/" + __file__.split("/")[-1].replace(".py", ".jsonl"), force_ascii=False)
+ds = ds.map(_mask_solution).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+save_dataset(ds, __file__)

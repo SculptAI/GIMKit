@@ -58,3 +58,7 @@ lint.ignore = [
 ]
 lint.isort.lines-between-types = 1
 lint.isort.lines-after-imports = 2
+
+[[tool.mypy.overrides]]
+module = ["datasets.*"]
+ignore_missing_imports = true

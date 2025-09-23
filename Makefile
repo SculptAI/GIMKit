@@ -12,13 +12,13 @@ serve:
 	uv run vllm serve $(model_path) --max_model_len 10240
 
 lint:
-	uv run ruff check src tests examples
-	uv run ruff format src tests examples --diff
-	uv run mypy src tests examples
+	uv run ruff check
+	uv run ruff format --diff
+	uv run mypy src tests examples dataset
 
 lint-fix:
-	uv run ruff check src tests examples --fix
-	uv run ruff format src tests examples
+	uv run ruff check --fix
+	uv run ruff format
 
 test:
 	uv run pytest --cov=gimkit --cov-report=term-missing:skip-covered tests

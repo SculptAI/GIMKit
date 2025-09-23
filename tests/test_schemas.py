@@ -2,13 +2,13 @@ import pytest
 
 from gimkit.exceptions import InvalidFormatError
 from gimkit.schemas import (
-    INPUT_PREFIX,
-    INPUT_SUFFIX,
-    OUTPUT_PREFIX,
-    OUTPUT_SUFFIX,
+    QUERY_PREFIX,
+    QUERY_SUFFIX,
+    RESPONSE_PREFIX,
+    RESPONSE_SUFFIX,
     MaskedTag,
     parse_tags,
-    validate_wrapped_masked_io,
+    validate,
 )
 
 
@@ -45,89 +45,108 @@ def test_masked_tag_init_invalid():
         MaskedTag(content="<|MASKED|>")
 
 
-def test_validate_wrapped_masked_io_yes():
-    # Valid: simple case
-    m_input = '<|M_INPUT|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/M_INPUT|>'
-    m_output = '<|M_OUTPUT|><|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>'
-    validate_wrapped_masked_io(m_input, m_output)
-
-    # Valid: no id in input, id in output
-    m_input = "<|M_INPUT|>This is an <|MASKED|><|/MASKED|> text.<|/M_INPUT|>"
-    m_output = '<|M_OUTPUT|><|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>'
-    validate_wrapped_masked_io(m_input, m_output)
-
-    # Valid: empty input and output
-    m_input = "<|M_INPUT|><|/M_INPUT|>"
-    m_output = "<|M_OUTPUT|><|/M_OUTPUT|>"
-    validate_wrapped_masked_io(m_input, m_output)
-
-    # Valid: with whitespaces around
-    m_input = '\n<|M_INPUT|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/M_INPUT|>\n\n \t'
-    m_output = ' \n<|M_OUTPUT|>\n<|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>\n'
-    validate_wrapped_masked_io(m_input, m_output)
-
-
-def test_validate_wrapped_masked_io_no():
-    # Invalid: non-sequential ids
-    m_input = '<|M_INPUT|>This is an <|MASKED id="m_1"|><|/MASKED|> text.<|/M_INPUT|>'
-    m_output = '<|M_OUTPUT|><|MASKED id="m_1"|>example<|/MASKED|><|/M_OUTPUT|>'
-    with pytest.raises(InvalidFormatError, match=r"Tag ids should be in order 0, 1, 2,"):
-        validate_wrapped_masked_io(m_input, m_output)
-
-    # Invalid: no prefix and suffix
-    m_input = 'This is an <|MASKED id="m_0"|><|/MASKED|> text.'
-    m_output = '<|MASKED id="m_0"|>example<|/MASKED|>'
-    with pytest.raises(InvalidFormatError, match=r"String must start with the .+ tag\."):
-        validate_wrapped_masked_io(m_input, m_output)
-
-    # Invalid: nested tags
-    m_input = '<|M_INPUT|>This is an <|MASKED id="m_0"|>nested <|MASKED id="m_1"|><|/MASKED|><|/MASKED|> text.<|/M_INPUT|>'
-    m_output = '<|M_OUTPUT|><|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>'
-    with pytest.raises(InvalidFormatError, match="Mismatched or nested masked tags"):
-        validate_wrapped_masked_io(m_input, m_output)
-
-    # Invalid: mismatched tags
-    m_input = '<|M_INPUT|>This is an <|MASKED id="m_0"|><|/MASKED|><|/MASKED|> text.<|/M_INPUT|>'
-    m_output = '<|M_OUTPUT|><|MASKED id="m_0"|>example<|/MASKED|><|/M_OUTPUT|>'
-    with pytest.raises(InvalidFormatError, match="Mismatched or nested masked tags"):
-        validate_wrapped_masked_io(m_input, m_output)
-
-
-def test_parse_tags():
+def test_parse_tags_valid():
     # Masked tag has desc
-    parse_tags(
-        INPUT_PREFIX + """<|MASKED id="m_0" desc="xx"|><|/MASKED|>""" + INPUT_SUFFIX,
-        INPUT_PREFIX,
-        INPUT_SUFFIX,
+    tags = parse_tags(
+        QUERY_PREFIX + """<|MASKED id="m_0" desc="xx"|><|/MASKED|>""" + QUERY_SUFFIX,
+        QUERY_PREFIX,
+        QUERY_SUFFIX,
     )
+    assert tags[0].id == 0
+    assert tags[0].desc == "xx"
+    assert tags[0].name is None
+    assert tags[0].content == ""
 
-    with pytest.raises(InvalidFormatError, match=f"String must start with the {INPUT_PREFIX} tag"):
-        parse_tags("no prefix", INPUT_PREFIX, INPUT_SUFFIX)
-    with pytest.raises(InvalidFormatError, match=r"Nested or duplicate .+ tag are not allowed."):
-        parse_tags(f"{INPUT_PREFIX}example{INPUT_PREFIX}", INPUT_PREFIX, INPUT_SUFFIX)
+    # Without prefix. The id can start from any non-negative integer
+    tags = parse_tags("""<|MASKED|><|/MASKED|><|MASKED id="m_3"|><|/MASKED|>""", None, None)
+    assert tags[0].id is None
+    assert tags[1].id == 3
 
-    with pytest.raises(InvalidFormatError, match=f"String must end with the {INPUT_SUFFIX} tag"):
-        parse_tags("no suffix", None, INPUT_SUFFIX)
+
+def test_parse_tags_invalid():
+    with pytest.raises(InvalidFormatError, match=f"String must start with the {QUERY_PREFIX} tag"):
+        parse_tags("no prefix", QUERY_PREFIX, QUERY_SUFFIX)
     with pytest.raises(InvalidFormatError, match=r"Nested or duplicate .+ tag are not allowed."):
-        parse_tags(f"{INPUT_SUFFIX}{INPUT_SUFFIX}", None, INPUT_SUFFIX)
+        parse_tags(f"{QUERY_PREFIX}example{QUERY_PREFIX}", QUERY_PREFIX, QUERY_SUFFIX)
+
+    with pytest.raises(InvalidFormatError, match=f"String must end with the {QUERY_SUFFIX} tag"):
+        parse_tags("no suffix", None, QUERY_SUFFIX)
+    with pytest.raises(InvalidFormatError, match=r"Nested or duplicate .+ tag are not allowed."):
+        parse_tags(f"{QUERY_SUFFIX}{QUERY_SUFFIX}", None, QUERY_SUFFIX)
 
     with pytest.raises(
         InvalidFormatError, match=r"Tag ids should be in order, got \d+ at position \d+\."
     ):
         parse_tags(
-            f'{INPUT_PREFIX}<|MASKED id="m_0"|><|/MASKED|><|MASKED id="m_2"|><|/MASKED|>{INPUT_SUFFIX}',
-            INPUT_PREFIX,
-            INPUT_SUFFIX,
+            f'{QUERY_PREFIX}<|MASKED id="m_0"|><|/MASKED|><|MASKED id="m_2"|><|/MASKED|>{QUERY_SUFFIX}',
+            QUERY_PREFIX,
+            QUERY_SUFFIX,
         )
 
 
-def test_validate_wrapped_masked_io():
-    with pytest.raises(ValueError):
-        validate_wrapped_masked_io(None, None)
+def test_validate_wrapped_masked_io_yes():
+    # Valid: simple case
+    query = '<|GIM_QUERY|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/GIM_QUERY|>'
+    response = '<|GIM_RESPONSE|><|MASKED id="m_0"|>example<|/MASKED|><|/GIM_RESPONSE|>'
+    validate(query, response)
 
-    m_input = f'{INPUT_PREFIX}<|MASKED id="m_0"|><|/MASKED|>{INPUT_SUFFIX}'
-    m_output_mismatch = f'{OUTPUT_PREFIX}<|MASKED id="m_0"|><|/MASKED|><|MASKED id="m_1"|><|/MASKED|>{OUTPUT_SUFFIX}'
+    # Valid: no id in query, id in response
+    query = "<|GIM_QUERY|>This is an <|MASKED|><|/MASKED|> text.<|/GIM_QUERY|>"
+    response = '<|GIM_RESPONSE|><|MASKED id="m_0"|>example<|/MASKED|><|/GIM_RESPONSE|>'
+    validate(query, response)
+
+    # Valid: empty query and response
+    query = "<|GIM_QUERY|><|/GIM_QUERY|>"
+    response = "<|GIM_RESPONSE|><|/GIM_RESPONSE|>"
+    validate(query, response)
+
+    # Valid: with whitespaces around
+    query = '\n<|GIM_QUERY|>This is an <|MASKED id="m_0"|><|/MASKED|> text.<|/GIM_QUERY|>\n\n \t'
+    response = ' \n<|GIM_RESPONSE|>\n<|MASKED id="m_0"|>example<|/MASKED|><|/GIM_RESPONSE|>\n'
+    validate(query, response)
+
+    # Valid: only query or response
+    validate(query, None)
+    validate(None, response)
+
+    # Valid: first tag has no id, second has id
+    query = '\n<|GIM_QUERY|>This is an <|MASKED|><|/MASKED|><|MASKED id="m_1"|><|/MASKED|> text.<|/GIM_QUERY|>\n\n \t'
+    response = " \n<|GIM_RESPONSE|>\n<|MASKED|>example<|/MASKED|><|MASKED|>example<|/MASKED|><|/GIM_RESPONSE|>\n"
+    validate(query, response)
+
+
+def test_validate_wrapped_masked_io_no():
+    # Invalid: both None
+    with pytest.raises(ValueError):
+        validate(None, None)
+
+    # Invalid: non-sequential ids
+    query = '<|GIM_QUERY|>This is an <|MASKED id="m_1"|><|/MASKED|> text.<|/GIM_QUERY|>'
+    response = '<|GIM_RESPONSE|><|MASKED id="m_1"|>example<|/MASKED|><|/GIM_RESPONSE|>'
+    with pytest.raises(InvalidFormatError, match=r"Tag ids should be in order 0, 1, 2,"):
+        validate(query, response)
+
+    # Invalid: no prefix and suffix
+    query = 'This is an <|MASKED id="m_0"|><|/MASKED|> text.'
+    response = '<|MASKED id="m_0"|>example<|/MASKED|>'
+    with pytest.raises(InvalidFormatError, match=r"String must start with the .+ tag\."):
+        validate(query, response)
+
+    # Invalid: nested tags
+    query = '<|GIM_QUERY|>This is an <|MASKED id="m_0"|>nested <|MASKED id="m_1"|><|/MASKED|><|/MASKED|> text.<|/GIM_QUERY|>'
+    response = '<|GIM_RESPONSE|><|MASKED id="m_0"|>example<|/MASKED|><|/GIM_RESPONSE|>'
+    with pytest.raises(InvalidFormatError, match="Mismatched or nested masked tags"):
+        validate(query, response)
+
+    # Invalid: mismatched tags
+    query = '<|GIM_QUERY|>This is an <|MASKED id="m_0"|><|/MASKED|><|/MASKED|> text.<|/GIM_QUERY|>'
+    response = '<|GIM_RESPONSE|><|MASKED id="m_0"|>example<|/MASKED|><|/GIM_RESPONSE|>'
+    with pytest.raises(InvalidFormatError, match="Mismatched or nested masked tags"):
+        validate(query, response)
+
+    query = f'{QUERY_PREFIX}<|MASKED id="m_0"|><|/MASKED|>{QUERY_SUFFIX}'
+    response = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|><|/MASKED|><|MASKED id="m_1"|><|/MASKED|>{RESPONSE_SUFFIX}'
     with pytest.raises(
-        InvalidFormatError, match=r"Mismatched number of masked tags between input and output."
+        InvalidFormatError, match=r"Mismatched number of masked tags between query and response"
     ):
-        validate_wrapped_masked_io(m_input, m_output_mismatch)
+        validate(query, response)
