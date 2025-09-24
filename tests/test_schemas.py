@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from gimkit.exceptions import InvalidFormatError
@@ -41,7 +43,14 @@ def test_masked_tag_init_invalid():
         MaskedTag(desc=123)
     with pytest.raises(ValueError, match="should be str or None"):
         MaskedTag(content=object)
-    with pytest.raises(ValueError, match="content should not contain special marks like"):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "content should not contain special marks like `<|GIM_QUERY|>` or "
+            "`<|/GIM_QUERY|>` or `<|GIM_RESPONSE|>` or `<|/GIM_RESPONSE|>` or "
+            "`<|MASKED` or `<|/MASKED|>`"
+        ),
+    ):
         MaskedTag(content="<|MASKED|>")
 
 
@@ -70,6 +79,16 @@ def test_parse_tags_valid():
     )
     assert len(tags) == 3
     assert tags[1].id is None
+
+    # With special mark
+    tags = parse_tags("<|MASKED|>|><|/MASKED|>")
+    assert tags[0].content == "|>"
+
+    # A tricky example: the value in desc cannot contain a double quote,
+    # so it will non-greedily match the first quote.
+    tags = parse_tags('<|MASKED desc="xxx"|>"|><|/MASKED|>')
+    assert tags[0].desc == "xxx"
+    assert tags[0].content == '"|>'
 
 
 def test_parse_tags_invalid():
