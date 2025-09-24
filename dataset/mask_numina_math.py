@@ -1,3 +1,4 @@
+import os
 import random
 
 from datasets import load_dataset
@@ -37,6 +38,6 @@ def _mask_solution(example: dict) -> dict:
     return to_gim_format(query, response)
 
 
-ds = load_dataset("AI-MO/NuminaMath-CoT", split="train")
-ds = ds.map(_mask_solution).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+ds = load_dataset("AI-MO/NuminaMath-CoT", split="train", num_proc=os.cpu_count())
+ds = ds.map(_mask_solution, num_proc=os.cpu_count()).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
 save_dataset(ds, __file__)

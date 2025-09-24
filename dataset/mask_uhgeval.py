@@ -1,3 +1,4 @@
+import os
 import random
 
 import numpy as np
@@ -16,6 +17,10 @@ def _mask_possion_4(example: dict) -> dict:
     return to_gim_format(query, response)
 
 
-ds = load_dataset("Ki-Seki/UHGEvalDataset", name="full", split="validation")
-ds = ds.map(_mask_possion_4).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+ds = load_dataset(
+    "Ki-Seki/UHGEvalDataset", name="full", split="validation", num_proc=os.cpu_count()
+)
+ds = ds.map(_mask_possion_4, num_proc=os.cpu_count()).select_columns(
+    [QUERY_COLUMN, RESPONSE_COLUMN]
+)
 save_dataset(ds, __file__)
