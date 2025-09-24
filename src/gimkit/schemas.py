@@ -91,7 +91,10 @@ class MaskedTag:
                 raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
         if isinstance(self.content, str):
-            if any(special_mark in self.content for special_mark in MAGIC_STRINGS):
+            # TAG_OPEN_RIGHT is common in text, so we allow it in content.
+            # But other magic strings are not allowed.
+            special_marks = MAGIC_STRINGS - {TAG_OPEN_RIGHT}
+            if any(special_mark in self.content for special_mark in special_marks):
                 raise ValueError(
                     "content should not contain special marks like "
                     + " or ".join(f"`{x}`" for x in MAGIC_STRINGS)

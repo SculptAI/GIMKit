@@ -71,6 +71,16 @@ def test_parse_tags_valid():
     assert len(tags) == 3
     assert tags[1].id is None
 
+    # With special mark
+    tags = parse_tags("<|MASKED|>|><|/MASKED|>")
+    assert tags[0].content == "|>"
+
+    # A tricky example: the value in desc cannot contain a double quote,
+    # so it will non-greedily match the first quote.
+    tags = parse_tags('<|MASKED desc="xxx"|>"|><|/MASKED|>')
+    assert tags[0].desc == "xxx"
+    assert tags[0].content == '"|>'
+
 
 def test_parse_tags_invalid():
     with pytest.raises(InvalidFormatError, match=f"String must start with the {QUERY_PREFIX} tag"):
