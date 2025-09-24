@@ -18,7 +18,7 @@ TAG_OPEN_LEFT = "<|MASKED"
 TAG_OPEN_RIGHT = "|>"
 TAG_END = "<|/MASKED|>"
 
-MAGIC_STRINGS = {
+MAGIC_STRINGS = [
     QUERY_PREFIX,
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
@@ -26,7 +26,7 @@ MAGIC_STRINGS = {
     TAG_OPEN_LEFT,
     TAG_OPEN_RIGHT,
     TAG_END,
-}
+]
 
 _TAG_ATTRS_REGEX = r'(?: id="m_(\d+)")?' + r'(?: name="(.*?)")?' + r'(?: desc="(.*?)")?'
 _TAG_CONTENT_REGEX = r"(.*?)"
@@ -91,10 +91,14 @@ class MaskedTag:
                 raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
         if isinstance(self.content, str):
-            if any(special_mark in self.content for special_mark in MAGIC_STRINGS):
+            # TAG_OPEN_RIGHT is common in text, so we allow it in content.
+            # But other magic strings are not allowed.
+            special_marks = MAGIC_STRINGS.copy()
+            special_marks.remove(TAG_OPEN_RIGHT)
+            if any(special_mark in self.content for special_mark in special_marks):
                 raise ValueError(
                     "content should not contain special marks like "
-                    + " or ".join(f"`{x}`" for x in MAGIC_STRINGS)
+                    + " or ".join(f"`{x}`" for x in special_marks)
                 )
         elif self.content is not None:
             raise ValueError(f"{type(self.content)=}, {self.content=}, should be str or None")
