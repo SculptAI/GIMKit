@@ -97,7 +97,7 @@ class MaskedTag:
             if any(special_mark in self.content for special_mark in special_marks):
                 raise ValueError(
                     "content should not contain special marks like "
-                    + " or ".join(f"`{x}`" for x in MAGIC_STRINGS)
+                    + " or ".join(f"`{x}`" for x in special_marks)
                 )
         elif self.content is not None:
             raise ValueError(f"{type(self.content)=}, {self.content=}, should be str or None")
