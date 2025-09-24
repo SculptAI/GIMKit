@@ -152,6 +152,7 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
                 raise InvalidFormatError(
                     f"Tag ids should be in order, got {tag_id} at position {curr_tag_id}."
                 )
+        if curr_tag_id is not None:
             curr_tag_id += 1
         parts.append(MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, content=tag_content))
 

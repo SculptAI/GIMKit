@@ -62,6 +62,15 @@ def test_parse_tags_valid():
     assert tags[0].id is None
     assert tags[1].id == 3
 
+    # Some masked tags have id, some don't
+    tags = parse_tags(
+        """<|MASKED id="m_0"|><|/MASKED|><|MASKED|><|/MASKED|><|MASKED id="m_2"|><|/MASKED|>""",
+        None,
+        None,
+    )
+    assert len(tags) == 3
+    assert tags[1].id is None
+
 
 def test_parse_tags_invalid():
     with pytest.raises(InvalidFormatError, match=f"String must start with the {QUERY_PREFIX} tag"):
