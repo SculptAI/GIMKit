@@ -1,3 +1,4 @@
+import os
 import random
 
 from datasets import concatenate_datasets, load_dataset
@@ -51,11 +52,11 @@ def _mask_process(example: dict) -> dict:
     return to_gim_format(query, response)
 
 
-ds = load_dataset("Qwen/ProcessBench")
+ds = load_dataset("Qwen/ProcessBench", num_proc=os.cpu_count())
 ds = concatenate_datasets([ds[split] for split in ds])
 ds = (
-    ds.filter(_is_correct_reasoning)
-    .map(_mask_process)
+    ds.filter(_is_correct_reasoning, num_proc=os.cpu_count())
+    .map(_mask_process, num_proc=os.cpu_count())
     .select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
 )
 save_dataset(ds, __file__)

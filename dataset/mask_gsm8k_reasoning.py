@@ -1,3 +1,4 @@
+import os
 import re
 
 from datasets import load_dataset
@@ -54,9 +55,9 @@ def _mask_tags_content(example: dict) -> dict:
 
 ds = load_dataset("thesven/gsm8k-reasoning", split="train")
 ds = (
-    ds.map(_extract_tags_content)
-    .filter(_is_valid_example)
-    .map(_mask_tags_content)
+    ds.map(_extract_tags_content, num_proc=os.cpu_count())
+    .filter(_is_valid_example, num_proc=os.cpu_count())
+    .map(_mask_tags_content, num_proc=os.cpu_count())
     .select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
 )
 save_dataset(ds, __file__)

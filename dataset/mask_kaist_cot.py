@@ -1,3 +1,4 @@
+import os
 import random
 
 from datasets import load_dataset
@@ -34,6 +35,10 @@ def _mask_rationale_and_target(example: dict) -> dict:
     return to_gim_format(query, response)
 
 
-ds = load_dataset("kaist-ai/CoT-Collection", split="train", trust_remote_code=True)
-ds = ds.map(_mask_rationale_and_target).select_columns([QUERY_COLUMN, RESPONSE_COLUMN])
+ds = load_dataset(
+    "kaist-ai/CoT-Collection", split="train", trust_remote_code=True, num_proc=os.cpu_count()
+)
+ds = ds.map(_mask_rationale_and_target, num_proc=os.cpu_count()).select_columns(
+    [QUERY_COLUMN, RESPONSE_COLUMN]
+)
 save_dataset(ds, __file__)

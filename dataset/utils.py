@@ -61,7 +61,9 @@ def to_gim_format(raw_query: str, raw_response: str) -> dict[str, str]:
     return {QUERY_COLUMN: query, RESPONSE_COLUMN: response}
 
 
-def save_dataset(ds: Dataset, script_path: str, save_dir: str = "data"):
+def save_dataset(
+    ds: Dataset, script_path: str, save_dir: str = "data", dataset_name: str = "GIM-SFT"
+):
     # Ensure the ds only has the required columns
     assert set(ds.column_names) == set(COLUMNS), (
         f"Dataset columns should be {COLUMNS}, got {ds.column_names}"
@@ -70,6 +72,6 @@ def save_dataset(ds: Dataset, script_path: str, save_dir: str = "data"):
     # Ensure the first row is valid
     validate(ds[0][QUERY_COLUMN], ds[0][RESPONSE_COLUMN])
 
-    dataset_name = Path(script_path).stem
-    output_path = Path(save_dir) / f"{dataset_name}.jsonl"
+    subset_name = Path(script_path).stem.removeprefix("mask_")
+    output_path = Path(save_dir) / dataset_name / subset_name / "train.jsonl"
     ds.to_json(output_path.as_posix(), force_ascii=False)
