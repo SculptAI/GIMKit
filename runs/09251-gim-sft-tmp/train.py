@@ -9,6 +9,8 @@ from datasets import concatenate_datasets, load_dataset
 from trl import SFTConfig, SFTTrainer
 from unsloth.chat_templates import get_chat_template, train_on_responses_only
 from gimkit import Query, guide
+from datasets import Dataset
+
 
 # ─── General Setup ────────────────────────────────────────────────────────────
 
@@ -30,8 +32,8 @@ for key, value in vars(configs).items():
 # ─── Load Model And Tokenizer ─────────────────────────────────────────────────
 
 model, tokenizer = FastModel.from_pretrained(
-    model_name="unsloth/Qwen3-4B-Instruct-2507",
-    max_seq_length=4096,
+    model_name=configs.BASE_MODEL_NAME,
+    max_seq_length=configs.MAX_SEQ_LENGTH,
     load_in_4bit=True,
     load_in_8bit=False,
     full_finetuning=False,
@@ -67,8 +69,6 @@ tokenizer = get_chat_template(
 
 # ─── Load Dataset ─────────────────────────────────────────────────────────────
 
-dataset_name = "Ki-Seki/GIM-SFT"
-
 # fmt: off
 high_subsets = [        # 23294 in total
     "gsm8k_reasoning",  # 1254
@@ -88,17 +88,37 @@ low_subsets = [         # 2697422 in total
 ]
 # fmt: on
 
-dataset = load_dataset("Ki-Seki/GIM-SFT")
-dataset = concatenate_datasets(list(dataset.values()))
+
+def _concat_subsets(subsets: list[str]) -> Dataset:
+    return concatenate_datasets(
+        [load_dataset(configs.DATASET_NAME, subset, split="train") for subset in subsets]
+    )
+
+
+logging.info("Loading and preparing dataset...")
+high_dataset = _concat_subsets(high_subsets)
+mid_dataset = _concat_subsets(mid_subsets)
+low_dataset = _concat_subsets(low_subsets)
+_rest_len = configs.DATASET_LEN - len(high_dataset)
+if _rest_len > 0:
+    _mid_len = int(_rest_len * 0.6)
+    _low_len = _rest_len - _mid_len
+    mid_dataset = mid_dataset.shuffle(seed=configs.RANDOM_SEED).select(range(_mid_len))
+    low_dataset = low_dataset.shuffle(seed=configs.RANDOM_SEED).select(range(_low_len))
+assert len(high_dataset) + len(mid_dataset) + len(low_dataset) == configs.DATASET_LEN
+logging.info(
+    f"Dataset sizes: high {len(high_dataset)}, mid {len(mid_dataset)}, low {len(low_dataset)}"
+)
+
+dataset = concatenate_datasets([high_dataset, mid_dataset, low_dataset])
 dataset = (
     dataset.shuffle(seed=configs.RANDOM_SEED)
-    .select(range(configs.DATASET_LEN))
     .map(
         lambda example: {
             "text": tokenizer.apply_chat_template(
                 [
-                    {"role": "user", "content": example["m_input"]},
-                    {"role": "assistant", "content": example["m_output"]},
+                    {"role": "user", "content": example["gim_query"]},
+                    {"role": "assistant", "content": example["gim_response"]},
                 ],
                 tokenize=False,
                 add_generation_prompt=False,
