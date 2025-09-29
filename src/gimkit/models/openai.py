@@ -27,7 +27,7 @@ class OpenAI(OutlinesOpenAI):
     def __call__(
         self,
         model_input: str | MaskedTag | list[str | MaskedTag],
-        output_type: Literal["none", "json"] = "none",
+        output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
     ) -> Response:
@@ -38,7 +38,7 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
     async def __call__(
         self,
         model_input: str | MaskedTag | list[str | MaskedTag],
-        output_type: Literal["none", "json"] = "none",
+        output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
     ) -> Response:
