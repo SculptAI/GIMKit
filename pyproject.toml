@@ -7,7 +7,9 @@ authors = [
     { name = "Shichao Song", email = "song.shichao@outlook.com" }
 ]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "outlines>=1.2.5",
+]
 
 [dependency-groups]
 dataset = [
