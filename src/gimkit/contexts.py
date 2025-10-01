@@ -158,7 +158,7 @@ class Query(Context):
                     part.content = None
 
     def infill(self, response: Response | ContextInput) -> Result:
-        """Fills tags in the query with content from the response."""
+        """Fills tags in this query (self) with content from the provided response."""
         return infill(self, response)
 
     def __str__(self) -> str:
@@ -170,7 +170,7 @@ class Response(Context):
         super().__init__(RESPONSE_PREFIX, RESPONSE_SUFFIX, *args)
 
     def infill(self, query: Query | ContextInput) -> Result:
-        """Fills the tags in the provided query with content from this response."""
+        """Fills the tags in the provided query with content from this response (self)."""
         return infill(query, self)
 
     def __str__(self) -> str:
