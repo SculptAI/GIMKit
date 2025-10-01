@@ -3,13 +3,10 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: tests/repositories/fixtures/pypi.org/metadata/.*\.metadata
       - id: end-of-file-fixer
-        exclude: ^.*\.egg-info/|tests/repositories/fixtures/pypi.org/metadata/.*\.metadata
       - id: check-merge-conflict
       - id: check-case-conflict
       - id: check-toml
-        exclude: tests/fixtures/invalid_lock/poetry\.lock
       - id: check-yaml
       - id: check-ast
       - id: debug-statements
@@ -27,12 +24,6 @@ repos:
         args: [ --fix, --config=./pyproject.toml ]
       - id: ruff-format
         args: [ --config=./pyproject.toml ]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.18.1'
-    hooks:
-      - id: mypy
-        exclude: runs
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
