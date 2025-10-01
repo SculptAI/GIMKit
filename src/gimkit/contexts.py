@@ -9,6 +9,8 @@ from gimkit.schemas import (
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
+    ContextInput,
+    ContextPart,
     MaskedTag,
     parse_parts,
 )
@@ -16,7 +18,7 @@ from gimkit.schemas import (
 
 class Context:
     class TagsView:
-        def __init__(self, parts: list[str | MaskedTag]):
+        def __init__(self, parts: list[ContextPart]):
             self._parts = parts
 
         @property
@@ -31,9 +33,9 @@ class Context:
                 if isinstance(part, MaskedTag) and part.name is not None
             }
 
-        def __setitem__(self, key: int | str, value: str | MaskedTag) -> None:
-            if not isinstance(value, str | MaskedTag):
-                raise TypeError("New value must be a str or MaskedTag")
+        def __setitem__(self, key: int | str, value: ContextPart) -> None:
+            if not isinstance(value, ContextPart):
+                raise TypeError("New value must be a ContextPart (str or MaskedTag)")
             if isinstance(key, int):
                 self._parts[self._tags_by_index[key]] = value
             elif isinstance(key, str):
@@ -69,13 +71,11 @@ class Context:
             for i in self._tags_by_index:
                 yield self._parts[i]
 
-    def __init__(
-        self, prefix: str, suffix: str, *args: str | MaskedTag | list[str | MaskedTag]
-    ) -> None:
+    def __init__(self, prefix: str, suffix: str, *args: ContextInput) -> None:
         self._prefix = prefix
         self._suffix = suffix
 
-        self._parts: list[str | MaskedTag] = [prefix]
+        self._parts: list[ContextPart] = [prefix]
         for arg in args:
             if isinstance(arg, str):
                 self._parts.extend(parse_parts(arg))
@@ -94,7 +94,7 @@ class Context:
         self._parts.append(suffix)
 
     @property
-    def parts(self) -> list[str | MaskedTag]:
+    def parts(self) -> list[ContextPart]:
         return self._parts
 
     @property
@@ -130,7 +130,7 @@ class Context:
 
 
 class Response(Context):
-    def __init__(self, *args: str | MaskedTag | list[str | MaskedTag]) -> None:
+    def __init__(self, *args: ContextInput) -> None:
         super().__init__(RESPONSE_PREFIX, RESPONSE_SUFFIX, *args)
 
     def __str__(self) -> str:
@@ -138,7 +138,7 @@ class Response(Context):
 
 
 class Query(Context):
-    def __init__(self, *args: str | MaskedTag | list[str | MaskedTag]) -> None:
+    def __init__(self, *args: ContextInput) -> None:
         super().__init__(QUERY_PREFIX, QUERY_SUFFIX, *args)
 
         # Validate and standardize the tags

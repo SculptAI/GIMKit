@@ -4,7 +4,7 @@ import html
 import re
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from gimkit.exceptions import InvalidFormatError
 
@@ -120,15 +120,19 @@ class MaskedTag:
         return str(other) + str(self)
 
 
-def parse_parts(s: str) -> list[str | MaskedTag]:
-    """Parse a string into a list of strings and MaskedTags.
+ContextPart: TypeAlias = str | MaskedTag
+ContextInput: TypeAlias = ContextPart | list[ContextPart]
+
+
+def parse_parts(s: str) -> list[ContextPart]:
+    """Parse a string into a list of ContextParts (str or MaskedTag).
 
     Args:
         s (str): The string to be parsed. Note it only contains masked tags or plain texts.
             Tag id may start from any non-negative integer, but must be in order 0, 1, 2, ...
 
     Returns:
-        list[str | MaskedTag]: A list of strings and MaskedTags.
+        list[ContextPart]: A list of ContextParts (str or MaskedTag).
     """
     open_matches = list(TAG_OPEN_PATTERN.finditer(s))
     end_matches = list(TAG_END_PATTERN.finditer(s))
@@ -136,7 +140,7 @@ def parse_parts(s: str) -> list[str | MaskedTag]:
     if not (len(open_matches) == len(end_matches) == len(full_matches)):
         raise InvalidFormatError(f"Mismatched or nested masked tags in {s[:50]}...")
 
-    parts: list[str | MaskedTag] = []
+    parts: list[ContextPart] = []
     curr_tag_id = None
     last_end = 0
     for match in full_matches:
