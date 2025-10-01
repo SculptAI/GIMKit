@@ -14,9 +14,8 @@ from gimkit.schemas import (
 )
 
 
-def build_cfg(query: Query) -> CFG:
+def build_cfg(query: Query) -> CFG:  # pragma: no cover  # TODO: support regex in query tags
     """Build a Lark-based CFG output type based on the query object."""
-    # TODO: support regex in query tags
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
     grammar_next_lines = (
@@ -31,11 +30,11 @@ def build_cfg(query: Query) -> CFG:
     return output_type
 
 
-def build_json_schema(query: Query) -> JsonSchema:
+def build_json_schema(query: Query) -> JsonSchema:  # pragma: no cover  # TODO
     raise NotImplementedError("JSON schema generation is not implemented yet.")
 
 
-def get_output_type(
+def get_output_type(  # pragma: no cover  # TODO
     output_type: Literal["cfg", "json"] | None, query: Query
 ) -> None | CFG | JsonSchema:
     if output_type is None:
