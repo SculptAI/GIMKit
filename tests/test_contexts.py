@@ -1,6 +1,6 @@
 import pytest
 
-from gimkit.contexts import Context, Query, Response
+from gimkit.contexts import Context, Query, Response, infill
 from gimkit.exceptions import InvalidFormatError
 from gimkit.guides import guide as g
 from gimkit.schemas import QUERY_PREFIX, QUERY_SUFFIX, RESPONSE_PREFIX, RESPONSE_SUFFIX, MaskedTag
@@ -22,6 +22,9 @@ def test_context_to_str_valid():
         fields="all"
     )
     assert text == 'prefixHello<|MASKED name="xx"|>, world<|/MASKED|>suffix'
+
+    text = Context("", "", "Hello", g(content=", world")).to_string(infill_mode=True)
+    assert text == "Hello, world"
 
 
 def test_context_to_str_invalid():
@@ -75,17 +78,12 @@ def test_query_infill_different_types():
 
 
 def test_query_infill_invalid():
-    with pytest.warns(UserWarning, match=r"Not enough tags in response to fill the query tags"):
-        assert str(Query(g(name="obj")).infill("")) == '<|MASKED id="m_0" name="obj"|><|/MASKED|>'
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
+        Query(g(name="obj")).infill("")
 
-    with pytest.warns(UserWarning, match=r"There are \d+ unused tags in the response."):
-        assert (
-            str(
-                Query("string").infill(
-                    f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>content<|/MASKED|>{RESPONSE_SUFFIX}'
-                )
-            )
-            == "string"
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
+        Query("string").infill(
+            f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>content<|/MASKED|>{RESPONSE_SUFFIX}'
         )
 
     with pytest.raises(InvalidFormatError, match=r"Mismatched or nested masked tags in .+"):
@@ -96,7 +94,9 @@ def test_query_infill_invalid():
     ):
         Query(g(), g()).infill('<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>')
 
-    with pytest.raises(TypeError, match=r"Response must be str, Response, or list of MaskedTag"):
+    with pytest.raises(
+        TypeError, match=r"Arguments must be str, MaskedTag, or list of str/MaskedTag\. Got .+"
+    ):
         Query(g()).infill(123)
 
 
@@ -147,3 +147,22 @@ def test_response_tags_modify():
 
     with pytest.raises(TypeError, match="Key must be int or str"):
         tags[None] = "new value"
+
+
+def test_response_infill():
+    response = Response(g(content="world"))
+    assert str(response.infill(["Hello, ", g()])) == "Hello, world"
+
+
+def test_infill_strict():
+    query = Query(f"Hello, {g(name='obj1')}{g(name='obj2')}")
+    response = Response(g(name="obj1", content="world"))
+
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
+        result = infill(query, response, strict=False)
+        assert str(result) == 'Hello, world<|MASKED id="m_1"|><|/MASKED|>'
+
+    with pytest.raises(
+        InvalidFormatError, match=r"Mismatch in number of tags between query and response"
+    ):
+        infill(query, response, strict=True)
