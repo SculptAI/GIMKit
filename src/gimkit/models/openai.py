@@ -65,5 +65,5 @@ def from_openai(
     else:
         raise ValueError(
             "Invalid client type. The client must be an instance of "
-            "+ `openai.OpenAI` or `openai.AsyncOpenAI`."
+            "`openai.OpenAI` or `openai.AsyncOpenAI`."
         )
