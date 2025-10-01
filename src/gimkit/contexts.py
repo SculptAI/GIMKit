@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import warnings
 
-from copy import deepcopy
 from typing import Literal, cast, overload
 
 from gimkit.exceptions import InvalidFormatError
@@ -90,7 +91,9 @@ class Context:
                     else:
                         raise TypeError("List items must be str or MaskedTag")
             else:
-                raise TypeError("Arguments must be str, MaskedTag, or list of str/MaskedTag")
+                raise TypeError(
+                    f"Arguments must be str, MaskedTag, or list of str/MaskedTag. Got {type(arg)}"
+                )
         self._parts.append(suffix)
 
     @property
@@ -125,16 +128,8 @@ class Context:
                     content += part.content
                 else:
                     content += str(part)
-            content = content[len(self._prefix) : -len(self._suffix)]
+            content = content[len(self._prefix) : len(content) - len(self._suffix)]
         return content
-
-
-class Response(Context):
-    def __init__(self, *args: ContextInput) -> None:
-        super().__init__(RESPONSE_PREFIX, RESPONSE_SUFFIX, *args)
-
-    def __str__(self) -> str:
-        return self.to_string(infill_mode=True)
 
 
 class Query(Context):
@@ -159,35 +154,66 @@ class Query(Context):
                 if part.content == "":
                     part.content = None
 
-    def infill(self, response: str | Response | list[MaskedTag]) -> Response:
-        if isinstance(response, str):
-            tmp_parts = parse_parts(response)
-            response_tags = [part for part in tmp_parts if isinstance(part, MaskedTag)]
-        elif isinstance(response, Response):
-            response_tags = list(response.tags)
-        elif isinstance(response, list) and all(isinstance(part, MaskedTag) for part in response):
-            response_tags = response
-        else:
-            raise TypeError("Response must be str, Response, or list of MaskedTag")
-
-        # Create a new parts list without the prefix/suffix
-        new_parts = deepcopy(self._parts[1:-1])
-        for part in new_parts:
-            if isinstance(part, MaskedTag):
-                if response_tags:
-                    part.content = response_tags.pop(0).content
-                else:
-                    warnings.warn(
-                        "Not enough tags in response to fill the query tags.", stacklevel=2
-                    )
-                    break
-
-        if len(response_tags) > 0:
-            warnings.warn(
-                f"There are {len(response_tags)} unused tags in the response.", stacklevel=2
-            )
-
-        return Response(new_parts)
+    def infill(self, response: Response | ContextInput) -> Result:
+        """Fills the query with content from the response."""
+        return infill(self, response)
 
     def __str__(self) -> str:
         return self.to_string(fields=["id", "desc", "content"])
+
+
+class Response(Context):
+    def __init__(self, *args: ContextInput) -> None:
+        super().__init__(RESPONSE_PREFIX, RESPONSE_SUFFIX, *args)
+
+    def infill(self, query: Query | ContextInput) -> Result:
+        """Fills the response with content from the query."""
+        return infill(query, self)
+
+    def __str__(self) -> str:
+        return self.to_string(infill_mode=True)
+
+
+class Result(Context):
+    def __init__(self, *args: ContextInput) -> None:
+        super().__init__("", "", *args)
+
+    def __str__(self) -> str:
+        return self.to_string(infill_mode=True)
+
+
+def infill(
+    query: Query | ContextInput, response: Response | ContextInput, strict: bool = False
+) -> Result:
+    """Combines query and response by infilling missing content."""
+    if not isinstance(query, Query):
+        query = Query(query)
+    if not isinstance(response, Response):
+        response = Response(response)
+
+    query_tags = list(query.tags)
+    response_tags = list(response.tags)
+    if len(query_tags) != len(response_tags):
+        msg = (
+            "Mismatch in number of tags between query and response. "
+            f"Query has {len(query_tags)} tag(s), response has {len(response_tags)} tag(s)."
+        )
+        if strict:
+            raise ValueError(msg)
+        else:
+            warnings.warn(msg + " Will merge as many as possible.", stacklevel=2)
+
+    result_parts: list[ContextPart] = []
+    for part in query.parts[1:-1]:  # Exclude prefix and suffix
+        if isinstance(part, MaskedTag) and query_tags and response_tags:
+            q_tag = query_tags.pop(0)
+            r_tag = response_tags.pop(0)
+            part = MaskedTag(
+                id=q_tag.id,
+                name=q_tag.name,
+                desc=q_tag.desc,
+                content=r_tag.content if r_tag.content is not None else q_tag.content,
+            )
+        result_parts.append(part)
+
+    return Result(result_parts)

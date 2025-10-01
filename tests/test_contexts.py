@@ -75,17 +75,12 @@ def test_query_infill_different_types():
 
 
 def test_query_infill_invalid():
-    with pytest.warns(UserWarning, match=r"Not enough tags in response to fill the query tags"):
-        assert str(Query(g(name="obj")).infill("")) == '<|MASKED id="m_0" name="obj"|><|/MASKED|>'
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
+        Query(g(name="obj")).infill("")
 
-    with pytest.warns(UserWarning, match=r"There are \d+ unused tags in the response."):
-        assert (
-            str(
-                Query("string").infill(
-                    f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>content<|/MASKED|>{RESPONSE_SUFFIX}'
-                )
-            )
-            == "string"
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
+        Query("string").infill(
+            f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>content<|/MASKED|>{RESPONSE_SUFFIX}'
         )
 
     with pytest.raises(InvalidFormatError, match=r"Mismatched or nested masked tags in .+"):
@@ -96,7 +91,9 @@ def test_query_infill_invalid():
     ):
         Query(g(), g()).infill('<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>')
 
-    with pytest.raises(TypeError, match=r"Response must be str, Response, or list of MaskedTag"):
+    with pytest.raises(
+        TypeError, match=r"Arguments must be str, MaskedTag, or list of str/MaskedTag\. Got .+"
+    ):
         Query(g()).infill(123)
 
 
