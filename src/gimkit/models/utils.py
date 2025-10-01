@@ -48,9 +48,10 @@ def get_output_type(  # pragma: no cover  # TODO
 
 
 def transform_to_outlines(
-    model_input: str | MaskedTag | list[str | MaskedTag], output_type: Literal["cfg", "json"] | None
+    model_input: str | MaskedTag | list[str | MaskedTag] | Query,
+    output_type: Literal["cfg", "json"] | None,
 ):
-    query_obj = Query(model_input)
+    query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_output_type = get_output_type(output_type, query_obj)
     outlines_model_input = str(query_obj)
     return outlines_output_type, outlines_model_input
@@ -65,7 +66,7 @@ def ensure_str(response: Any) -> str:
 
 def _call(
     self,
-    model_input: str | MaskedTag | list[str | MaskedTag],
+    model_input: str | MaskedTag | list[str | MaskedTag] | Query,
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
@@ -80,7 +81,7 @@ def _call(
 
 async def _acall(
     self,
-    model_input: str | MaskedTag | list[str | MaskedTag],
+    model_input: str | MaskedTag | list[str | MaskedTag] | Query,
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,

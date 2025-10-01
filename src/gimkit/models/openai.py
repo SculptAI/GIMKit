@@ -1,34 +1,23 @@
 # Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/openai.py
 
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import Any, Literal, overload
 
+from openai import AsyncAzureOpenAI as AsyncAzureOpenAIClient
+from openai import AsyncOpenAI as AsyncOpenAIClient
+from openai import AzureOpenAI as AzureOpenAIClient
+from openai import OpenAI as OpenAIClient
 from outlines.models.openai import AsyncOpenAI as OutlinesAsyncOpenAI
 from outlines.models.openai import OpenAI as OutlinesOpenAI
 
-from gimkit.contexts import Response
+from gimkit.contexts import Query, Response
 from gimkit.models.utils import _acall, _call
 from gimkit.schemas import MaskedTag
-
-
-if TYPE_CHECKING:
-    from openai import (
-        AsyncAzureOpenAI as AsyncAzureOpenAIClient,
-    )
-    from openai import (
-        AsyncOpenAI as AsyncOpenAIClient,
-    )
-    from openai import (
-        AzureOpenAI as AzureOpenAIClient,
-    )
-    from openai import (
-        OpenAI as OpenAIClient,
-    )
 
 
 class OpenAI(OutlinesOpenAI):
     def __call__(
         self,
-        model_input: str | MaskedTag | list[str | MaskedTag],
+        model_input: str | MaskedTag | list[str | MaskedTag] | Query,
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
@@ -39,7 +28,7 @@ class OpenAI(OutlinesOpenAI):
 class AsyncOpenAI(OutlinesAsyncOpenAI):
     async def __call__(
         self,
-        model_input: str | MaskedTag | list[str | MaskedTag],
+        model_input: str | MaskedTag | list[str | MaskedTag] | Query,
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
@@ -47,13 +36,20 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
         return await _acall(self, model_input, output_type, backend, **inference_kwargs)
 
 
+@overload
 def from_openai(
-    client: Union[
-        "OpenAIClient",
-        "AsyncOpenAIClient",
-        "AzureOpenAIClient",
-        "AsyncAzureOpenAIClient",
-    ],
+    client: OpenAIClient | AzureOpenAIClient, model_name: str | None = None
+) -> OpenAI: ...
+
+
+@overload
+def from_openai(
+    client: AsyncOpenAIClient | AsyncAzureOpenAIClient, model_name: str | None = None
+) -> AsyncOpenAI: ...
+
+
+def from_openai(
+    client: OpenAIClient | AsyncOpenAIClient | AzureOpenAIClient | AsyncAzureOpenAIClient,
     model_name: str | None = None,
 ) -> OpenAI | AsyncOpenAI:
     import openai
