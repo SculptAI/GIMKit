@@ -1,6 +1,6 @@
 import pytest
 
-from gimkit.contexts import Context, Query, Response
+from gimkit.contexts import Context, Query, Response, infill
 from gimkit.exceptions import InvalidFormatError
 from gimkit.guides import guide as g
 from gimkit.schemas import QUERY_PREFIX, QUERY_SUFFIX, RESPONSE_PREFIX, RESPONSE_SUFFIX, MaskedTag
@@ -144,3 +144,22 @@ def test_response_tags_modify():
 
     with pytest.raises(TypeError, match="Key must be int or str"):
         tags[None] = "new value"
+
+
+def test_response_infill():
+    response = Response(g(content="world"))
+    assert str(response.infill(["Hello, ", g()])) == "Hello, world"
+
+
+def test_infill_strict():
+    query = Query(f"Hello, {g(name='obj1')}{g(name='obj2')}")
+    response = Response(g(name="obj1", content="world"))
+
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
+        result = infill(query, response, strict=False)
+        assert str(result) == 'Hello, world<|MASKED id="m_1"|><|/MASKED|>'
+
+    with pytest.raises(
+        InvalidFormatError, match=r"Mismatch in number of tags between query and response"
+    ):
+        infill(query, response, strict=True)

@@ -124,10 +124,13 @@ class Context:
         if infill_mode is not None:
             content = ""
             for part in self._parts:
-                if isinstance(part, MaskedTag) and part.content is not None:
-                    content += part.content
+                if isinstance(part, MaskedTag):
+                    if part.content is not None:
+                        content += part.content
+                    else:
+                        content += part.to_string(fields=["id", "desc", "content"])
                 else:
-                    content += str(part)
+                    content += part
             content = content[len(self._prefix) : len(content) - len(self._suffix)]
         return content
 
@@ -155,7 +158,7 @@ class Query(Context):
                     part.content = None
 
     def infill(self, response: Response | ContextInput) -> Result:
-        """Fills the query with content from the response."""
+        """Fills tags in the query with content from the response."""
         return infill(self, response)
 
     def __str__(self) -> str:
@@ -167,7 +170,7 @@ class Response(Context):
         super().__init__(RESPONSE_PREFIX, RESPONSE_SUFFIX, *args)
 
     def infill(self, query: Query | ContextInput) -> Result:
-        """Fills the response with content from the query."""
+        """Fills tags in the query with content from the response."""
         return infill(query, self)
 
     def __str__(self) -> str:
@@ -199,7 +202,7 @@ def infill(
             f"Query has {len(query_tags)} tag(s), response has {len(response_tags)} tag(s)."
         )
         if strict:
-            raise ValueError(msg)
+            raise InvalidFormatError(msg)
         else:
             warnings.warn(msg + " Will merge as many as possible.", stacklevel=2)
 
