@@ -1192,7 +1192,7 @@ name = "gimkit"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
-    { name = "outlines" },
+    { name = "outlines", extra = ["openai"] },
 ]
 
 [package.dev-dependencies]
@@ -1218,7 +1218,7 @@ training = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "outlines", specifier = ">=1.2.5" }]
+requires-dist = [{ name = "outlines", extras = ["openai"], specifier = ">=1.2.5" }]
 
 [package.metadata.requires-dev]
 dataset = [{ name = "datasets", specifier = "==3.6.0" }]
@@ -2573,6 +2573,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b5/2a/dc8a08972e87974e0adae13910ee9b2f5298b1ad6756f335c844bd143979/outlines-1.2.5.tar.gz", hash = "sha256:24a2ef40dffd6529bf5f913f30a8997802a9c49903339421b1712f03c05aa788", size = 2825333, upload-time = "2025-09-15T20:08:46.519Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/6d/31ad4cb24590a36fab776e413f67a56f4c97109bac1db4d3e9aed54fe834/outlines-1.2.5-py3-none-any.whl", hash = "sha256:60bd9dfaa4b7c5895a67695f0966bc06c6f0b8d98cda8fef2fb76ad5bc1bdef8", size = 93854, upload-time = "2025-09-15T20:08:44.775Z" },
+]
+
+[package.optional-dependencies]
+openai = [
+    { name = "openai" },
 ]
 
 [[package]]
