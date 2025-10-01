@@ -23,10 +23,8 @@ def test_context_to_str_valid():
     )
     assert text == 'prefixHello<|MASKED name="xx"|>, world<|/MASKED|>suffix'
 
-    text = Context("", "", "Hello", g(content=", world")).to_string(
-        infill_mode=True
-    )
-    assert text == 'Hello, world'
+    text = Context("", "", "Hello", g(content=", world")).to_string(infill_mode=True)
+    assert text == "Hello, world"
 
 
 def test_context_to_str_invalid():
