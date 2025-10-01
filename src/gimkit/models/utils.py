@@ -4,17 +4,30 @@ from outlines.generator import Generator
 from outlines.types import CFG, JsonSchema
 
 from gimkit.contexts import Query, Response
-from gimkit.schemas import MaskedTag
-
-
-def build_query(model_input: str | MaskedTag | list[str | MaskedTag]) -> Query:
-    return Query(model_input)
+from gimkit.schemas import (
+    RESPONSE_PREFIX,
+    RESPONSE_SUFFIX,
+    TAG_END,
+    TAG_OPEN_LEFT,
+    TAG_OPEN_RIGHT,
+    MaskedTag,
+)
 
 
 def build_cfg(query: Query) -> CFG:
-    # TODO
-    grammar_string = ""
-    output_type = CFG(grammar_string)
+    """Build a Lark-based CFG output type based on the query object."""
+    # TODO: support regex in query tags
+    num_tags = len(query.tags)
+    grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
+    grammar_next_lines = (
+        "\n".join(
+            f'tag{i}: "{TAG_OPEN_LEFT} id="m_{i}"{TAG_OPEN_RIGHT}" /(.|\n)*?/ "{TAG_END}"'
+            for i in range(num_tags)
+        )
+        if num_tags > 0
+        else ""
+    )
+    output_type = CFG(f"{grammar_first_line}\n{grammar_next_lines}")
     return output_type
 
 
@@ -35,6 +48,15 @@ def get_output_type(
         raise ValueError(f"Invalid output type: {output_type}")
 
 
+def transform_to_outlines(
+    model_input: str | MaskedTag | list[str | MaskedTag], output_type: Literal["cfg", "json"] | None
+):
+    query_obj = Query(model_input)
+    outlines_output_type = get_output_type(output_type, query_obj)
+    outlines_model_input = str(query_obj)
+    return outlines_output_type, outlines_model_input
+
+
 def ensure_str(response: Any) -> str:
     if isinstance(response, str):
         return response
@@ -49,9 +71,7 @@ def _call(
     backend: str | None = None,
     **inference_kwargs: Any,
 ) -> Response:
-    query_obj = Query(model_input)
-    outlines_output_type = get_output_type(output_type, query_obj)
-    outlines_model_input = str(query_obj)
+    outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     raw_response = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
@@ -66,9 +86,7 @@ async def _acall(
     backend: str | None = None,
     **inference_kwargs: Any,
 ) -> Response:
-    query_obj = Query(model_input)
-    outlines_output_type = get_output_type(output_type, query_obj)
-    outlines_model_input = str(query_obj)
+    outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_response = await generator(outlines_model_input, **inference_kwargs)
     str_response = ensure_str(raw_response)
