@@ -136,7 +136,7 @@ def test_response_tags_modify():
     assert len(tags) == 1
     assert str(rsps) == "Hello, mars and galaxy"
 
-    with pytest.raises(TypeError, match="New value must be a str or MaskedTag"):
+    with pytest.raises(TypeError, match=r"New value must be a ContextPart \(str or MaskedTag\)"):
         tags[0] = 123
 
     with pytest.raises(KeyError, match=r"Tag name '.+' does not exist."):
