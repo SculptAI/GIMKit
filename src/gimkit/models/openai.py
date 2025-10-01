@@ -1,3 +1,5 @@
+# Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/openai.py
+
 from typing import TYPE_CHECKING, Any, Literal, Union
 
 from outlines.models.openai import AsyncOpenAI as OutlinesAsyncOpenAI
