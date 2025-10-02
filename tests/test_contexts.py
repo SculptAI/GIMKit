@@ -70,6 +70,16 @@ def test_query_init_invalid():
     ):
         Query(123)
 
+    with pytest.raises(
+        InvalidFormatError, match=r"Nested or duplicate <\|GIM_QUERY\|> tag are not allowed"
+    ):
+        Query("<|GIM_QUERY|><|GIM_QUERY|>Hello<|/GIM_QUERY|>")
+
+    with pytest.raises(
+        InvalidFormatError, match=r"Nested or duplicate <\|/GIM_QUERY\|> tag are not allowed"
+    ):
+        Query("<|GIM_QUERY|>Hello<|/GIM_QUERY|><|/GIM_QUERY|>")
+
 
 def test_query_infill_different_types():
     query = Query(f"Hello, {g(name='obj')}")
@@ -101,6 +111,11 @@ def test_query_infill_invalid():
         TypeError, match=r"Arguments must be str, MaskedTag, or list of str/MaskedTag\. Got .+"
     ):
         Query(g()).infill(123)
+
+
+def test_response_init():
+    r = Response(f"<|GIM_RESPONSE|>Hello, {g(name='obj', content='world')}<|/GIM_RESPONSE|>")
+    assert str(r) == "Hello, world"
 
 
 def test_response_tags():

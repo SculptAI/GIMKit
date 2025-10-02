@@ -73,28 +73,32 @@ class Context:
                 yield self._parts[i]
 
     def __init__(self, prefix: str, suffix: str, *args: ContextInput) -> None:
+        _inner_parts = self._process_context_inputs(*args)
+
+        if (
+            prefix
+            and _inner_parts
+            and isinstance(_inner_parts[0], str)
+            and _inner_parts[0].startswith(prefix)
+        ):
+            _inner_parts[0] = _inner_parts[0].removeprefix(prefix)
+        if (
+            suffix
+            and _inner_parts
+            and isinstance(_inner_parts[-1], str)
+            and _inner_parts[-1].endswith(suffix)
+        ):
+            _inner_parts[-1] = _inner_parts[-1].removesuffix(suffix)
+
+        _str_inner_parts = "".join(str(part) for part in _inner_parts)
+        if prefix and prefix in _str_inner_parts:
+            raise InvalidFormatError(f"Nested or duplicate {prefix} tag are not allowed.")
+        if suffix and suffix in _str_inner_parts:
+            raise InvalidFormatError(f"Nested or duplicate {suffix} tag are not allowed.")
+
         self._prefix = prefix
         self._suffix = suffix
-
-        self._parts: list[ContextPart] = [prefix]
-        for arg in args:
-            if isinstance(arg, str):
-                self._parts.extend(parse_parts(arg))
-            elif isinstance(arg, MaskedTag):
-                self._parts.append(arg)
-            elif isinstance(arg, list):
-                for item in arg:
-                    if isinstance(item, str):
-                        self._parts.extend(parse_parts(item))
-                    elif isinstance(item, MaskedTag):
-                        self._parts.append(item)
-                    else:
-                        raise TypeError("List items must be str or MaskedTag")
-            else:
-                raise TypeError(
-                    f"Arguments must be str, MaskedTag, or list of str/MaskedTag. Got {type(arg)}"
-                )
-        self._parts.append(suffix)
+        self._parts = [prefix, *_inner_parts, suffix]
 
     @property
     def parts(self) -> list[ContextPart]:
@@ -136,6 +140,28 @@ class Context:
 
     def __repr__(self):
         return self.to_string(fields="all")
+
+    @staticmethod
+    def _process_context_inputs(*args: ContextInput) -> list[ContextPart]:
+        parts = []
+        for arg in args:
+            if isinstance(arg, str):
+                parts.extend(parse_parts(arg))
+            elif isinstance(arg, MaskedTag):
+                parts.append(arg)
+            elif isinstance(arg, list):
+                for item in arg:
+                    if isinstance(item, str):
+                        parts.extend(parse_parts(item))
+                    elif isinstance(item, MaskedTag):
+                        parts.append(item)
+                    else:
+                        raise TypeError("List items must be str or MaskedTag")
+            else:
+                raise TypeError(
+                    f"Arguments must be str, MaskedTag, or list of str/MaskedTag. Got {type(arg)}"
+                )
+        return parts
 
 
 class Query(Context):
