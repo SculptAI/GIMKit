@@ -9,30 +9,30 @@ from openai import OpenAI as OpenAIClient
 from outlines.models.openai import AsyncOpenAI as OutlinesAsyncOpenAI
 from outlines.models.openai import OpenAI as OutlinesOpenAI
 
-from gimkit.contexts import Query, Response
+from gimkit.contexts import Query, Result
 from gimkit.models.utils import _acall, _call
-from gimkit.schemas import MaskedTag
+from gimkit.schemas import ContextInput
 
 
 class OpenAI(OutlinesOpenAI):
     def __call__(
         self,
-        model_input: str | MaskedTag | list[str | MaskedTag] | Query,
+        model_input: ContextInput | Query,
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Response:
+    ) -> Result:
         return _call(self, model_input, output_type, backend, **inference_kwargs)
 
 
 class AsyncOpenAI(OutlinesAsyncOpenAI):
     async def __call__(
         self,
-        model_input: str | MaskedTag | list[str | MaskedTag] | Query,
+        model_input: ContextInput | Query,
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Response:
+    ) -> Result:
         return await _acall(self, model_input, output_type, backend, **inference_kwargs)
 
 

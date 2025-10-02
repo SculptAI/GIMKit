@@ -1,11 +1,19 @@
-from gimkit import Query
+from openai import OpenAI
+
+from gimkit import from_openai
 from gimkit import guide as g
 
 
-# ─── 1. Construct ─────────────────────────────────────────────────────────────
+# ─── 1. Use A Model ───────────────────────────────────────────────────────────
 
-# Define the query with guides
-raw_query = f"""I'm {g.person_name(name="sub")}. Hello, {g.single_word(name="obj")}!
+
+openai_client = OpenAI(api_key="", base_url="http://localhost:8000/v1")
+model = from_openai(openai_client, model_name="artifacts/09251-gim-sft-tmp/sft-gim")
+
+
+# ─── 2. Define A Query With Guide ─────────────────────────────────────────────
+
+query = f"""I'm {g.person_name(name="pred")}. Hello, {g.single_word(name="obj")}!
 
 My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
 
@@ -18,46 +26,24 @@ My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "
 * Phone number: {g.phone_number(name="phone")}
 * E-mail: {g.e_mail(name="email")}
 """
-
-# Query() adds necessary tags and standardizes format
-query = Query(raw_query)
 print(query)
 print("=" * 80)
 
-# ─── 2. Request ───────────────────────────────────────────────────────────────
 
+# ─── 3. Get The Result ────────────────────────────────────────────────────────
 
-# A mock LLM request function
-def llm_request(query: str) -> str:
-    return (
-        "<|GIM_RESPONSE|>"
-        '<|MASKED id="m_0"|>Alice<|/MASKED|>'
-        '<|MASKED id="m_1"|>World<|/MASKED|>'
-        '<|MASKED id="m_2"|>reading<|/MASKED|>'
-        '<|MASKED id="m_3"|>Alice is a software engineer with 5 years of experience. She loves hiking and photography. She graduated from MIT with a degree in Computer Science. In her free time, she volunteers at local animal shelters.<|/MASKED|>'
-        '<|MASKED id="m_4"|>123-456-7890<|/MASKED|>'
-        '<|MASKED id="m_5"|>alice@example.com<|/MASKED|>'
-        "<|/GIM_RESPONSE|>"
-    )
-
-
-raw_response = llm_request(str(query))
-
-# ─── 3. Infill ────────────────────────────────────────────────────────────────
-
-# Infill predicted tags back to the original query
-response = query.infill(raw_response)
-print(response)
+result = model(query, output_type=None)
+print(result)
 print("=" * 80)
 
-# You can also visit the tags
-for tag in response.tags:
+# You can also visit the tags in the result
+for tag in result.tags:
     print(tag)
 print("=" * 80)
 
 # Or visit tags by id/name
-assert response.tags[0] == response.tags["sub"]
+assert result.tags[0] == result.tags["pred"]
 
 # Change the content of a tag
-response.tags["email"].content = "PRIVATE"
-print(str(response)[-40:])
+result.tags["email"].content = "PRIVATE"
+print(str(result)[-40:])
