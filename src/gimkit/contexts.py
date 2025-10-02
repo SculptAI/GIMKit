@@ -92,9 +92,9 @@ class Context:
 
         _str_inner_parts = "".join(str(part) for part in _inner_parts)
         if prefix and prefix in _str_inner_parts:
-            raise InvalidFormatError(f"Nested or duplicate {prefix} tag are not allowed.")
+            raise InvalidFormatError(f"Nested or duplicate {prefix} tags are not allowed.")
         if suffix and suffix in _str_inner_parts:
-            raise InvalidFormatError(f"Nested or duplicate {suffix} tag are not allowed.")
+            raise InvalidFormatError(f"Nested or duplicate {suffix} tags are not allowed.")
 
         self._prefix = prefix
         self._suffix = suffix
