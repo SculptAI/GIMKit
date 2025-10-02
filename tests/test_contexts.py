@@ -26,6 +26,9 @@ def test_context_to_str_valid():
     text = Context("", "", "Hello", g(content=", world")).to_string(infill_mode=True)
     assert text == "Hello, world"
 
+    text = Context("p", "s", "Hello", g(name="obj", content=", world"))
+    assert repr(text) == 'pHello<|MASKED name="obj"|>, world<|/MASKED|>s'
+
 
 def test_context_to_str_invalid():
     with pytest.raises(ValueError, match="Exactly one of fields or infill_mode must be specified"):
