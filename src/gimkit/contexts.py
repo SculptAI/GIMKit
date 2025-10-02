@@ -134,6 +134,9 @@ class Context:
             content = content[len(self._prefix) : len(content) - len(self._suffix)]
         return content
 
+    def __repr__(self):
+        return self.to_string(fields="all")
+
 
 class Query(Context):
     def __init__(self, *args: ContextInput) -> None:
