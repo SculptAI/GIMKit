@@ -3,14 +3,14 @@ from typing import Any, Literal
 from outlines.generator import Generator
 from outlines.types import CFG, JsonSchema
 
-from gimkit.contexts import Query, Response
+from gimkit.contexts import Query, Result, infill
 from gimkit.schemas import (
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
     TAG_END,
     TAG_OPEN_LEFT,
     TAG_OPEN_RIGHT,
-    MaskedTag,
+    ContextInput,
 )
 
 
@@ -48,7 +48,7 @@ def get_output_type(  # pragma: no cover  # TODO
 
 
 def transform_to_outlines(
-    model_input: str | MaskedTag | list[str | MaskedTag] | Query,
+    model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None,
 ):
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
@@ -66,28 +66,28 @@ def ensure_str(response: Any) -> str:
 
 def _call(
     self,
-    model_input: str | MaskedTag | list[str | MaskedTag] | Query,
+    model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
-) -> Response:
+) -> Result:
     outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     raw_response = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
     str_response = ensure_str(raw_response)
-    return Response(str_response)
+    return infill(model_input, str_response)
 
 
 async def _acall(
     self,
-    model_input: str | MaskedTag | list[str | MaskedTag] | Query,
+    model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
-) -> Response:
+) -> Result:
     outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_response = await generator(outlines_model_input, **inference_kwargs)
     str_response = ensure_str(raw_response)
-    return Response(str_response)
+    return infill(model_input, str_response)
