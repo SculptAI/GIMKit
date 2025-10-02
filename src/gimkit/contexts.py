@@ -203,7 +203,7 @@ class Response(Context):
         return infill(query, self)
 
     def __str__(self) -> str:
-        return self.to_string(infill_mode=True)
+        return self.to_string(fields=["id", "content"])
 
 
 class Result(Context):

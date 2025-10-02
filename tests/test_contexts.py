@@ -1,6 +1,6 @@
 import pytest
 
-from gimkit.contexts import Context, Query, Response, infill
+from gimkit.contexts import Context, Query, Response, Result, infill
 from gimkit.exceptions import InvalidFormatError
 from gimkit.guides import guide as g
 from gimkit.schemas import QUERY_PREFIX, QUERY_SUFFIX, RESPONSE_PREFIX, RESPONSE_SUFFIX, MaskedTag
@@ -10,8 +10,11 @@ def test_context_to_str_valid():
     query = Query(f"Hello, {g(name='obj')}")
     assert str(query) == f'{QUERY_PREFIX}Hello, <|MASKED id="m_0"|><|/MASKED|>{QUERY_SUFFIX}'
 
-    response = Response(f"Hello, {g(name='obj', content='world')}")
-    assert str(response) == "Hello, world"
+    response = Response(f"{MaskedTag(id=0, content='world')}")
+    assert str(response) == f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world<|/MASKED|>{RESPONSE_SUFFIX}'
+
+    result = Result(f"Hello, {MaskedTag(id=0, name='obj', content='world')}")
+    assert str(result) == "Hello, world"
 
     text = Context("prefix", "suffix", "Hello", g(name="xx", content=", world")).to_string(
         infill_mode=True
@@ -85,7 +88,7 @@ def test_query_infill_different_types():
     query = Query(f"Hello, {g(name='obj')}")
     assert str(query.infill(Response(g(name="obj", content="world")))) == "Hello, world"
     assert str(query.infill([MaskedTag(id=0, name="obj", content="world")])) == "Hello, world"
-    assert str(Response(f"Hello, {g(content='world')}")) == str(
+    assert str(Result(f"Hello, {g(content='world')}")) == str(
         query.infill("Hello, " + g(name="obj", content="world"))
     )
 
@@ -114,15 +117,20 @@ def test_query_infill_invalid():
 
 
 def test_response_init():
-    r = Response(f"<|GIM_RESPONSE|>Hello, {g(name='obj', content='world')}<|/GIM_RESPONSE|>")
-    assert str(r) == "Hello, world"
+    r = Response(f"{RESPONSE_PREFIX}{g(name='obj', content='world')}{RESPONSE_SUFFIX}")
+    assert str(r) == "<|GIM_RESPONSE|><|MASKED|>world<|/MASKED|><|/GIM_RESPONSE|>"
 
 
-def test_response_tags():
+def test_response_infill():
+    response = Response(g(content="world"))
+    assert str(response.infill(["Hello, ", g()])) == "Hello, world"
+
+
+def test_result_tags():
     tag1 = MaskedTag(id=0, name="obj1", content="world")
     tag2 = MaskedTag(id=1, name="obj2", content="universe")
-    rsps = Response(f"Hello, {tag1}", "and ", tag2)
-    tags = rsps.tags
+    result = Result(f"Hello, {tag1}", "and ", tag2)
+    tags = result.tags
 
     assert len(tags) == 2
     assert tags[0] == tag1
@@ -137,22 +145,22 @@ def test_response_tags():
         tags["non_exist"]
 
 
-def test_response_tags_modify():
+def test_result_tags_modify():
     tag1 = MaskedTag(id=0, name="obj1", content="world")
     tag2 = MaskedTag(id=1, name="obj2", content="universe")
-    rsps = Response(f"Hello, {tag1}", "and ", tag2)
-    tags = rsps.tags
+    result = Result(f"Hello, {tag1}", "and ", tag2)
+    tags = result.tags
 
     tags[0] = "mars "
     assert len(tags) == 1
-    assert str(rsps) == f"Hello, mars and {tag2.content}"
+    assert str(result) == f"Hello, mars and {tag2.content}"
 
     tags["obj2"].content = "milky way"
-    assert str(rsps) == "Hello, mars and milky way"
+    assert str(result) == "Hello, mars and milky way"
 
     tags["obj2"] = MaskedTag(name="obj3", content="galaxy")
     assert len(tags) == 1
-    assert str(rsps) == "Hello, mars and galaxy"
+    assert str(result) == "Hello, mars and galaxy"
 
     with pytest.raises(TypeError, match=r"New value must be a ContextPart \(str or MaskedTag\)"):
         tags[0] = 123
@@ -165,11 +173,6 @@ def test_response_tags_modify():
 
     with pytest.raises(TypeError, match="Key must be int or str"):
         tags[None] = "new value"
-
-
-def test_response_infill():
-    response = Response(g(content="world"))
-    assert str(response.infill(["Hello, ", g()])) == "Hello, world"
 
 
 def test_infill_strict():
