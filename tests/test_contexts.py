@@ -74,12 +74,12 @@ def test_query_init_invalid():
         Query(123)
 
     with pytest.raises(
-        InvalidFormatError, match=r"Nested or duplicate <\|GIM_QUERY\|> tag are not allowed"
+        InvalidFormatError, match=r"Nested or duplicate <\|GIM_QUERY\|> tags are not allowed"
     ):
         Query("<|GIM_QUERY|><|GIM_QUERY|>Hello<|/GIM_QUERY|>")
 
     with pytest.raises(
-        InvalidFormatError, match=r"Nested or duplicate <\|/GIM_QUERY\|> tag are not allowed"
+        InvalidFormatError, match=r"Nested or duplicate <\|/GIM_QUERY\|> tags are not allowed"
     ):
         Query("<|GIM_QUERY|>Hello<|/GIM_QUERY|><|/GIM_QUERY|>")
 
