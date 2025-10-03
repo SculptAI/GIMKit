@@ -21,7 +21,7 @@ lint-fix:
 	uv run ruff format
 
 test:
-	uv run pytest --cov=gimkit --cov-report=term-missing:skip-covered tests
+	uv run pytest tests --cov=gimkit --cov-report=term-missing:skip-covered -vv --durations=10
 
 pre-commit:
 	uv run pre-commit run --all-files
