@@ -12,10 +12,10 @@ from gimkit.schemas import MaskedTag, validate
 
 __all__ = [
     "FEW_SHOT_EXAMPLES",
+    "SYSTEM_PROMPT",
     "MaskedTag",
     "Query",
     "Response",
-    "SYSTEM_PROMPT",
     "build_few_shot_messages",
     "build_few_shot_prompt",
     "from_openai",

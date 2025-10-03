@@ -30,8 +30,45 @@ def build_cfg(query: Query) -> CFG:
     return CFG(f"{grammar_first_line}\n{grammar_next_lines}")
 
 
-def build_json_schema(query: Query) -> JsonSchema:  # pragma: no cover  # TODO
-    raise NotImplementedError("JSON schema generation is not implemented yet.")
+def build_json_schema(query: Query) -> JsonSchema:
+    """Build a JSON schema output type based on the query object.
+    
+    This creates a JSON schema that enforces the GIM response format,
+    useful for non-GIM LLMs with JSON mode support.
+    """
+    from outlines.types.dsl import JsonSchema
+    
+    # Build the schema for tags
+    tag_properties = {}
+    required_tags = []
+    
+    for i, tag in enumerate(query.tags):
+        tag_id = f"m_{i}"
+        tag_desc = tag.desc or "Generated content for this masked section"
+        
+        tag_properties[tag_id] = {
+            "type": "string",
+            "description": tag_desc,
+        }
+        required_tags.append(tag_id)
+    
+    # Create the overall schema
+    schema = {
+        "type": "object",
+        "properties": {
+            "tags": {
+                "type": "object",
+                "properties": tag_properties,
+                "required": required_tags,
+                "additionalProperties": False,
+            }
+        },
+        "required": ["tags"],
+        "additionalProperties": False,
+    }
+    
+    import json
+    return JsonSchema(json.dumps(schema))
 
 
 def get_outlines_output_type(
@@ -41,7 +78,7 @@ def get_outlines_output_type(
         return None
     elif output_type == "cfg":
         return build_cfg(query)
-    elif output_type == "json":  # pragma: no cover  # TODO
+    elif output_type == "json":
         return build_json_schema(query)
     else:
         raise ValueError(f"Invalid output type: {output_type}")
@@ -58,9 +95,34 @@ def transform_to_outlines(
 
 
 def infill_responses(
-    query: ContextInput | Query, responses: str | list[str] | Any
+    query: ContextInput | Query, responses: str | list[str] | Any, output_type: Literal["cfg", "json"] | None = None
 ) -> Result | list[Result]:
+    """Infill responses into query, handling both GIM format and JSON format responses.
+    
+    Args:
+        query: The query with masked tags
+        responses: The model response(s) - either GIM format string(s) or JSON format
+        output_type: The output type used to generate the response ("cfg" or "json")
+    
+    Returns:
+        Result or list of Results with infilled content
+    """
     if isinstance(responses, str):
+        # Handle JSON response format
+        if output_type == "json":
+            import json
+            try:
+                json_data = json.loads(responses)
+                # Convert JSON format to GIM response format
+                response_str = RESPONSE_PREFIX
+                if "tags" in json_data:
+                    for tag_id, content in json_data["tags"].items():
+                        response_str += f'<|MASKED id="{tag_id}"|>{content}<|/MASKED|>'
+                response_str += RESPONSE_SUFFIX
+                return infill(query, response_str)
+            except (json.JSONDecodeError, KeyError):
+                # If JSON parsing fails, try to infill as-is
+                return infill(query, responses)
         return infill(query, responses)
 
     if not isinstance(responses, list):
@@ -72,7 +134,7 @@ def infill_responses(
     if len(responses) == 0:
         raise ValueError("Response list is empty.")
 
-    return [infill(query, resp) for resp in responses]
+    return [infill_responses(query, resp, output_type) for resp in responses]
 
 
 def _call(
@@ -86,7 +148,7 @@ def _call(
     raw_response = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
-    return infill_responses(model_input, raw_response)
+    return infill_responses(model_input, raw_response, output_type)
 
 
 async def _acall(
@@ -99,4 +161,4 @@ async def _acall(
     outlines_model_input, outlines_output_type = transform_to_outlines(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = await generator(outlines_model_input, **inference_kwargs)
-    return infill_responses(model_input, raw_responses)
+    return infill_responses(model_input, raw_responses, output_type)
