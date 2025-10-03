@@ -1,12 +1,33 @@
 [project]
 name = "gimkit"
-version = "0.0.1"
+version = "0.1.0a1"
 description = "Guided Infilling Modeling"
 readme = "README.md"
 authors = [
     { name = "Shichao Song", email = "song.shichao@outlook.com" }
 ]
 requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords=[
+    "machine learning",
+    "deep learning",
+    "language models",
+    "structured generation",
+    "guided infilling",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "outlines[openai]>=1.2.5",
 ]
@@ -15,6 +36,12 @@ dependencies = [
 vllm = [
     "vllm>=0.10.2",
 ]
+
+[project.urls]
+# Homepage = "TODO"
+# Documentation = "TODO"
+Repository = "https://github.com/SculptAI/GIM"
+Issues = "https://github.com/SculptAI/GIM/issues"
 
 [dependency-groups]
 dev = [
