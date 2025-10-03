@@ -6,7 +6,7 @@ from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
 
 from gimkit.contexts import Query, Result
 from gimkit.models.utils import _call
-from gimkit.schemas import ContextInput
+from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
 
 
 if TYPE_CHECKING:
@@ -21,6 +21,15 @@ class VLLMOffline(OutlinesVLLMOffline):
         backend: str | None = None,
         **inference_kwargs: Any,
     ) -> Result:
+        if "sampling_params" not in inference_kwargs:
+            from vllm import SamplingParams
+
+            inference_kwargs["sampling_params"] = SamplingParams(stop=[RESPONSE_SUFFIX])
+        elif (
+            isinstance(inference_kwargs["sampling_params"].stop, list)
+            and RESPONSE_SUFFIX not in inference_kwargs["sampling_params"].stop
+        ):
+            inference_kwargs["sampling_params"].stop.append(RESPONSE_SUFFIX)
         return _call(self, model_input, output_type, backend, **inference_kwargs)
 
 
