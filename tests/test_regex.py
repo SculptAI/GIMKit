@@ -33,6 +33,27 @@ def test_masked_tag_regex_serialization():
     assert parsed_tag.name == "phone"
 
 
+def test_masked_tag_regex_with_special_chars():
+    """Test that regex patterns with special characters are handled correctly."""
+    # Test various regex patterns with special characters
+    patterns = [
+        r"\w+",
+        r"[A-Z]{3}",
+        r"\d{3}-\d{3}-\d{4}",
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        r"(?:https?://)?[\w.-]+\.[\w.-]+",
+    ]
+    
+    for pattern in patterns:
+        tag = MaskedTag(id=0, regex=pattern)
+        tag_str = str(tag)
+        # Parse it back
+        tags = parse_tags(tag_str)
+        assert len(tags) == 1
+        # The regex should be preserved after serialization/deserialization
+        assert tags[0].regex == pattern
+
+
 def test_guide_regex_method():
     """Test that guide.regex() creates a MaskedTag with regex."""
     tag = g.regex(r"[A-Z]{3}", name="code", desc="Three uppercase letters")
@@ -102,4 +123,24 @@ def test_build_cfg_without_regex():
     )
     assert isinstance(cfg, CFG)
     assert cfg.definition == expected_grm
+
+
+def test_build_cfg_mixed_regex():
+    """Test that build_cfg handles mix of tags with and without regex."""
+    # Create a query with multiple tags, some with regex and some without
+    query = Query(
+        'Code: <|MASKED id="m_0" regex="[A-Z]{3}"|><|/MASKED|>, '
+        'Text: <|MASKED id="m_1"|><|/MASKED|>!'
+    )
+    cfg = build_cfg(query)
+    
+    # The expected grammar should use regex for tag0 and default for tag1
+    expected_grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 tag1 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" /[A-Z]{3}/ "<|/MASKED|>"\n'
+        'tag1: "<|MASKED id=\\"m_1\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
+    )
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == expected_grm
+
 
