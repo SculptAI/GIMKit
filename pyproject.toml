@@ -17,25 +17,14 @@ vllm = [
 ]
 
 [dependency-groups]
-dataset = [
-    "datasets==3.6.0",  # The next version, v4.0.0 has bad backward compatibility for now
-]
 dev = [
+    "ipykernel>=6.30.1",
     "mypy>=1.18.1",
     "pre-commit>=4.3.0",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
     "ruff>=0.13.0",
-]
-eval = [
-    "ipykernel>=6.30.1",
-    "vllm>=0.10.1.1",
-]
-training = [
-    "swanlab>=0.6.9",
-    "transformers==4.55.4",  # unsloth currently works best with this version for now
-    "unsloth>=2025.9.3",
 ]
 
 [build-system]
