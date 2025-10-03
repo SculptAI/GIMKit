@@ -18,15 +18,20 @@ def build_cfg(query: Query) -> CFG:
     """Build a Lark-based CFG output type based on the query object."""
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
-    grammar_next_lines = (
-        "\n".join(
+    
+    tag_rules = []
+    for i in range(num_tags):
+        tag = query.tags[i]
+        # If tag has a regex pattern, use it; otherwise use non-greedy match for any content
+        if tag.regex:
+            # Use the regex pattern provided by the user
+            content_pattern = f"/{tag.regex}/"
+        else:
             # `/(?s:.)*?/` is a non-greedy match for any character including newlines
-            f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /(?s:.)*?/ "{TAG_END}"'
-            for i in range(num_tags)
-        )
-        if num_tags > 0
-        else ""
-    )
+            content_pattern = "/(?s:.)*?/"
+        tag_rules.append(f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" {content_pattern} "{TAG_END}"')
+    
+    grammar_next_lines = "\n".join(tag_rules) if num_tags > 0 else ""
     return CFG(f"{grammar_first_line}\n{grammar_next_lines}")
 
 

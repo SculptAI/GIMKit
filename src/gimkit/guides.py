@@ -3,9 +3,9 @@ from gimkit.schemas import MaskedTag
 
 class BaseMixin:
     def __call__(
-        self, name: str | None = None, desc: str | None = None, content: str | None = None
+        self, name: str | None = None, desc: str | None = None, regex: str | None = None, content: str | None = None
     ) -> MaskedTag:
-        return MaskedTag(name=name, desc=desc, content=content)
+        return MaskedTag(name=name, desc=desc, regex=regex, content=content)
 
 
 class FormMixin:  # pragma: no cover
@@ -19,6 +19,10 @@ class FormMixin:  # pragma: no cover
             raise ValueError("choices must be a non-empty list of strings.")
         desc = f"Choose one from the following options: {', '.join(choices)}."
         return MaskedTag(name=name, desc=desc)
+
+    def regex(self, pattern: str, name: str | None = None, desc: str | None = None) -> MaskedTag:
+        """Match text according to the given regex pattern."""
+        return MaskedTag(name=name, desc=desc, regex=pattern)
 
 
 class PersonalInfoMixin:  # pragma: no cover
