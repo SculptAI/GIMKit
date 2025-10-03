@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
 from outlines.generator import Generator
-from outlines.types import CFG, JsonSchema
+from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result, infill
 from gimkit.schemas import (
@@ -14,7 +14,7 @@ from gimkit.schemas import (
 )
 
 
-def build_cfg(query: Query) -> CFG:  # TODO: support regex in query tags
+def build_cfg(query: Query) -> CFG:
     """Build a Lark-based CFG output type based on the query object."""
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
@@ -35,14 +35,14 @@ def build_json_schema(query: Query) -> JsonSchema:  # pragma: no cover  # TODO
     raise NotImplementedError("JSON schema generation is not implemented yet.")
 
 
-def get_output_type(  # pragma: no cover  # TODO
+def get_output_type(
     output_type: Literal["cfg", "json"] | None, query: Query
 ) -> None | CFG | JsonSchema:
     if output_type is None:
         return None
     elif output_type == "cfg":
         return build_cfg(query)
-    elif output_type == "json":
+    elif output_type == "json":  # pragma: no cover  # TODO
         return build_json_schema(query)
     else:
         raise ValueError(f"Invalid output type: {output_type}")
