@@ -62,7 +62,7 @@ def process_raw_response(
     query: ContextInput | Query, responses: str | list[str] | Any
 ) -> Result | list[Result]:
     if isinstance(responses, str):
-        responses = [responses]
+        return infill(query, responses)
 
     if not isinstance(responses, list):
         raise TypeError(f"Expected responses to be str or list of str, got {type(responses)}")
@@ -73,11 +73,7 @@ def process_raw_response(
     if len(responses) == 0:
         raise ValueError("Response list is empty.")
 
-    result_objects = [infill(query, resp) for resp in responses]
-
-    if len(result_objects) == 1:
-        return result_objects[0]
-    return result_objects
+    return [infill(query, resp) for resp in responses]
 
 
 def _call(
