@@ -19,7 +19,7 @@ class VLLM(OutlinesVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Result | list[Result]:
         # TODO: Using `stop=RESPONSE_SUFFIX` is just a temporary workaround. The ending string
         # has already been defined in the lark grammar, and the intermediate regex matching is
         # non-greedy. However, for some reason, it still matches multiple ending strings. Solving
@@ -37,7 +37,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Result | list[Result]:
         return await _acall(
             self, model_input, output_type, backend, stop=RESPONSE_SUFFIX, **inference_kwargs
         )

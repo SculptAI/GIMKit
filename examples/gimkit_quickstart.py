@@ -33,6 +33,7 @@ print("=" * 80)
 # ─── 3. Get The Result ────────────────────────────────────────────────────────
 
 result = model(query)
+result = result if not isinstance(result, list) else result[0]
 print(result)
 print("=" * 80)
 

@@ -20,7 +20,7 @@ class VLLMOffline(OutlinesVLLMOffline):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Result | list[Result]:
         if "sampling_params" not in inference_kwargs:
             from vllm import SamplingParams
 

@@ -21,7 +21,7 @@ class OpenAI(OutlinesOpenAI):
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Result | list[Result]:
         return _call(self, model_input, output_type, backend, **inference_kwargs)
 
 
@@ -32,7 +32,7 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Result | list[Result]:
         return await _acall(self, model_input, output_type, backend, **inference_kwargs)
 
 
