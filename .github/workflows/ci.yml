@@ -57,7 +57,7 @@ jobs:
       run: uv sync --locked --all-extras --dev
 
     - name: Run tests
-      run: uv run pytest --cov=gimkit --cov-report=xml:coverage.xml tests
+      run: uv run pytest tests --cov=gimkit --cov-report=xml:coverage.xml -vv --durations=10
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
