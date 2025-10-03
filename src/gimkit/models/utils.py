@@ -66,7 +66,7 @@ def ensure_str(response: Any) -> str:
         and len(response) > 0
         and all(isinstance(item, str) for item in response)
     ):
-        return response[0]  # TODO: Handle multiple responses
+        return response[0]  # pragma: no cover  # TODO: Handle multiple responses
     else:
         raise TypeError("Response is not a string.")
 
