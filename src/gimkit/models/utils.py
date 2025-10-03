@@ -14,13 +14,14 @@ from gimkit.schemas import (
 )
 
 
-def build_cfg(query: Query) -> CFG:  # pragma: no cover  # TODO: support regex in query tags
+def build_cfg(query: Query) -> CFG:  # TODO: support regex in query tags
     """Build a Lark-based CFG output type based on the query object."""
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
     grammar_next_lines = (
         "\n".join(
-            f'tag{i}: "{TAG_OPEN_LEFT} id="m_{i}"{TAG_OPEN_RIGHT}" /(.|\n)*?/ "{TAG_END}"'
+            # `/(?s:.)*?/` is a non-greedy match for any character including newlines
+            f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /(?s:.)*?/ "{TAG_END}"'
             for i in range(num_tags)
         )
         if num_tags > 0
