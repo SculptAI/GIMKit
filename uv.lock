@@ -1195,6 +1195,11 @@ dependencies = [
     { name = "outlines", extra = ["openai"] },
 ]
 
+[package.optional-dependencies]
+vllm = [
+    { name = "vllm" },
+]
+
 [package.dev-dependencies]
 dataset = [
     { name = "datasets" },
@@ -1218,7 +1223,11 @@ training = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "outlines", extras = ["openai"], specifier = ">=1.2.5" }]
+requires-dist = [
+    { name = "outlines", extras = ["openai"], specifier = ">=1.2.5" },
+    { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.10.2" },
+]
+provides-extras = ["vllm"]
 
 [package.metadata.requires-dev]
 dataset = [{ name = "datasets", specifier = "==3.6.0" }]

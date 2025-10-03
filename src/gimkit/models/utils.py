@@ -61,6 +61,12 @@ def transform_to_outlines(
 def ensure_str(response: Any) -> str:
     if isinstance(response, str):
         return response
+    if (
+        isinstance(response, list)
+        and len(response) > 0
+        and all(isinstance(item, str) for item in response)
+    ):
+        return response[0]  # pragma: no cover  # TODO: Handle multiple responses
     else:
         raise TypeError("Response is not a string.")
 
