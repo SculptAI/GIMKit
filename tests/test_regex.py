@@ -1,5 +1,7 @@
 """Tests for regex support in MaskedTag and guide."""
 
+from outlines.types.dsl import CFG
+
 from gimkit.contexts import Query
 from gimkit.guides import guide as g
 from gimkit.models.utils import build_cfg
@@ -78,8 +80,13 @@ def test_build_cfg_with_regex():
     query = Query('Hello, <|MASKED id="m_0" regex="\\d{3}"|><|/MASKED|>!')
     cfg = build_cfg(query)
     
-    # Check that the regex pattern is used in the grammar
-    assert r"\d{3}" in cfg.definition or "\\d{3}" in cfg.definition
+    # The expected grammar should use the regex pattern instead of the default
+    expected_grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" /\\d{3}/ "<|/MASKED|>"'
+    )
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == expected_grm
 
 
 def test_build_cfg_without_regex():
@@ -88,6 +95,11 @@ def test_build_cfg_without_regex():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
     cfg = build_cfg(query)
     
-    # Check that the default pattern is used
-    assert "/(?s:.)*?/" in cfg.definition
+    # The expected grammar should use the default pattern
+    expected_grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
+    )
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == expected_grm
 
