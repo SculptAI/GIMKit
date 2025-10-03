@@ -12,8 +12,6 @@ from gimkit.schemas import ContextInput
 if TYPE_CHECKING:
     from vllm import LLM
 
-__all__ = ["VLLMOffline", "from_vllm_offline"]
-
 
 class VLLMOffline(OutlinesVLLMOffline):
     def __call__(
