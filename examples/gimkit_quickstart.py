@@ -29,10 +29,10 @@ My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "
 print(query)
 print("=" * 80)
 
-
 # ─── 3. Get The Result ────────────────────────────────────────────────────────
 
-result = model(query)[0]
+result = model(query)
+result = result if not isinstance(result, list) else result[0]
 print(result)
 print("=" * 80)
 

@@ -21,11 +21,12 @@ def test_from_vllm_offline():
 def test_vllm_offline_call():
     mock_client = MagicMock(spec=LLM)
     model = from_vllm_offline(mock_client)
-    results = [Result(MaskedTag(id=0, content="hi"))]
+    result = Result(MaskedTag(id=0, content="hi"))
 
-    with patch("gimkit.models.vllm_offline._call", return_value=results) as mock_call:
-        results = model(MaskedTag())
-        assert results[0].tags[0].content == "hi"
+    with patch("gimkit.models.vllm_offline._call", return_value=result) as mock_call:
+        returned = model(MaskedTag())
+        assert isinstance(returned, Result)
+        assert returned.tags[0].content == "hi"
         mock_call.assert_called_once_with(
             model,
             MaskedTag(),
@@ -34,10 +35,11 @@ def test_vllm_offline_call():
             sampling_params=SamplingParams(stop="<|/GIM_RESPONSE|>"),
         )
 
-    with patch("gimkit.models.vllm_offline._call", return_value=results) as mock_call:
+    with patch("gimkit.models.vllm_offline._call", return_value=result) as mock_call:
         sample_params = SamplingParams(temperature=0.2, stop=["another_stop"])
-        results = model(MaskedTag(), sampling_params=sample_params)
-        assert results[0].tags[0].content == "hi"
+        returned = model(MaskedTag(), sampling_params=sample_params)
+        assert isinstance(returned, Result)
+        assert returned.tags[0].content == "hi"
 
         sample_params.stop.append("<|/GIM_RESPONSE|>")
         mock_call.assert_called_once_with(
@@ -51,6 +53,7 @@ def test_vllm_offline_call():
 
         results = model("", sampling_params=SamplingParams(n=2))
 
+        assert isinstance(results, list)
         assert len(results) == 2
         mock_generator.assert_called_once()
         generator_instance.assert_called_once()

@@ -49,11 +49,9 @@ def test_sync_call():
     with patch.object(client.chat.completions, "create", return_value=mock_response) as mock_create:
         model = from_vllm(client, model_name="gpt-4o")
 
-        results = model("Hello, " + guide())
-        assert isinstance(results, list)
-        assert len(results) == 1
-        assert isinstance(results[0], Result)
-        assert results[0].tags[0] == MaskedTag(id=0, content="world")
+        result = model("Hello, " + guide())
+        assert isinstance(result, Result)
+        assert result.tags[0] == MaskedTag(id=0, content="world")
         mock_create.assert_called_once()
         assert mock_create.call_args[1]["stop"] == "<|/GIM_RESPONSE|>"
 
@@ -81,10 +79,8 @@ async def test_async_call():
         client.chat.completions, "create", new_callable=AsyncMock, return_value=mock_response
     ) as mock_create:
         model = from_vllm(client, model_name="gpt-4o")
-        results = await model("Hello, " + guide())
-        assert isinstance(results, list)
-        assert len(results) == 1
-        assert isinstance(results[0], Result)
-        assert results[0].tags[0] == MaskedTag(id=0, content="world")
+        result = await model("Hello, " + guide())
+        assert isinstance(result, Result)
+        assert result.tags[0] == MaskedTag(id=0, content="world")
         mock_create.assert_awaited_once()
         assert mock_create.call_args[1]["stop"] == "<|/GIM_RESPONSE|>"

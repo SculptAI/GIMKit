@@ -9,7 +9,7 @@ from openai import OpenAI as OpenAIClient
 from outlines.models.openai import AsyncOpenAI as OutlinesAsyncOpenAI
 from outlines.models.openai import OpenAI as OutlinesOpenAI
 
-from gimkit.contexts import Query, Results
+from gimkit.contexts import Query, Result
 from gimkit.models.utils import _acall, _call
 from gimkit.schemas import ContextInput
 
@@ -21,7 +21,7 @@ class OpenAI(OutlinesOpenAI):
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Results:
+    ) -> Result | list[Result]:
         return _call(self, model_input, output_type, backend, **inference_kwargs)
 
 
@@ -32,7 +32,7 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Results:
+    ) -> Result | list[Result]:
         return await _acall(self, model_input, output_type, backend, **inference_kwargs)
 
 

@@ -3,7 +3,7 @@ from typing import Any, Literal
 from outlines.generator import Generator
 from outlines.types.dsl import CFG, JsonSchema
 
-from gimkit.contexts import Query, Results, infill
+from gimkit.contexts import Query, Result, infill
 from gimkit.schemas import (
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
@@ -58,7 +58,9 @@ def transform_to_outlines(
     return outlines_output_type, outlines_model_input
 
 
-def process_raw_response(query: ContextInput | Query, responses: str | list[str] | Any) -> Results:
+def process_raw_response(
+    query: ContextInput | Query, responses: str | list[str] | Any
+) -> Result | list[Result]:
     if isinstance(responses, str):
         responses = [responses]
 
@@ -71,7 +73,11 @@ def process_raw_response(query: ContextInput | Query, responses: str | list[str]
     if len(responses) == 0:
         raise ValueError("Response list is empty.")
 
-    return [infill(query, resp) for resp in responses]
+    result_objects = [infill(query, resp) for resp in responses]
+
+    if len(result_objects) == 1:
+        return result_objects[0]
+    return result_objects
 
 
 def _call(
@@ -80,7 +86,7 @@ def _call(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
-) -> Results:
+) -> Result | list[Result]:
     outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     raw_response = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
@@ -94,7 +100,7 @@ async def _acall(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
-) -> Results:
+) -> Result | list[Result]:
     outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_response = await generator(outlines_model_input, **inference_kwargs)
