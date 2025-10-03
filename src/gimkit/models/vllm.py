@@ -7,7 +7,7 @@ from openai import OpenAI as OpenAIClient
 from outlines.models.vllm import VLLM as OutlinesVLLM
 from outlines.models.vllm import AsyncVLLM as OutlinesAsyncVLLM
 
-from gimkit.contexts import Query, Result
+from gimkit.contexts import Query, Results
 from gimkit.models.utils import _acall, _call
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
 
@@ -19,7 +19,7 @@ class VLLM(OutlinesVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Results:
         # TODO: Using `stop=RESPONSE_SUFFIX` is just a temporary workaround. The ending string
         # has already been defined in the lark grammar, and the intermediate regex matching is
         # non-greedy. However, for some reason, it still matches multiple ending strings. Solving
@@ -37,7 +37,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         **inference_kwargs: Any,
-    ) -> Result:
+    ) -> Results:
         return await _acall(
             self, model_input, output_type, backend, stop=RESPONSE_SUFFIX, **inference_kwargs
         )

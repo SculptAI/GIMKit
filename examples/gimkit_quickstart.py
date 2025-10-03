@@ -32,7 +32,7 @@ print("=" * 80)
 
 # ─── 3. Get The Result ────────────────────────────────────────────────────────
 
-result = model(query)
+result = model(query)[0]
 print(result)
 print("=" * 80)
 

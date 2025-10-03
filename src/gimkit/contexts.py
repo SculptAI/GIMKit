@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 
-from typing import Literal, cast, overload
+from typing import Literal, TypeAlias, cast, overload
 
 from gimkit.exceptions import InvalidFormatError
 from gimkit.schemas import (
@@ -15,6 +15,9 @@ from gimkit.schemas import (
     MaskedTag,
     parse_parts,
 )
+
+
+Results: TypeAlias = list["Result"]
 
 
 class Context:

@@ -3,7 +3,7 @@ from typing import Any, Literal
 from outlines.generator import Generator
 from outlines.types.dsl import CFG, JsonSchema
 
-from gimkit.contexts import Query, Result, infill
+from gimkit.contexts import Query, Results, infill
 from gimkit.schemas import (
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
@@ -58,17 +58,20 @@ def transform_to_outlines(
     return outlines_output_type, outlines_model_input
 
 
-def ensure_str(response: Any) -> str:
-    if isinstance(response, str):
-        return response
-    if (
-        isinstance(response, list)
-        and len(response) > 0
-        and all(isinstance(item, str) for item in response)
-    ):
-        return response[0]  # pragma: no cover  # TODO: Handle multiple responses
-    else:
-        raise TypeError("Response is not a string.")
+def process_raw_response(query: ContextInput | Query, responses: str | list[str] | Any) -> Results:
+    if isinstance(responses, str):
+        responses = [responses]
+
+    if not isinstance(responses, list):
+        raise TypeError(f"Expected responses to be str or list of str, got {type(responses)}")
+
+    if not all(isinstance(resp, str) for resp in responses):
+        raise TypeError(f"All items in the response list must be strings, got: {responses}")
+
+    if len(responses) == 0:
+        raise ValueError("Response list is empty.")
+
+    return [infill(query, resp) for resp in responses]
 
 
 def _call(
@@ -77,13 +80,12 @@ def _call(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
-) -> Result:
+) -> Results:
     outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     raw_response = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
-    str_response = ensure_str(raw_response)
-    return infill(model_input, str_response)
+    return process_raw_response(model_input, raw_response)
 
 
 async def _acall(
@@ -92,9 +94,8 @@ async def _acall(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     **inference_kwargs: Any,
-) -> Result:
+) -> Results:
     outlines_output_type, outlines_model_input = transform_to_outlines(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_response = await generator(outlines_model_input, **inference_kwargs)
-    str_response = ensure_str(raw_response)
-    return infill(model_input, str_response)
+    return process_raw_response(model_input, raw_response)
