@@ -1,13 +1,23 @@
 from gimkit.contexts import Query, Response
 from gimkit.guides import guide
 from gimkit.models import from_openai, from_vllm, from_vllm_offline
+from gimkit.prompts import (
+    FEW_SHOT_EXAMPLES,
+    SYSTEM_PROMPT,
+    build_few_shot_messages,
+    build_few_shot_prompt,
+)
 from gimkit.schemas import MaskedTag, validate
 
 
 __all__ = [
+    "FEW_SHOT_EXAMPLES",
     "MaskedTag",
     "Query",
     "Response",
+    "SYSTEM_PROMPT",
+    "build_few_shot_messages",
+    "build_few_shot_prompt",
     "from_openai",
     "from_vllm",
     "from_vllm_offline",
