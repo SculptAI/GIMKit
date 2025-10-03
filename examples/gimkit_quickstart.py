@@ -29,6 +29,7 @@ My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "
 print(query)
 print("=" * 80)
 
+
 # ─── 3. Get The Result ────────────────────────────────────────────────────────
 
 result = model(query)
