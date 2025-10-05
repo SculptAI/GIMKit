@@ -13,7 +13,7 @@ class FormMixin:  # pragma: no cover
         """A single word without spaces."""
         return MaskedTag(name=name, desc=self.single_word.__doc__)
 
-    def options(self, name: str | None = None, choices: list[str] | None = None) -> MaskedTag:
+    def select(self, name: str | None = None, choices: list[str] | None = None) -> MaskedTag:
         """Choose one from the given options."""
         if not choices:
             raise ValueError("choices must be a non-empty list of strings.")
