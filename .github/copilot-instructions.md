@@ -47,7 +47,7 @@ GIM (Guided Infilling Modeling) is a Python toolkit for structured text generati
 ### Testing
 
 - **pytest**: Test framework with coverage tracking
-  - Minimum coverage target: 97%
+  - Minimum coverage target: 100%
   - Run: `make test` or `uv run pytest tests --cov=gimkit --cov-report=term-missing:skip-covered -vv`
   - Tests in `tests/` directory mirror `src/gimkit/` structure
   - Mock external dependencies (OpenAI, vLLM)
