@@ -15,7 +15,7 @@ model = from_openai(openai_client, model_name="artifacts/09251-gim-sft-tmp/sft-g
 
 query = f"""I'm {g.person_name(name="pred")}. Hello, {g.single_word(name="obj")}!
 
-My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
+My favorite hobby is {g.select(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
 
 ## Bio
 
