@@ -138,7 +138,7 @@ def parse_parts(s: str) -> list[ContextPart]:
     end_matches = list(TAG_END_PATTERN.finditer(s))
     full_matches = list(TAG_FULL_PATTERN.finditer(s))
     if not (len(open_matches) == len(end_matches) == len(full_matches)):
-        raise InvalidFormatError(f"Mismatched or nested masked tags in {s[:50]}...")
+        raise InvalidFormatError(f"Mismatched or nested masked tags in {s}")
 
     parts: list[ContextPart] = []
     curr_tag_id = None
