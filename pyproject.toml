@@ -1,6 +1,6 @@
 [project]
 name = "gimkit"
-version = "0.1.0a3"
+version = "0.1.0a4"
 description = "Guided Infilling Modeling"
 readme = "README.md"
 authors = [
