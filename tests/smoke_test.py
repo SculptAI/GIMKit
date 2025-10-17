@@ -1,9 +1,9 @@
 """Check that basic features work."""
 
-from gimkit import MaskedTag
+from gimkit import guide
 
 
-tag = MaskedTag(desc="Hello, world!")
+tag = guide(desc="Hello, world!")
 
 if str(tag) == '<|MASKED desc="Hello, world!"|><|/MASKED|>':
     print("Smoke test succeeded")
