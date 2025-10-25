@@ -1,9 +1,11 @@
 from typing import Any, Literal
 
 from outlines.generator import Generator
+from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result, infill
+from gimkit.prompts import DEMO_CONVERSATION, SYSTEM_PROMPT
 from gimkit.schemas import (
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
@@ -50,9 +52,14 @@ def get_outlines_output_type(
 def transform_to_outlines(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None,
-):
+    use_gim_prompt: bool,
+) -> tuple[str | Chat, None | CFG | JsonSchema]:
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
-    outlines_model_input = str(query_obj)
+    outlines_model_input: str | Chat = str(query_obj)
+    if use_gim_prompt:
+        outlines_model_input = Chat(
+            SYSTEM_PROMPT + DEMO_CONVERSATION + [{"role": "user", "content": outlines_model_input}]
+        )
     outlines_output_type = get_outlines_output_type(output_type, query_obj)
     return outlines_model_input, outlines_output_type
 
@@ -80,9 +87,12 @@ def _call(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
+    use_gim_prompt: bool = False,
     **inference_kwargs: Any,
 ) -> Result | list[Result]:
-    outlines_model_input, outlines_output_type = transform_to_outlines(model_input, output_type)
+    outlines_model_input, outlines_output_type = transform_to_outlines(
+        model_input, output_type, use_gim_prompt
+    )
     raw_response = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
@@ -94,9 +104,12 @@ async def _acall(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
+    use_gim_prompt: bool = False,
     **inference_kwargs: Any,
 ) -> Result | list[Result]:
-    outlines_model_input, outlines_output_type = transform_to_outlines(model_input, output_type)
+    outlines_model_input, outlines_output_type = transform_to_outlines(
+        model_input, output_type, use_gim_prompt
+    )
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = await generator(outlines_model_input, **inference_kwargs)
     return infill_responses(model_input, raw_responses)

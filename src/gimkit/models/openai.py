@@ -20,9 +20,10 @@ class OpenAI(OutlinesOpenAI):
         model_input: ContextInput | Query,
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
+        use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
-        return _call(self, model_input, output_type, backend, **inference_kwargs)
+        return _call(self, model_input, output_type, backend, use_gim_prompt, **inference_kwargs)
 
 
 class AsyncOpenAI(OutlinesAsyncOpenAI):
@@ -31,9 +32,12 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
         model_input: ContextInput | Query,
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
+        use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
-        return await _acall(self, model_input, output_type, backend, **inference_kwargs)
+        return await _acall(
+            self, model_input, output_type, backend, use_gim_prompt, **inference_kwargs
+        )
 
 
 @overload
