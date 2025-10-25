@@ -43,4 +43,12 @@ DEMO_CONVERSATION_MSGS = [
         "role": "assistant",
         "content": '<|GIM_RESPONSE|><|MASKED id="m_0"|>France<|/MASKED|><|MASKED id="m_1"|>.<|/MASKED|><|/GIM_RESPONSE|>',
     },
+    {
+        "role": "user",
+        "content": '<|GIM_QUERY|>To bake a cake, you need <|MASKED id="m_0" desc="an ingredient"|><|/MASKED|>, <|MASKED id="m_1" desc="another ingredient"|><|/MASKED|>, and <|MASKED id="m_2" desc="a final ingredient"|><|/MASKED|>.<|/GIM_QUERY|>',
+    },
+    {
+        "role": "assistant",
+        "content": '<|GIM_RESPONSE|><|MASKED id="m_0"|>flour<|/MASKED|><|MASKED id="m_1"|>sugar<|/MASKED|><|MASKED id="m_2"|>eggs<|/MASKED|><|/GIM_RESPONSE|>',
+    },
 ]
