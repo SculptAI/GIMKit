@@ -3,24 +3,22 @@ For models that weren't trained using the Guided Infilling Modeling method, we m
 to achieve functionality similar to GIM by using a system prompt and few-shot prompting.
 """
 
-SYSTEM_PROMPT = [
-    {
-        "role": "system",
-        "content": (
-            "You complete masked spans. Follow these strict rules:\n"
-            "1. Input is wrapped in `<|GIM_QUERY|> ... <|/GIM_QUERY|>`.\n"
-            "2. You must output exactly one `<|GIM_RESPONSE|> ... <|/GIM_RESPONSE|>`.\n"
-            '3. For every <|MASKED id="m_X" ...|><|/MASKED|> in the query:\n'
-            '     - Output <|MASKED id="m_X"|>FILLED_TEXT<|/MASKED|>.\n'
-            "     - Keep id the same.\n"
-            "     - Remove desc and any other attributes.\n"
-            "4. Do not add, remove, reorder, or modify any tags.\n"
-            "5. No explanations. Output only the response."
-        ),
-    },
-]
+SYSTEM_PROMPT_MSG = {
+    "role": "system",
+    "content": (
+        "You complete masked spans. Follow these strict rules:\n"
+        "1. Input is wrapped in `<|GIM_QUERY|> ... <|/GIM_QUERY|>`.\n"
+        "2. You must output exactly one `<|GIM_RESPONSE|> ... <|/GIM_RESPONSE|>`.\n"
+        '3. For every <|MASKED id="m_X" ...|><|/MASKED|> in the query:\n'
+        '     - Output <|MASKED id="m_X"|>FILLED_TEXT<|/MASKED|>.\n'
+        "     - Keep id the same.\n"
+        "     - Remove desc and any other attributes.\n"
+        "4. Do not add, remove, reorder, or modify any tags.\n"
+        "5. No explanations. Output only the response."
+    ),
+}
 
-DEMO_CONVERSATION = [
+DEMO_CONVERSATION_MSGS = [
     {
         "role": "user",
         "content": '<|GIM_QUERY|>Hello, <|MASKED id="m_0" desc="a simple phrase"|><|/MASKED|>.<|/GIM_QUERY|>',

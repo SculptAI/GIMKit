@@ -5,7 +5,7 @@ from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result, infill
-from gimkit.prompts import DEMO_CONVERSATION, SYSTEM_PROMPT
+from gimkit.prompts import DEMO_CONVERSATION_MSGS, SYSTEM_PROMPT_MSG
 from gimkit.schemas import (
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
@@ -58,7 +58,11 @@ def transform_to_outlines(
     outlines_model_input: str | Chat = str(query_obj)
     if use_gim_prompt:
         outlines_model_input = Chat(
-            SYSTEM_PROMPT + DEMO_CONVERSATION + [{"role": "user", "content": outlines_model_input}]
+            [
+                SYSTEM_PROMPT_MSG,
+                *DEMO_CONVERSATION_MSGS,
+                {"role": "user", "content": outlines_model_input},
+            ]
         )
     outlines_output_type = get_outlines_output_type(output_type, query_obj)
     return outlines_model_input, outlines_output_type
