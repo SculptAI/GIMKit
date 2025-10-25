@@ -32,6 +32,7 @@ def test_vllm_offline_call():
             MaskedTag(),
             "cfg",
             None,
+            False,
             sampling_params=SamplingParams(stop="<|/GIM_RESPONSE|>"),
         )
 
@@ -43,7 +44,7 @@ def test_vllm_offline_call():
 
         sample_params.stop.append("<|/GIM_RESPONSE|>")
         mock_call.assert_called_once_with(
-            model, MaskedTag(), "cfg", None, sampling_params=sample_params
+            model, MaskedTag(), "cfg", None, False, sampling_params=sample_params
         )
 
     with patch("gimkit.models.utils.Generator") as mock_generator:

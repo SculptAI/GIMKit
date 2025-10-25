@@ -19,6 +19,7 @@ class VLLMOffline(OutlinesVLLMOffline):
         model_input: ContextInput | Query,
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
+        use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         if "sampling_params" not in inference_kwargs:
@@ -30,7 +31,7 @@ class VLLMOffline(OutlinesVLLMOffline):
             and RESPONSE_SUFFIX not in inference_kwargs["sampling_params"].stop
         ):
             inference_kwargs["sampling_params"].stop.append(RESPONSE_SUFFIX)
-        return _call(self, model_input, output_type, backend, **inference_kwargs)
+        return _call(self, model_input, output_type, backend, use_gim_prompt, **inference_kwargs)
 
 
 def from_vllm_offline(model: "LLM") -> VLLMOffline:

@@ -18,6 +18,7 @@ class VLLM(OutlinesVLLM):
         model_input: ContextInput | Query,
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
+        use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         # TODO: Using `stop=RESPONSE_SUFFIX` is just a temporary workaround. The ending string
@@ -26,7 +27,13 @@ class VLLM(OutlinesVLLM):
         # this issue involves five packages, including `outlines`, `vllm`, `guidance`,
         # `llguidance`, and `lark`. Due to its complexity, it will be addressed in future updates.
         return _call(
-            self, model_input, output_type, backend, stop=RESPONSE_SUFFIX, **inference_kwargs
+            self,
+            model_input,
+            output_type,
+            backend,
+            use_gim_prompt,
+            stop=RESPONSE_SUFFIX,
+            **inference_kwargs,
         )
 
 
@@ -36,10 +43,17 @@ class AsyncVLLM(OutlinesAsyncVLLM):
         model_input: ContextInput | Query,
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
+        use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         return await _acall(
-            self, model_input, output_type, backend, stop=RESPONSE_SUFFIX, **inference_kwargs
+            self,
+            model_input,
+            output_type,
+            backend,
+            use_gim_prompt,
+            stop=RESPONSE_SUFFIX,
+            **inference_kwargs,
         )
 
 
