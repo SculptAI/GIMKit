@@ -28,7 +28,9 @@ MAGIC_STRINGS = [
     TAG_END,
 ]
 
-_TAG_ATTRS_REGEX = r'(?: id="m_(\d+)")?' + r'(?: name="(.*?)")?' + r'(?: desc="(.*?)")?'
+_TAG_ATTRS_REGEX = (
+    r'(?: id="m_(\d+)")?' + r'(?: name="(.*?)")?' + r'(?: desc="(.*?)")?' + r'(?: regex="(.*?)")?'
+)
 _TAG_CONTENT_REGEX = r"(.*?)"
 
 TAG_OPEN_PATTERN = re.compile(
@@ -50,16 +52,18 @@ class MaskedTag:
     id: int | None = None
     name: str | None = None
     desc: str | None = None
+    regex: str | None = None
     content: str | None = None
 
-    _attrs = ("name", "desc")
+    _attrs = ("name", "desc", "regex")
 
     def to_string(
-        self, fields: list[Literal["id", "name", "desc", "content"]] | Literal["all"] = "all"
+        self,
+        fields: list[Literal["id", "name", "desc", "regex", "content"]] | Literal["all"] = "all",
     ) -> str:
         attr_part = ""
         if fields == "all":
-            fields = ["id", "name", "desc", "content"]
+            fields = ["id", "name", "desc", "regex", "content"]
         if "id" in fields and self.id is not None:
             attr_part += f' id="m_{self.id}"'
         for attr in self._attrs:
@@ -151,7 +155,8 @@ def parse_parts(s: str) -> list[ContextPart]:
         tag_id = match.group(1)
         tag_name = match.group(2)
         tag_desc = match.group(3)
-        tag_content = match.group(4)
+        tag_regex = match.group(4)
+        tag_content = match.group(5)
         if tag_id is not None:
             tag_id = int(tag_id)
             if curr_tag_id is None:
@@ -162,7 +167,9 @@ def parse_parts(s: str) -> list[ContextPart]:
                 )
         if curr_tag_id is not None:
             curr_tag_id += 1
-        parts.append(MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, content=tag_content))
+        parts.append(
+            MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, regex=tag_regex, content=tag_content)
+        )
 
         last_end = end
     if last_end < len(s):

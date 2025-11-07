@@ -20,16 +20,17 @@ def build_cfg(query: Query) -> CFG:
     """Build a Lark-based CFG output type based on the query object."""
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
-    grammar_next_lines = (
-        "\n".join(
-            # `/(?s:.)*?/` is a non-greedy match for any character including newlines
-            f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /(?s:.)*?/ "{TAG_END}"'
-            for i in range(num_tags)
+
+    grammar_rest_lines = []
+    for i, tag in enumerate(query.tags):
+        # `/(?s:.)*?/` is a non-greedy match for any character including newlines
+        content_pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.)*?/"
+        grammar_rest_lines.append(
+            f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" {content_pattern} "{TAG_END}"'
         )
-        if num_tags > 0
-        else ""
-    )
-    return CFG(f"{grammar_first_line}\n{grammar_next_lines}")
+
+    grammar = grammar_first_line + "\n" + "\n".join(grammar_rest_lines)
+    return CFG(grammar)
 
 
 def build_json_schema(query: Query) -> JsonSchema:  # pragma: no cover  # TODO

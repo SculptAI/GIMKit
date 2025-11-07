@@ -1,4 +1,44 @@
+import re
+
+import pytest
+
 from gimkit.guides import guide as g
+
+
+class TestFormMixin:
+    def test_single_word(self):
+        tag = g.single_word(name="word")
+        assert re.fullmatch(tag.regex, "Hello")
+        assert not re.fullmatch(tag.regex, "Hello World")
+
+    def test_select(self):
+        choices = ["apple", "banana", "cherry", "special|char"]
+        tag = g.select(name="fruit", choices=choices)
+        assert tag.regex == "apple|banana|cherry|special\\|char"
+        assert re.fullmatch(tag.regex, "banana")
+        assert not re.fullmatch(tag.regex, "grape")
+        assert re.fullmatch(tag.regex, "special|char")
+        with pytest.raises(ValueError, match="choices must be a non-empty list of strings"):
+            g.select(name="fruit", choices=None)
+
+
+class TestPersonalInfoMixin:
+    def test_person_name(self):
+        tag = g.person_name(name="name")
+        assert tag
+
+    def test_phone_number(self):
+        tag = g.phone_number(name="phone")
+        assert re.fullmatch(tag.regex, "+1-123-456-7890")
+        assert re.fullmatch(tag.regex, "(123) 456-7890")
+        assert re.fullmatch(tag.regex, "123-456-7890")
+        assert not re.fullmatch(tag.regex, "abc-def-ghij")
+
+    def test_e_mail(self):
+        tag = g.e_mail(name="email")
+        assert re.fullmatch(tag.regex, "john.doe@example.com")
+        assert re.fullmatch(tag.regex, "alice@example.com")
+        assert not re.fullmatch(tag.regex, "invalid-email")
 
 
 def test_guide_call():
