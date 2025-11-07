@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 
-from typing import Literal, cast, overload
+from typing import TYPE_CHECKING, Literal, cast, overload
 
 from gimkit.exceptions import InvalidFormatError
 from gimkit.schemas import (
@@ -15,6 +15,10 @@ from gimkit.schemas import (
     MaskedTag,
     parse_parts,
 )
+
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class Context:
@@ -65,12 +69,12 @@ class Context:
                     raise KeyError(f"Tag name '{key}' does not exist.")
             raise TypeError("Key must be int, slice, or str")
 
-        def __len__(self):
+        def __len__(self) -> int:
             return len(self._tags_by_index)
 
-        def __iter__(self):
+        def __iter__(self) -> Iterator[MaskedTag]:
             for i in self._tags_by_index:
-                yield self._parts[i]
+                yield cast("MaskedTag", self._parts[i])
 
     def __init__(self, prefix: str, suffix: str, *args: ContextInput) -> None:
         _inner_parts = self._process_context_inputs(*args)
@@ -110,7 +114,9 @@ class Context:
 
     def to_string(
         self,
-        fields: list[Literal["id", "name", "desc", "regex", "content"]] | Literal["all"] | None = None,
+        fields: list[Literal["id", "name", "desc", "regex", "content"]]
+        | Literal["all"]
+        | None = None,
         infill_mode: Literal[True] | None = None,
     ) -> str:
         if not ((fields is None) ^ (infill_mode is None)):
