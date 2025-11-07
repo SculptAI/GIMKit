@@ -109,13 +109,31 @@ def json_to_response_string(json_response: dict[str, str]) -> str:
     
     Returns:
         A properly formatted GIM response string.
+    
+    Raises:
+        ValueError: If any key does not follow the "m_X" format where X is an integer.
     """
-    # Sort by tag id to ensure correct order
-    sorted_items = sorted(json_response.items(), key=lambda x: int(x[0].split("_")[1]))
+    # Validate and sort by tag id to ensure correct order
+    validated_items = []
+    for field_name, content in json_response.items():
+        parts = field_name.split("_")
+        if len(parts) != 2 or parts[0] != "m":
+            raise ValueError(
+                f"Invalid field name '{field_name}'. Expected format is 'm_X' where X is an integer."
+            )
+        try:
+            tag_id = int(parts[1])
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid field name '{field_name}'. Expected format is 'm_X' where X is an integer."
+            ) from e
+        validated_items.append((tag_id, content))
+    
+    # Sort by tag id
+    validated_items.sort(key=lambda x: x[0])
     
     tag_strings = []
-    for field_name, content in sorted_items:
-        tag_id = field_name.split("_")[1]  # Extract id from "m_X"
+    for tag_id, content in validated_items:
         tag_str = f'{TAG_OPEN_LEFT} id="m_{tag_id}"{TAG_OPEN_RIGHT}{content}{TAG_END}'
         tag_strings.append(tag_str)
     

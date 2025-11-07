@@ -110,6 +110,21 @@ def test_json_to_response_string_ordering():
     assert response_str == expected
 
 
+def test_json_to_response_string_validation():
+    # Test validation of field names
+    with pytest.raises(ValueError, match="Invalid field name 'invalid'"):
+        json_to_response_string({"invalid": "value"})
+    
+    with pytest.raises(ValueError, match="Invalid field name 'm_'"):
+        json_to_response_string({"m_": "value"})
+    
+    with pytest.raises(ValueError, match="Invalid field name 'm_abc'"):
+        json_to_response_string({"m_abc": "value"})
+    
+    with pytest.raises(ValueError, match="Invalid field name 'x_0'"):
+        json_to_response_string({"x_0": "value"})
+
+
 def test_infill_responses_with_json():
     # Test infill with JSON response
     query = Query('Hello, ' + g.person_name(name='name') + '!')
