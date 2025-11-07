@@ -31,10 +31,10 @@ def test_build_cfg_with_regex():
 
 def test_build_cfg_with_grammar():
     """Test build_cfg with EBNF grammar pattern."""
-    query = Query('Word: <|MASKED id="m_0" grammar="word: /[a-z]+/"|><|/MASKED|>')
+    query = Query('Word: <|MASKED id="m_0" grammar="/[a-z]+/"|><|/MASKED|>')
     grm = (
         'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
-        'tag0: "<|MASKED id=\\"m_0\\"|>" word: /[a-z]+/ "<|/MASKED|>"'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" /[a-z]+/ "<|/MASKED|>"'
     )
     cfg = build_cfg(query)
     assert isinstance(cfg, CFG)
@@ -44,11 +44,24 @@ def test_build_cfg_with_grammar():
 def test_build_cfg_with_both_regex_and_grammar():
     """Test that grammar takes precedence over regex when both are provided."""
     query = Query(
-        'Item: <|MASKED id="m_0" regex="\\d+" grammar="number: /[0-9]+/"|><|/MASKED|>'
+        'Item: <|MASKED id="m_0" regex="\\d+" grammar="/[0-9]+/"|><|/MASKED|>'
     )
     grm = (
         'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
-        'tag0: "<|MASKED id=\\"m_0\\"|>" number: /[0-9]+/ "<|/MASKED|>"'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" /[0-9]+/ "<|/MASKED|>"'
+    )
+    cfg = build_cfg(query)
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == grm
+
+
+def test_build_cfg_with_complex_grammar():
+    """Test build_cfg with complex EBNF grammar including non-terminals."""
+    # Users can define more complex grammars with non-terminal references
+    query = Query('Item: <|MASKED id="m_0" grammar="word\nword: /[a-z]+/"|><|/MASKED|>')
+    grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" word\nword: /[a-z]+/ "<|/MASKED|>"'
     )
     cfg = build_cfg(query)
     assert isinstance(cfg, CFG)

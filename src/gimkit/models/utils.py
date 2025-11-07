@@ -17,7 +17,14 @@ from gimkit.schemas import (
 
 
 def build_cfg(query: Query) -> CFG:
-    """Build a Lark-based CFG output type based on the query object."""
+    """Build a Lark-based CFG output type based on the query object.
+    
+    The grammar field in MaskedTag allows users to provide custom EBNF grammar
+    patterns that are embedded directly into the CFG. This provides flexibility
+    but requires users to ensure their grammar is valid Lark syntax and compatible
+    with the surrounding CFG structure. Invalid grammar will cause parsing errors
+    when the CFG is used for generation.
+    """
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
 
