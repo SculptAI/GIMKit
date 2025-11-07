@@ -4,6 +4,9 @@ build:
 install:
 	uv pip install -e .
 
+install-dev:
+	uv sync --all-groups --all-extras
+
 lint:
 	uv run ruff check
 	uv run ruff format --diff
