@@ -1,21 +1,21 @@
 from openai import OpenAI
 
-from gimkit import from_openai
+from gimkit import from_vllm
 from gimkit import guide as g
 
 
 # ─── 1. Use A Model ───────────────────────────────────────────────────────────
 
-
+# You must have a separate vLLM server running on http://localhost:8000/v1
 openai_client = OpenAI(api_key="", base_url="http://localhost:8000/v1")
-model = from_openai(openai_client, model_name="artifacts/09251-gim-sft-tmp/sft-gim")
+model = from_vllm(openai_client, model_name="artifacts/09251-gim-sft-tmp/sft-gim")
 
 
 # ─── 2. Define A Query With Guide ─────────────────────────────────────────────
 
 query = f"""I'm {g.person_name(name="pred")}. Hello, {g.single_word(name="obj")}!
 
-My favorite hobby is {g.options(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
+My favorite hobby is {g.select(name="hobby", choices=["reading", "traveling", "cooking", "swimming"])}.
 
 ## Bio
 
