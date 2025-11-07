@@ -166,14 +166,7 @@ def infill_responses(
         raise TypeError(f"All items in the response list must be str or dict, got: {responses}")
 
     # Convert each response
-    results = []
-    for resp in responses:
-        if isinstance(resp, str):
-            results.append(infill(query, resp))
-        elif isinstance(resp, dict):
-            response_str = json_to_response_string(resp)
-            results.append(infill(query, response_str))
-
+    results = [infill_responses(query, resp) for resp in responses]
     return results
 
 
