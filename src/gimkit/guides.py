@@ -30,7 +30,7 @@ class FormMixin:
 
 class PersonalInfoMixin:
     def person_name(self, name: str | None = None) -> MaskedTag:
-        """A person's name, e.g., John Doe, Alice, Bob, Charlie Brown, etc."""
+        """A person's name, e.g., John Doe, Alice, Bob, Charlie Brown, 张三, etc."""
         return MaskedTag(name=name, desc=self.person_name.__doc__)
 
     def phone_number(self, name: str | None = None) -> MaskedTag:
