@@ -58,7 +58,8 @@ def test_build_cfg_with_both_regex_and_grammar():
 def test_build_cfg_with_complex_grammar():
     """Test build_cfg with complex EBNF grammar including non-terminals."""
     # Users can define more complex grammars with non-terminal references
-    query = Query('Item: <|MASKED id="m_0" grammar="word\nword: /[a-z]+/"|><|/MASKED|>')
+    complex_grammar = "word\nword: /[a-z]+/"
+    query = Query(f'Item: <|MASKED id="m_0" grammar="{complex_grammar}"|><|/MASKED|>')
     grm = (
         'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
         'tag0: "<|MASKED id=\\"m_0\\"|>" word\nword: /[a-z]+/ "<|/MASKED|>"'

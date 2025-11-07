@@ -26,7 +26,8 @@ def main():
     # Example 2: Using grammar in a query
     print("Example 2: Using grammar in a query")
     print("-" * 40)
-    query = Query(f"Generate a word: {g(name='word', grammar='/[a-z]+/')}")
+    word_tag = g(name="word", grammar="/[a-z]+/")
+    query = Query(f"Generate a word: {word_tag}")
     print(f"Query: {query}")
     cfg = build_cfg(query)
     print("Generated CFG:")
@@ -65,11 +66,10 @@ def main():
     # Example 5: Multiple tags with different patterns
     print("Example 5: Multiple tags with different patterns")
     print("-" * 40)
-    query_multi = Query(
-        f"Person: {g(name='name', desc='A person name')} "
-        f"likes {g(name='activity', grammar='/[a-z]+ing/')} "
-        f"with {g(name='count', grammar='/[1-9][0-9]*/')} friends."
-    )
+    name_tag = g(name="name", desc="A person name")
+    activity_tag = g(name="activity", grammar="/[a-z]+ing/")
+    count_tag = g(name="count", grammar="/[1-9][0-9]*/")
+    query_multi = Query(f"Person: {name_tag} likes {activity_tag} with {count_tag} friends.")
     print(f"Multi-tag query: {query_multi}")
     cfg_multi = build_cfg(query_multi)
     print("Generated CFG:")
