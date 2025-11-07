@@ -33,8 +33,39 @@ def build_cfg(query: Query) -> CFG:
     return CFG(grammar)
 
 
-def build_json_schema(query: Query) -> JsonSchema:  # pragma: no cover  # TODO
-    raise NotImplementedError("JSON schema generation is not implemented yet.")
+def build_json_schema(query: Query) -> JsonSchema:
+    """Build a JSON schema output type based on the query object.
+    
+    The JSON schema represents the response structure where each masked tag
+    becomes a field in the JSON object. The field name is "m_{id}" to match
+    the tag id, and patterns are applied when regex is specified.
+    """
+    properties = {}
+    required_fields = []
+    
+    for tag in query.tags:
+        field_name = f"m_{tag.id}"
+        field_schema = {"type": "string"}
+        
+        # Add regex pattern if specified
+        if tag.regex is not None:
+            field_schema["pattern"] = tag.regex
+        
+        # Add description if available
+        if tag.desc is not None:
+            field_schema["description"] = tag.desc
+        
+        properties[field_name] = field_schema
+        required_fields.append(field_name)
+    
+    schema = {
+        "type": "object",
+        "properties": properties,
+        "required": required_fields,
+        "additionalProperties": False
+    }
+    
+    return JsonSchema(schema)
 
 
 def get_outlines_output_type(
@@ -44,7 +75,7 @@ def get_outlines_output_type(
         return None
     elif output_type == "cfg":
         return build_cfg(query)
-    elif output_type == "json":  # pragma: no cover  # TODO
+    elif output_type == "json":
         return build_json_schema(query)
     else:
         raise ValueError(f"Invalid output type: {output_type}")
@@ -69,22 +100,63 @@ def transform_to_outlines(
     return outlines_model_input, outlines_output_type
 
 
+def json_to_response_string(json_response: dict[str, str]) -> str:
+    """Convert a JSON response dict to a GIM response string.
+    
+    Args:
+        json_response: A dictionary with keys like "m_0", "m_1", etc.
+            containing the content for each masked tag.
+    
+    Returns:
+        A properly formatted GIM response string.
+    """
+    # Sort by tag id to ensure correct order
+    sorted_items = sorted(json_response.items(), key=lambda x: int(x[0].split("_")[1]))
+    
+    tag_strings = []
+    for field_name, content in sorted_items:
+        tag_id = field_name.split("_")[1]  # Extract id from "m_X"
+        tag_str = f'{TAG_OPEN_LEFT} id="m_{tag_id}"{TAG_OPEN_RIGHT}{content}{TAG_END}'
+        tag_strings.append(tag_str)
+    
+    return f"{RESPONSE_PREFIX}{''.join(tag_strings)}{RESPONSE_SUFFIX}"
+
+
 def infill_responses(
-    query: ContextInput | Query, responses: str | list[str] | Any
+    query: ContextInput | Query, responses: str | dict | list[str | dict] | Any
 ) -> Result | list[Result]:
+    # Handle single string response
     if isinstance(responses, str):
         return infill(query, responses)
-
+    
+    # Handle single dict (JSON) response
+    if isinstance(responses, dict):
+        response_str = json_to_response_string(responses)
+        return infill(query, response_str)
+    
+    # Handle list of responses
     if not isinstance(responses, list):
-        raise TypeError(f"Expected responses to be str or list of str, got {type(responses)}")
-
-    if not all(isinstance(resp, str) for resp in responses):
-        raise TypeError(f"All items in the response list must be strings, got: {responses}")
-
+        raise TypeError(
+            f"Expected responses to be str, dict, or list of str/dict, got {type(responses)}"
+        )
+    
     if len(responses) == 0:
         raise ValueError("Response list is empty.")
-
-    return [infill(query, resp) for resp in responses]
+    
+    # Check that all items are either str or dict
+    if not all(isinstance(resp, (str, dict)) for resp in responses):
+        raise TypeError(f"All items in the response list must be str or dict, got: {responses}")
+    
+    # Convert each response
+    results = []
+    for resp in responses:
+        if isinstance(resp, str):
+            results.append(infill(query, resp))
+        elif isinstance(resp, dict):
+            response_str = json_to_response_string(resp)
+            results.append(infill(query, response_str))
+    
+    return results
 
 
 def _call(

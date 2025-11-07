@@ -64,6 +64,24 @@ def test_sync_call():
         model(["Hello, " + guide()], output_type=None)
 
 
+def test_sync_call_with_json():
+    client = OpenAI(api_key="test", timeout=0, max_retries=0)
+
+    # Mock JSON response
+    mock_response = {"m_0": "world"}
+
+    with patch("gimkit.models.utils.Generator") as mock_generator_class:
+        mock_generator = mock_generator_class.return_value
+        mock_generator.return_value = mock_response
+        
+        model = from_openai(client, model_name="gpt-4o")
+        result = model("Hello, " + guide(), output_type="json")
+        
+        assert isinstance(result, Result)
+        assert result.tags[0] == MaskedTag(id=0, content="world")
+        assert str(result) == "Hello, world"
+
+
 @pytest.mark.asyncio
 async def test_async_call():
     client = AsyncOpenAI(api_key="test", timeout=0, max_retries=0)
@@ -83,3 +101,25 @@ async def test_async_call():
         assert isinstance(result, Result)
         assert result.tags[0] == MaskedTag(id=0, content="world")
         mock_create.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_async_call_with_json():
+    client = AsyncOpenAI(api_key="test", timeout=0, max_retries=0)
+
+    # Mock JSON response
+    mock_response = {"m_0": "world"}
+
+    with patch("gimkit.models.utils.Generator") as mock_generator_class:
+        mock_generator = mock_generator_class.return_value
+        # Make the generator return a coroutine
+        async def async_return():
+            return mock_response
+        mock_generator.return_value = async_return()
+        
+        model = from_openai(client, model_name="gpt-4o")
+        result = await model("Hello, " + guide(), output_type="json")
+        
+        assert isinstance(result, Result)
+        assert result.tags[0] == MaskedTag(id=0, content="world")
+        assert str(result) == "Hello, world"
