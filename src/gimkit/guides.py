@@ -45,8 +45,8 @@ class PersonalInfoMixin:
     def e_mail(self, name: str | None = None) -> MaskedTag:
         """An email address, e.g., john.doe@example.com, alice@example.com, etc."""
 
-        # Adapted from https://regexr.com/2rhq7
-        regex = r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
+        # Adapted from https://regexr.com/3a2i5
+        regex = r"([\w\.]+)@([\w\.]+)\.(\w+)"
         return MaskedTag(name=name, desc=self.e_mail.__doc__, regex=regex)
 
 
