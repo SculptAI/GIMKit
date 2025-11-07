@@ -4,7 +4,7 @@ from outlines.generator import Generator
 from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
 
-from gimkit.contexts import Query, Result, infill
+from gimkit.contexts import Query, Response, Result, infill
 from gimkit.prompts import DEMO_CONVERSATION_MSGS, SYSTEM_PROMPT_MSG
 from gimkit.schemas import (
     RESPONSE_PREFIX,
@@ -13,6 +13,7 @@ from gimkit.schemas import (
     TAG_OPEN_LEFT,
     TAG_OPEN_RIGHT,
     ContextInput,
+    MaskedTag,
 )
 
 
@@ -100,12 +101,11 @@ def transform_to_outlines(
     return outlines_model_input, outlines_output_type
 
 
-def json_to_response_string(json_response: dict[str, str]) -> str:
-    """Convert a JSON response dict to a GIM response string.
+def json_responses_to_gim_response(json_response: str) -> str:
+    """Convert a JSON response string to a GIM response string.
 
     Args:
-        json_response: A dictionary with keys like "m_0", "m_1", etc.
-            containing the content for each masked tag.
+        json_response: A JSON string representing the response.
 
     Returns:
         A properly formatted GIM response string.
@@ -113,61 +113,48 @@ def json_to_response_string(json_response: dict[str, str]) -> str:
     Raises:
         ValueError: If any key does not follow the "m_X" format where X is an integer.
     """
-    # Validate and sort by tag id to ensure correct order
+    import re
+
+    import json_repair
+
+    json_obj = cast("dict", json_repair.loads(json_response))
+
     validated_items = []
-    for field_name, content in json_response.items():
-        parts = field_name.split("_")
-        if len(parts) != 2 or parts[0] != "m":
+    for field_name, content in json_obj.items():
+        match_result = re.fullmatch(r"m_(\d+)", field_name)
+        if not match_result:
             raise ValueError(
-                f"Invalid field name '{field_name}'. Expected format is 'm_X' where X is an integer."
+                f"Invalid field name in JSON response: {field_name}. Expected format 'm_X' where X is an integer."
             )
-        try:
-            tag_id = int(parts[1])
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid field name '{field_name}'. Expected format is 'm_X' where X is an integer."
-            ) from e
+        tag_id = int(match_result.group(1))
         validated_items.append((tag_id, content))
 
-    # Sort by tag id
     validated_items.sort(key=lambda x: x[0])
-
-    tag_strings = []
-    for tag_id, content in validated_items:
-        tag_str = f'{TAG_OPEN_LEFT} id="m_{tag_id}"{TAG_OPEN_RIGHT}{content}{TAG_END}'
-        tag_strings.append(tag_str)
-
-    return f"{RESPONSE_PREFIX}{''.join(tag_strings)}{RESPONSE_SUFFIX}"
+    return str(
+        Response([MaskedTag(id=tag_id, content=content) for tag_id, content in validated_items])
+    )
 
 
 def infill_responses(
-    query: ContextInput | Query, responses: str | dict | list[str | dict] | Any
+    query: ContextInput | Query, responses: str | list[str], json_responses: bool = False
 ) -> Result | list[Result]:
     # Handle single string response
     if isinstance(responses, str):
+        if json_responses:
+            responses = json_responses_to_gim_response(responses)
         return infill(query, responses)
-
-    # Handle single dict (JSON) response
-    if isinstance(responses, dict):
-        response_str = json_to_response_string(responses)
-        return infill(query, response_str)
 
     # Handle list of responses
     if not isinstance(responses, list):
-        raise TypeError(
-            f"Expected responses to be str, dict, or list of str/dict, got {type(responses)}"
-        )
+        raise TypeError(f"Expected responses to be str or list of str, got {type(responses)}")
 
     if len(responses) == 0:
         raise ValueError("Response list is empty.")
 
-    # Check that all items are either str or dict
-    if not all(isinstance(resp, (str, dict)) for resp in responses):
-        raise TypeError(f"All items in the response list must be str or dict, got: {responses}")
+    if not all(isinstance(resp, str) for resp in responses):
+        raise TypeError(f"All items in the response list must be strings, got: {responses}")
 
-    # Convert each response
-    results = [cast("Result", infill_responses(query, resp)) for resp in responses]
-    return results
+    return [cast("Result", infill_responses(query, resp)) for resp in responses]
 
 
 def _call(
@@ -181,10 +168,10 @@ def _call(
     outlines_model_input, outlines_output_type = transform_to_outlines(
         model_input, output_type, use_gim_prompt
     )
-    raw_response = Generator(self, outlines_output_type, backend)(
+    raw_responses = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
-    return infill_responses(model_input, raw_response)
+    return infill_responses(model_input, raw_responses, json_responses=(output_type == "json"))  # type: ignore[arg-type]
 
 
 async def _acall(
@@ -200,4 +187,4 @@ async def _acall(
     )
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = await generator(outlines_model_input, **inference_kwargs)
-    return infill_responses(model_input, raw_responses)
+    return infill_responses(model_input, raw_responses, json_responses=(output_type == "json"))
