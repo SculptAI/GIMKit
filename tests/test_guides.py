@@ -40,6 +40,7 @@ class TestPersonalInfoMixin:
         assert re.fullmatch(tag.regex, "alice@example.com")
         assert not re.fullmatch(tag.regex, "invalid-email")
 
+
 def test_guide_call():
     tag1 = g(desc="It's a great day.", name="first")
     assert tag1.id is None
