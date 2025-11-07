@@ -114,7 +114,7 @@ class Context:
 
     def to_string(
         self,
-        fields: list[Literal["id", "name", "desc", "regex", "content"]]
+        fields: list[Literal["id", "name", "desc", "regex", "grammar", "content"]]
         | Literal["all"]
         | None = None,
         infill_mode: Literal[True] | None = None,
@@ -124,7 +124,7 @@ class Context:
         content = ""
         if fields is not None:
             if fields == "all":
-                fields = ["id", "name", "desc", "regex", "content"]
+                fields = ["id", "name", "desc", "regex", "grammar", "content"]
 
             for part in self._parts:
                 if isinstance(part, MaskedTag):
@@ -138,7 +138,7 @@ class Context:
                     if part.content is not None:
                         content += part.content
                     else:
-                        content += part.to_string(fields=["id", "desc", "regex", "content"])
+                        content += part.to_string(fields=["id", "desc", "regex", "grammar", "content"])
                 else:
                     content += part
             content = content[len(self._prefix) : len(content) - len(self._suffix)]

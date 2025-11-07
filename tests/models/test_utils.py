@@ -17,6 +17,44 @@ def test_build_cfg():
     assert cfg.definition == grm
 
 
+def test_build_cfg_with_regex():
+    """Test build_cfg with regex pattern."""
+    query = Query('Number: <|MASKED id="m_0" regex="\\d+"|><|/MASKED|>')
+    grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" /\\d+/ "<|/MASKED|>"'
+    )
+    cfg = build_cfg(query)
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == grm
+
+
+def test_build_cfg_with_grammar():
+    """Test build_cfg with EBNF grammar pattern."""
+    query = Query('Word: <|MASKED id="m_0" grammar="word: /[a-z]+/"|><|/MASKED|>')
+    grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" word: /[a-z]+/ "<|/MASKED|>"'
+    )
+    cfg = build_cfg(query)
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == grm
+
+
+def test_build_cfg_with_both_regex_and_grammar():
+    """Test that grammar takes precedence over regex when both are provided."""
+    query = Query(
+        'Item: <|MASKED id="m_0" regex="\\d+" grammar="number: /[0-9]+/"|><|/MASKED|>'
+    )
+    grm = (
+        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
+        'tag0: "<|MASKED id=\\"m_0\\"|>" number: /[0-9]+/ "<|/MASKED|>"'
+    )
+    cfg = build_cfg(query)
+    assert isinstance(cfg, CFG)
+    assert cfg.definition == grm
+
+
 def test_transform_to_outlines():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
 
