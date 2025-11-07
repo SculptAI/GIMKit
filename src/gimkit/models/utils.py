@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from outlines.generator import Generator
 from outlines.inputs import Chat
@@ -166,7 +166,7 @@ def infill_responses(
         raise TypeError(f"All items in the response list must be str or dict, got: {responses}")
 
     # Convert each response
-    results = [infill_responses(query, resp) for resp in responses]
+    results = [cast("Result", infill_responses(query, resp)) for resp in responses]
     return results
 
 
