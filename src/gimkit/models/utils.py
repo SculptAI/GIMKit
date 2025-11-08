@@ -1,4 +1,4 @@
-from typing import Any, Literal, overload
+from typing import Any, Literal, cast, overload
 
 from outlines.generator import Generator
 from outlines.inputs import Chat
@@ -184,10 +184,9 @@ def _call(
     raw_responses = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
-    assert isinstance(raw_responses, str | list[str]), (
-        "Expected raw responses to be a string or list."
+    return infill_responses(
+        model_input, cast("str | list[str]", raw_responses), json_responses=(output_type == "json")
     )
-    return infill_responses(model_input, raw_responses, json_responses=(output_type == "json"))
 
 
 async def _acall(
