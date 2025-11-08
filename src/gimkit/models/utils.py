@@ -204,4 +204,6 @@ async def _acall(
     )
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = await generator(outlines_model_input, **inference_kwargs)
-    return infill_responses(model_input, raw_responses, json_responses=(output_type == "json"))
+    return infill_responses(
+        model_input, cast("str | list[str]", raw_responses), json_responses=(output_type == "json")
+    )
