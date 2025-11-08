@@ -1,4 +1,4 @@
-from typing import Any, Literal, cast
+from typing import Any, Literal, overload
 
 from outlines.generator import Generator
 from outlines.inputs import Chat
@@ -117,7 +117,8 @@ def json_responses_to_gim_response(json_response: str) -> str:
 
     import json_repair
 
-    json_obj = cast("dict", json_repair.loads(json_response))
+    json_obj = json_repair.loads(json_response)
+    assert isinstance(json_obj, dict), "Expected JSON response to be a dictionary."
 
     validated_items = []
     for field_name, content in json_obj.items():
@@ -133,6 +134,18 @@ def json_responses_to_gim_response(json_response: str) -> str:
     return str(
         Response([MaskedTag(id=tag_id, content=content) for tag_id, content in validated_items])
     )
+
+
+@overload
+def infill_responses(
+    query: ContextInput | Query, responses: str, json_responses: bool = False
+) -> Result: ...
+
+
+@overload
+def infill_responses(
+    query: ContextInput | Query, responses: list[str], json_responses: bool = False
+) -> list[Result]: ...
 
 
 def infill_responses(
@@ -154,7 +167,7 @@ def infill_responses(
     if not all(isinstance(resp, str) for resp in responses):
         raise TypeError(f"All items in the response list must be strings, got: {responses}")
 
-    return [cast("Result", infill_responses(query, resp)) for resp in responses]
+    return [infill_responses(query, resp) for resp in responses]
 
 
 def _call(
@@ -171,7 +184,10 @@ def _call(
     raw_responses = Generator(self, outlines_output_type, backend)(
         outlines_model_input, **inference_kwargs
     )
-    return infill_responses(model_input, raw_responses, json_responses=(output_type == "json"))  # type: ignore[arg-type]
+    assert isinstance(raw_responses, str | list[str]), (
+        "Expected raw responses to be a string or list."
+    )
+    return infill_responses(model_input, raw_responses, json_responses=(output_type == "json"))
 
 
 async def _acall(
