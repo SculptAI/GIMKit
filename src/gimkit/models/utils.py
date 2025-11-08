@@ -118,9 +118,8 @@ def json_responses_to_gim_response(json_response: str) -> str:
     import json_repair
 
     json_obj = json_repair.loads(json_response)
-    assert isinstance(json_obj, dict), (
-        f"Expected JSON response to be a dictionary, got {type(json_obj)}"
-    )
+    if not isinstance(json_obj, dict):
+        raise ValueError(f"Expected JSON response to be a dictionary, got {type(json_obj)}")
 
     validated_items = []
     for field_name, content in json_obj.items():

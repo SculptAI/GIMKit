@@ -96,7 +96,7 @@ def test_json_responses_to_gim_response():
         json_responses_to_gim_response('{"m_0": "John", "m-1": "Doe"}')
 
     # Test non-dict response
-    with pytest.raises(AssertionError, match="Expected JSON response to be a dictionary, got"):
+    with pytest.raises(ValueError, match="Expected JSON response to be a dictionary, got"):
         json_responses_to_gim_response('["John", "Doe"]')
 
 
