@@ -169,7 +169,7 @@ def infill_responses(
     if not all(isinstance(resp, str) for resp in responses):
         raise TypeError(f"All items in the response list must be strings, got: {responses}")
 
-    return [infill_responses(query, resp) for resp in responses]
+    return [infill_responses(query, resp, json_responses=json_responses) for resp in responses]
 
 
 def _call(
