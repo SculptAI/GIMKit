@@ -1062,6 +1062,7 @@ name = "gimkit"
 version = "0.1.0a5"
 source = { editable = "." }
 dependencies = [
+    { name = "json-repair" },
     { name = "outlines", extra = ["openai"] },
 ]
 
@@ -1083,6 +1084,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "json-repair", specifier = ">=0.52.5" },
     { name = "outlines", extras = ["openai"], specifier = ">=1.2.5" },
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.10.2" },
 ]
@@ -1428,6 +1430,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/ab/eb06ca556b2551d41de7d03bf2ee24285fa3d0c58c5f8d95c64c9c3281b1/jiter-0.11.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:fb4790497369d134a07fc763cc88888c46f734abdd66f9fdf7865038bf3a8f40", size = 313405, upload-time = "2025-09-15T09:20:18.918Z" },
     { url = "https://files.pythonhosted.org/packages/af/22/7ab7b4ec3a1c1f03aef376af11d23b05abcca3fb31fbca1e7557053b1ba2/jiter-0.11.0-cp314-cp314t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6e2bbf24f16ba5ad4441a9845e40e4ea0cb9eed00e76ba94050664ef53ef4406", size = 347102, upload-time = "2025-09-15T09:20:20.16Z" },
     { url = "https://files.pythonhosted.org/packages/70/f3/ce100253c80063a7b8b406e1d1562657fd4b9b4e1b562db40e68645342fb/jiter-0.11.0-graalpy311-graalpy242_311_native-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:902b43386c04739229076bd1c4c69de5d115553d982ab442a8ae82947c72ede7", size = 336380, upload-time = "2025-09-15T09:20:36.867Z" },
+]
+
+[[package]]
+name = "json-repair"
+version = "0.52.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/cd/030ecc4c864298870bdfedd950d7b86b15abf30aff5915178cb1221abd8c/json_repair-0.52.5.tar.gz", hash = "sha256:b17c8af9af91573bb7bd94a32b98a331df1d5e4ca58f0407c80eb14b1489ca1a", size = 35770, upload-time = "2025-11-06T16:09:28.669Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/c1/7cad04a5d6248a38656b0cdb267697e67b174fe21c61fb9bbfe0995591f4/json_repair-0.52.5-py3-none-any.whl", hash = "sha256:031a84536c93df1de3fb8c8554393da69111e375109cac3ff3d7c68158d68633", size = 26733, upload-time = "2025-11-06T16:09:26.532Z" },
 ]
 
 [[package]]

@@ -59,6 +59,12 @@ def test_sync_call():
         model(Query("Hello, ", guide()))
         model(["Hello, " + guide()])
 
+        # Test with JSON output type
+        mock_response.choices[0].message.content = '{"m_0": "world"}'
+        with pytest.warns(UserWarning, match="JSON output type is unstable"):
+            result = model("Hello, " + guide(), output_type="json")
+            assert str(result) == "Hello, world"
+
         # Model raises error on invalid output type
         with pytest.raises(ValueError, match="Invalid output type: xxx"):
             model(Query("hi"), output_type="xxx")

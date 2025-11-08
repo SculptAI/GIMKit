@@ -1,5 +1,7 @@
 # Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/vllm_offline.py
 
+import warnings
+
 from typing import TYPE_CHECKING, Any, Literal
 
 from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
@@ -22,6 +24,13 @@ class VLLMOffline(OutlinesVLLMOffline):
         use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
+        if output_type == "json":
+            warnings.warn(
+                "JSON output type is unstable due to unknown vllm issues. "
+                "We are still investigating the root cause.",
+                stacklevel=2,
+            )
+
         if "sampling_params" not in inference_kwargs:
             from vllm import SamplingParams
 
