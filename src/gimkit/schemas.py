@@ -118,9 +118,9 @@ class MaskedTag:
 
         # 4. Validate regex if provided
         if isinstance(self.regex, str):
-            if self.regex.startswith("^") or self.regex.endswith("$"):
+            if "^" in self.regex or "$" in self.regex:
                 raise ValueError(
-                    "regex should not start with ^ or end with $, "
+                    "regex should not contain ^ or $, "
                     "as it will be used within a larger regex pattern."
                 )
             if self.regex.startswith("/") or self.regex.endswith("/"):

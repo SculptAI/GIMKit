@@ -29,7 +29,7 @@ def test_build_cfg():
     assert cfg.definition == grm
 
     with pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"):
-        cfg = build_cfg(Query(MaskedTag(regex="[[]]")))
+        build_cfg(Query(MaskedTag(regex="[[]]")))
 
 
 def test_build_json_schema():
