@@ -49,6 +49,12 @@ TAG_FULL_PATTERN = re.compile(
 
 @dataclass
 class MaskedTag:
+    """Represents a masked tag in the GIM schema. A tag consists of a tag
+    id, tag content and some other related attributes. It looks like:
+
+    `<|MASKED id="m_0" name="xxx" desc="xxx" regex="xxx"|>xxx<|/MASKED|>`
+    """
+
     id: int | None = None
     name: str | None = None
     desc: str | None = None
@@ -85,9 +91,11 @@ class MaskedTag:
         return html.unescape(value)
 
     def __post_init__(self):
+        # 1. Validate id
         if not (self.id is None or isinstance(self.id, int)):
             raise ValueError(f"{type(self.id)=}, {self.id=}, should be int or None")
 
+        # 2. Validate all attrs
         for attr in self._attrs:
             attr_val = getattr(self, attr)
             if isinstance(attr_val, str):
@@ -95,6 +103,7 @@ class MaskedTag:
             elif attr_val is not None:
                 raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
+        # 3. Validate content
         if isinstance(self.content, str):
             # TAG_OPEN_RIGHT is common in text, so we allow it in content.
             # But other magic strings are not allowed.
@@ -107,6 +116,25 @@ class MaskedTag:
                 )
         elif self.content is not None:
             raise ValueError(f"{type(self.content)=}, {self.content=}, should be str or None")
+
+        # 4. Validate regex if provided
+        if isinstance(self.regex, str):
+            if "^" in self.regex or "$" in self.regex:
+                raise ValueError(
+                    "regex should not contain ^ or $, "
+                    "as it will be used within a larger regex pattern."
+                )
+            if self.regex.startswith("/") or self.regex.endswith("/"):
+                raise ValueError(
+                    "regex should not start or end with /, "
+                    "as it will be wrapped with /.../ in CFG grammar."
+                )
+            if self.regex == "":
+                raise ValueError("regex should not be an empty string.")
+            try:
+                re.compile(self.regex)
+            except re.error as e:
+                raise ValueError(f"Invalid regex pattern: {self.regex}") from e
 
     def __str__(self):
         return self.to_string()
