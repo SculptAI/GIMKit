@@ -5,6 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from gimkit.exceptions import InvalidFormatError
+from gimkit.parsing import parse_parts
 from gimkit.schemas import (
     QUERY_PREFIX,
     QUERY_SUFFIX,
@@ -13,7 +14,6 @@ from gimkit.schemas import (
     ContextInput,
     ContextPart,
     MaskedTag,
-    parse_parts,
 )
 
 

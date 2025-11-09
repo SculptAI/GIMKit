@@ -1,5 +1,5 @@
+from gimkit.parsing import validate
 from gimkit.prompts import DEMO_CONVERSATION_MSGS
-from gimkit.schemas import validate
 
 
 def test_demo_conversation_validity():

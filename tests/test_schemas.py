@@ -3,14 +3,13 @@ import re
 import pytest
 
 from gimkit.exceptions import InvalidFormatError
+from gimkit.parsing import parse_tags, validate
 from gimkit.schemas import (
     QUERY_PREFIX,
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
     MaskedTag,
-    parse_tags,
-    validate,
 )
 
 
