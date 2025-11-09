@@ -1063,6 +1063,7 @@ version = "0.1.0a5"
 source = { editable = "." }
 dependencies = [
     { name = "json-repair" },
+    { name = "llguidance" },
     { name = "outlines", extra = ["openai"] },
 ]
 
@@ -1085,6 +1086,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "json-repair", specifier = ">=0.52.5" },
+    { name = "llguidance", specifier = ">=0.7.30" },
     { name = "outlines", extras = ["openai"], specifier = ">=1.2.5" },
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.10.2" },
 ]
@@ -1528,7 +1530,9 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/e1/694c89986fcae7777184fc8b22baa0976eba15a6847221763f6ad211fc1f/llguidance-0.7.30-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c80af02c118d2b0526bcecaab389af2ed094537a069b0fc724cd2a2f2ba3990f", size = 3327974, upload-time = "2025-06-23T00:23:47.556Z" },
     { url = "https://files.pythonhosted.org/packages/fd/77/ab7a548ae189dc23900fdd37803c115c2339b1223af9e8eb1f4329b5935a/llguidance-0.7.30-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:00a256d532911d2cf5ba4ef63e182944e767dd2402f38d63002016bc37755958", size = 3210709, upload-time = "2025-06-23T00:23:45.872Z" },
     { url = "https://files.pythonhosted.org/packages/9c/5b/6a166564b14f9f805f0ea01ec233a84f55789cb7eeffe1d6224ccd0e6cdd/llguidance-0.7.30-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:af8741c867e4bc7e42f7cdc68350c076b4edd0ca10ecefbde75f15a9f6bc25d0", size = 14867038, upload-time = "2025-06-23T00:23:39.571Z" },
+    { url = "https://files.pythonhosted.org/packages/17/ec/69507bdb36767f9b6ff2e290660a9b5afdda0fb8a7903faa37f37c6c2a72/llguidance-0.7.30-cp39-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f4a327a30dd37d86dd6347861ac8de3521fc1dbef9475296c06744e5b40ffc54", size = 15142936, upload-time = "2025-06-23T00:23:41.944Z" },
     { url = "https://files.pythonhosted.org/packages/af/80/5a40b9689f17612434b820854cba9b8cabd5142072c491b5280fe5f7a35e/llguidance-0.7.30-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9edc409b9decd6cffba5f5bf3b4fbd7541f95daa8cbc9510cbf96c6ab1ffc153", size = 15004926, upload-time = "2025-06-23T00:23:43.965Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/bc/2d2f9b446bb3e51e4dd4db290590afee03ae29163f417168569f0361204c/llguidance-0.7.30-cp39-abi3-win32.whl", hash = "sha256:a0d52b8d1b2d3b0e661e3f953ecccfa16644f302026b3067a4815c1baa2ae643", size = 2585627, upload-time = "2025-06-23T00:23:52.39Z" },
     { url = "https://files.pythonhosted.org/packages/99/47/58e49a118b514855b245f8a962c6aaf9a5cc95a0f61eac7e230e691c7b7e/llguidance-0.7.30-cp39-abi3-win_amd64.whl", hash = "sha256:05234ecceea7c9c6ff13b9739112043173a3bcb88cae860249b20335a07b3075", size = 2796878, upload-time = "2025-06-23T00:23:51Z" },
 ]
 
