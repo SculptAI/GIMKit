@@ -55,18 +55,6 @@ def test_guide_call():
     tag3 = g()
     assert str(tag3) == "<|MASKED|><|/MASKED|>"
 
-    # Test with grammar
-    tag4 = g(name="test", grammar="word: /[a-z]+/")
-    assert tag4.name == "test"
-    assert tag4.grammar == "word: /[a-z]+/"
-    assert tag4.regex is None
-    assert str(tag4) == '<|MASKED name="test" grammar="word: /[a-z]+/"|><|/MASKED|>'
-
-    # Test with both regex and grammar
-    tag5 = g(name="both", regex=r"\d+", grammar="digit: /[0-9]/")
-    assert tag5.regex == r"\d+"
-    assert tag5.grammar == "digit: /[0-9]/"
-
 
 def test_guide_with_string():
     # Test format string

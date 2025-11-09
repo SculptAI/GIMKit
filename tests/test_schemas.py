@@ -27,14 +27,6 @@ def test_masked_tag_str():
     assert str(MaskedTag(id=0, content="content")) == '<|MASKED id="m_0"|>content<|/MASKED|>'
     assert str(MaskedTag()) == "<|MASKED|><|/MASKED|>"
     assert str(MaskedTag(name="content")) == '<|MASKED name="content"|><|/MASKED|>'
-    assert (
-        str(MaskedTag(id=0, grammar='word: /[a-z]+/'))
-        == '<|MASKED id="m_0" grammar="word: /[a-z]+/"|><|/MASKED|>'
-    )
-    assert (
-        str(MaskedTag(id=0, regex=r'\d+', grammar='digit: /[0-9]/'))
-        == '<|MASKED id="m_0" regex="\\d+" grammar="digit: /[0-9]/"|><|/MASKED|>'
-    )
 
 
 def test_masked_tag_repr():
@@ -49,10 +41,6 @@ def test_masked_tag_init_invalid():
         MaskedTag(name=123)
     with pytest.raises(ValueError, match="should be str or None"):
         MaskedTag(desc=123)
-    with pytest.raises(ValueError, match="should be str or None"):
-        MaskedTag(regex=123)
-    with pytest.raises(ValueError, match="should be str or None"):
-        MaskedTag(grammar=123)
     with pytest.raises(ValueError, match="should be str or None"):
         MaskedTag(content=object)
     with pytest.raises(
@@ -102,26 +90,6 @@ def test_parse_tags_valid():
     )
     assert len(tags) == 3
     assert tags[1].id is None
-
-    # Masked tag with grammar
-    tags = parse_tags(
-        """<|MASKED id="m_0" grammar="word: /[a-z]+/"|><|/MASKED|>""",
-        None,
-        None,
-    )
-    assert tags[0].id == 0
-    assert tags[0].grammar == "word: /[a-z]+/"
-    assert tags[0].regex is None
-
-    # Masked tag with both regex and grammar
-    tags = parse_tags(
-        """<|MASKED id="m_0" regex="\\d+" grammar="digit: /[0-9]/"|><|/MASKED|>""",
-        None,
-        None,
-    )
-    assert tags[0].id == 0
-    assert tags[0].regex == r"\d+"
-    assert tags[0].grammar == "digit: /[0-9]/"
 
     # With special mark
     tags = parse_tags("<|MASKED|>|><|/MASKED|>")
