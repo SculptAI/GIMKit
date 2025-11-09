@@ -49,7 +49,7 @@ TAG_FULL_PATTERN = re.compile(
 
 @dataclass
 class MaskedTag:
-    """Represents a masked tag in the GIM schema. A tag is consisted of a tag
+    """Represents a masked tag in the GIM schema. A tag consists of a tag
     id, tag content and some other related attributes. It looks like:
 
     `<|MASKED id="m_0" name="xxx" desc="xxx" regex="xxx"|>xxx<|/MASKED|>`
