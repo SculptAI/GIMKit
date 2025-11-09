@@ -54,6 +54,17 @@ def test_masked_tag_init_invalid():
         MaskedTag(content="<|MASKED|>")
 
 
+def test_masked_tag_init_with_regex():
+    with pytest.raises(ValueError, match="regex should not start with \^ or end with \$"):
+        MaskedTag(regex="^abc$")
+    with pytest.raises(ValueError, match="regex should not be an empty string"):
+        MaskedTag(regex="")
+    with pytest.raises(ValueError, match="regex should not start or end with /"):
+        MaskedTag(regex="/abc/")
+    with pytest.raises(ValueError, match="Invalid regex pattern"):
+        MaskedTag(regex="[")
+
+
 def test_parse_tags_valid():
     # Masked tag has desc
     tags = parse_tags(
