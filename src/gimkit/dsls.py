@@ -46,13 +46,16 @@ def build_cfg(query: Query) -> str:
 
     grammar_rest_lines = []
     for i, tag in enumerate(query.tags):
+        rule_template = f'{CFG_TAG_RULE_NAME_PREFIX}{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" {{}} "{TAG_END}"'
         if tag.regex:
-            rule = f'{CFG_TAG_RULE_NAME_PREFIX}{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /{tag.regex}/ "{TAG_END}"'
+            rule = rule_template.format(f'/{tag.regex}/')
         elif tag.grammar:
-            rule = f"{CFG_TAG_RULE_NAME_PREFIX}{i}: {tag.grammar.strip().removeprefix('start: ')}"  # may be multiple lines
+            sub_rule_0 = rule_template.format(f'{CFG_TAG_RULE_NAME_PREFIX}{i}_start')
+            sub_rule_rest = f'{CFG_TAG_RULE_NAME_PREFIX}{i}_{tag.grammar}'  # may be multiple lines
+            rule = sub_rule_0 + "\n" + sub_rule_rest
         else:
             # `/(?s:.)*?/` is a non-greedy match for any character including newlines
-            rule = f'{CFG_TAG_RULE_NAME_PREFIX}{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /(?s:.)*?/ "{TAG_END}"'
+            rule = rule_template.format('/(?s:.)*?/')
         grammar_rest_lines.append(rule)
 
     grammar = grammar_first_line + "\n" + "\n".join(grammar_rest_lines)

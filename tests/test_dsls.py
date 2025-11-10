@@ -28,7 +28,8 @@ def test_build_cfg():
     query_with_grammar = Query(MaskedTag(id=0, grammar=cfg), "!")
     whole_grammar = (
         'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
-        'masked_tag_0: obj1 ", " obj2\n'
+        'masked_tag_0: "<|MASKED id=\\"m_0\\"|>" masked_tag_0_start "<|/MASKED|>"\n'
+        'masked_tag_0_start: obj1 ", " obj2\n'
         'obj1: "Hello" | "Hi"\n'
         'obj2: "World" | "Everyone"'
     )
