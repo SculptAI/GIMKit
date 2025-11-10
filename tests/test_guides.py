@@ -1,8 +1,17 @@
+import inspect
 import re
 
 import pytest
 
 from gimkit.guides import guide as g
+from gimkit.schemas import ALL_FIELDS
+
+
+class TestBaseMixin:
+    def test_call_params(self):
+        sig = inspect.signature(g.__call__)
+        params = sig.parameters
+        assert list(params.keys()) == list(ALL_FIELDS[1:])
 
 
 class TestFormMixin:
