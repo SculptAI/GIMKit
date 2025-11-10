@@ -11,8 +11,8 @@ from gimkit.schemas import MaskedTag
 def test_build_cfg():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
     grm = (
-        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
-        'tag0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
+        'start: "<|GIM_RESPONSE|>" MASKED_TAG_0 "<|/GIM_RESPONSE|>"\n'
+        'MASKED_TAG_0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
     )
     assert build_cfg(query) == grm
 

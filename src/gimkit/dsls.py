@@ -4,31 +4,24 @@
 - `build_json_schema` constructs a JSON schema representing the response structure."""
 
 from gimkit.contexts import Query
-from gimkit.schemas import (
-    RESPONSE_PREFIX,
-    RESPONSE_SUFFIX,
-    TAG_END,
-    TAG_OPEN_LEFT,
-    TAG_OPEN_RIGHT,
-)
 
 
-def get_grammar_spec(grammar: str) -> str:
-    from llguidance import grammar_from
+CFG_TAG_RULE_NAME_PREFIX = "MASKED_TAG_"
+LLGUIDANCE_CFG_DOCS_URL = "https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md"
+
+
+def validate_grammar(grammar: str) -> tuple[bool, list[str]]:
+    from llguidance import LLMatcher, grammar_from
 
     # Borrowed from outlines source code at https://github.com/dottxt-ai/outlines/blob/87234d202924acce84ead694f8d06748608fd5f9/outlines/backends/llguidance.py#L296-L299
+    # This turns the original LLGuidance grammar to a normal grammar spec
     # We try both lark and ebnf
     try:
         grammar_spec = grammar_from("grammar", grammar)
     except ValueError:  # pragma: no cover
         grammar_spec = grammar_from("lark", grammar)
 
-    return grammar_spec
-
-
-def validate_grammar_spec(grammar_spec: str) -> tuple[bool, list[str]]:
-    from llguidance import LLMatcher
-
+    # Validate the grammar spec
     is_error, msgs = LLMatcher.validate_grammar_with_warnings(grammar_spec)
     return is_error, msgs
 
@@ -38,25 +31,39 @@ def build_cfg(query: Query) -> str:
 
     LLGuidance syntax reference: https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md
     """
+
+    # Avoid circular import
+    from gimkit.schemas import (
+        RESPONSE_PREFIX,
+        RESPONSE_SUFFIX,
+        TAG_END,
+        TAG_OPEN_LEFT,
+        TAG_OPEN_RIGHT,
+    )
+
     num_tags = len(query.tags)
-    grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
+    grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"{CFG_TAG_RULE_NAME_PREFIX}{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
 
     grammar_rest_lines = []
     for i, tag in enumerate(query.tags):
-        # `/(?s:.)*?/` is a non-greedy match for any character including newlines
-        content_pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.)*?/"
-        grammar_rest_lines.append(
-            f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" {content_pattern} "{TAG_END}"'
-        )
+        if tag.regex:
+            rule = f'{CFG_TAG_RULE_NAME_PREFIX}{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /{tag.regex}/ "{TAG_END}"'
+        elif tag.grammar:
+            rule = f"{CFG_TAG_RULE_NAME_PREFIX}{i}: {tag.grammar.strip().removeprefix('start: ')}"  # may be multiple lines
+        else:
+            # `/(?s:.)*?/` is a non-greedy match for any character including newlines
+            rule = f'{CFG_TAG_RULE_NAME_PREFIX}{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" /(?s:.)*?/ "{TAG_END}"'
+        grammar_rest_lines.append(rule)
 
     grammar = grammar_first_line + "\n" + "\n".join(grammar_rest_lines)
 
-    is_error, msgs = validate_grammar_spec(get_grammar_spec(grammar))
+    is_error, msgs = validate_grammar(grammar)
     if is_error:
         raise ValueError(
             "Invalid CFG grammar constructed from the query object:\n"
             + "\n".join(msgs)
-            + "\nWe recommend checking the syntax documentation at https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md"
+            + "\nWe recommend checking the syntax documentation at "
+            + LLGUIDANCE_CFG_DOCS_URL
         )
     return grammar
 

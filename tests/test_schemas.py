@@ -24,12 +24,12 @@ from gimkit.schemas import (
 
 
 def test_global_variables():
-    assert COMMON_ATTRS == ("name", "desc", "regex")
-    assert ALL_ATTRS == ("id", "name", "desc", "regex")
-    assert ALL_FIELDS == ("id", "name", "desc", "regex", "content")
+    assert COMMON_ATTRS == ("name", "desc", "regex", "grammar")
+    assert ALL_ATTRS == ("id", "name", "desc", "regex", "grammar")
+    assert ALL_FIELDS == ("id", "name", "desc", "regex", "grammar", "content")
     assert tuple(f.name for f in fields(MaskedTag)) == ALL_FIELDS
     assert len(set(ALL_FIELDS)) == len(ALL_FIELDS)
-    assert TagField.__args__ == ("id", "name", "desc", "regex", "content")
+    assert TagField.__args__ == ("id", "name", "desc", "regex", "grammar", "content")
 
 
 def test_regex_patterns():

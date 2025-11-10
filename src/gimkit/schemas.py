@@ -35,11 +35,11 @@ MAGIC_STRINGS = (
 
 # ─── Tag Fields Definitions ───────────────────────────────────────────────────
 
-COMMON_ATTRS = ("name", "desc", "regex")
+COMMON_ATTRS = ("name", "desc", "regex", "grammar")
 ALL_ATTRS = ("id", *COMMON_ATTRS)
 ALL_FIELDS = ("id", *COMMON_ATTRS, "content")
 
-TagField: TypeAlias = Literal["id", "name", "desc", "regex", "content"]
+TagField: TypeAlias = Literal["id", "name", "desc", "regex", "grammar", "content"]
 
 
 # ─── Regex Patterns For Tag Parsing ───────────────────────────────────────────
@@ -90,6 +90,7 @@ class MaskedTag:
     name: str | None = None
     desc: str | None = None
     regex: str | None = None
+    grammar: str | None = None
     content: str | None = None
 
     # Read-only class variable for additional attribute escapes. These
@@ -117,7 +118,16 @@ class MaskedTag:
         return html.unescape(text)
 
     def __post_init__(self):
-        # 1. Validate id
+        # Avoid circular imports
+        from gimkit.dsls import CFG_TAG_RULE_NAME_PREFIX, LLGUIDANCE_CFG_DOCS_URL, validate_grammar
+
+        # ─── Ensure Only One Decoding Constraint Is Specified ─────────
+
+        if sum([self.regex is not None, self.grammar is not None]) > 1:
+            raise ValueError("Only one of regex or grammar can be specified.")
+
+        # ─── Validate Id ──────────────────────────────────────────────
+
         if not (
             self.id is None
             or isinstance(self.id, int)
@@ -127,7 +137,8 @@ class MaskedTag:
         if isinstance(self.id, str):
             self.id = int(self.id)
 
-        # 2. Validate common attributes
+        # ─── Validate Common Attributes ───────────────────────────────
+
         for attr in COMMON_ATTRS:
             attr_val = getattr(self, attr)
             if isinstance(attr_val, str):
@@ -135,7 +146,8 @@ class MaskedTag:
             elif attr_val is not None:
                 raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
-        # 3. Validate content
+        # ─── Validate Content ─────────────────────────────────────────
+
         if isinstance(self.content, str):
             # TAG_OPEN_RIGHT is common in text, so we allow it in content.
             # But other magic strings are not allowed.
@@ -148,7 +160,8 @@ class MaskedTag:
         elif self.content is not None:
             raise ValueError(f"{type(self.content)=}, {self.content=}, should be str or None")
 
-        # 4. Validate regex if provided
+        # ─── Validate Regex ───────────────────────────────────────────
+
         if isinstance(self.regex, str):
             if self.regex.startswith("^") or self.regex.endswith("$"):
                 raise ValueError(
@@ -166,6 +179,30 @@ class MaskedTag:
                 re.compile(self.regex)
             except re.error as e:
                 raise ValueError(f"Invalid regex pattern: {self.regex}") from e
+
+        # ─── Validate Grammar ─────────────────────────────────────────
+
+        if isinstance(self.grammar, str):
+            if self.grammar == "":
+                raise ValueError("grammar should not be an empty string.")
+            if matches := re.findall(CFG_TAG_RULE_NAME_PREFIX + r"\d+", self.grammar):
+                raise ValueError(
+                    "grammar should not contain reserved rule names like "
+                    + " or ".join(f"`{x}`" for x in set(matches))
+                )
+            if not self.grammar.startswith("start:"):
+                raise ValueError(
+                    "Grammar should start with a `start:` rule."
+                    "\nWe recommend checking the syntax documentation at " + LLGUIDANCE_CFG_DOCS_URL
+                )
+            is_error, msgs = validate_grammar(self.grammar)
+            if is_error:
+                raise ValueError(
+                    "Invalid CFG grammar constructed from the query object:\n"
+                    + "\n".join(msgs)
+                    + "\nWe recommend checking the syntax documentation at "
+                    + LLGUIDANCE_CFG_DOCS_URL
+                )
 
     def to_string(
         self,
