@@ -95,7 +95,8 @@ def test_masked_tag_init_with_grammar():
     ):
         MaskedTag(grammar="start: masked_tag_0")
     with pytest.raises(ValueError, match="Grammar should begin with a `start:` rule"):
-        MaskedTag(grammar="rule: 'test'")
+        MaskedTag(grammar='rule: "test"')
+    MaskedTag(grammar='   \nstart: "test"')
     with pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"):
         MaskedTag(grammar="start: invalid_syntax")
 

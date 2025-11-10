@@ -183,6 +183,7 @@ class MaskedTag:
         # ─── Validate Grammar ─────────────────────────────────────────
 
         if isinstance(self.grammar, str):
+            self.grammar = self.grammar.strip()
             if self.grammar == "":
                 raise ValueError("Grammar should not be an empty string.")
             if matches := re.findall(CFG_TAG_RULE_NAME_PREFIX + r"\d+", self.grammar):
