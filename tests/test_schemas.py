@@ -1,5 +1,7 @@
 import re
 
+from dataclasses import fields
+
 import pytest
 
 from gimkit.exceptions import InvalidFormatError
@@ -25,7 +27,7 @@ def test_global_variables():
     assert COMMON_ATTRS == ("name", "desc", "regex")
     assert ALL_ATTRS == ("id", "name", "desc", "regex")
     assert ALL_FIELDS == ("id", "name", "desc", "regex", "content")
-    assert tuple(MaskedTag.__dataclass_fields__.keys()) == ALL_FIELDS
+    assert tuple(f.name for f in fields(MaskedTag)) == ALL_FIELDS
     assert len(set(ALL_FIELDS)) == len(ALL_FIELDS)
     assert TagField.__args__ == ("id", "name", "desc", "regex", "content")
 
@@ -81,6 +83,17 @@ def test_masked_tag_init_with_regex():
         MaskedTag(regex="/abc/")
     with pytest.raises(ValueError, match="Invalid regex pattern"):
         MaskedTag(regex="[")
+
+
+def test_masked_tag_attr_escape():
+    original = "& < > \" ' \t \n \r"
+    escaped = MaskedTag.attr_escape(original)
+    unescaped = MaskedTag.attr_unescape(escaped)
+    assert escaped == "&amp; &lt; &gt; &quot; &#x27; &#x09; &#x0a; &#x0d;"
+    assert original == unescaped
+
+    assert MaskedTag.attr_escape("&&") == "&amp;&amp;"
+    assert MaskedTag.attr_unescape("&amp;#x09;") == "&#x09;"
 
 
 def test_masked_tag_str():
