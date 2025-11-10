@@ -28,7 +28,10 @@ def test_build_cfg():
     assert isinstance(cfg, CFG)
     assert cfg.definition == grm
 
-    with pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"):
+    with (
+        pytest.warns(FutureWarning, match="Possible nested set at position 1"),
+        pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"),
+    ):
         build_cfg(Query(MaskedTag(regex="[[]]")))
 
 

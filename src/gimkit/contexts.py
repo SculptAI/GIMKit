@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal, cast, overload
 
 from gimkit.exceptions import InvalidFormatError
 from gimkit.schemas import (
+    ALL_FIELDS,
     QUERY_PREFIX,
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
@@ -13,6 +14,7 @@ from gimkit.schemas import (
     ContextInput,
     ContextPart,
     MaskedTag,
+    TagField,
     parse_parts,
 )
 
@@ -79,6 +81,7 @@ class Context:
     def __init__(self, prefix: str, suffix: str, *args: ContextInput) -> None:
         _inner_parts = self._process_context_inputs(*args)
 
+        # Remove prefix and suffix from the inner parts if present
         if (
             prefix
             and _inner_parts
@@ -114,9 +117,7 @@ class Context:
 
     def to_string(
         self,
-        fields: list[Literal["id", "name", "desc", "regex", "content"]]
-        | Literal["all"]
-        | None = None,
+        fields: list[TagField] | Literal["all"] | None = None,
         infill_mode: Literal[True] | None = None,
     ) -> str:
         if not ((fields is None) ^ (infill_mode is None)):
@@ -124,7 +125,7 @@ class Context:
         content = ""
         if fields is not None:
             if fields == "all":
-                fields = ["id", "name", "desc", "regex", "content"]
+                fields = cast("list[TagField]", list(ALL_FIELDS))
 
             for part in self._parts:
                 if isinstance(part, MaskedTag):

@@ -52,7 +52,7 @@ def test_vllm_offline_call():
             model(MaskedTag(), output_type="json")
         mock_call.assert_called_once()
 
-    with patch("gimkit.models.utils.Generator") as mock_generator:
+    with patch("gimkit.models.base.Generator") as mock_generator:
         generator_instance = MagicMock()
         generator_instance.return_value = ["response1", "response2"]
         mock_generator.return_value = generator_instance
@@ -68,21 +68,21 @@ def test_vllm_offline_call():
 def test_vllm_offline_call_invalid_response():
     model = from_vllm_offline(MagicMock(spec=LLM))
 
-    with patch("gimkit.models.utils.Generator") as mock_generator:
+    with patch("gimkit.models.base.Generator") as mock_generator:
         generator_instance = MagicMock()
         generator_instance.return_value = set()
         mock_generator.return_value = generator_instance
         with pytest.raises(TypeError, match="Expected responses to be str or list of str, got"):
             model(MaskedTag())
 
-    with patch("gimkit.models.utils.Generator") as mock_generator:
+    with patch("gimkit.models.base.Generator") as mock_generator:
         generator_instance = MagicMock()
         generator_instance.return_value = [object, "response2"]
         mock_generator.return_value = generator_instance
         with pytest.raises(TypeError, match="All items in the response list must be strings, got"):
             model(MaskedTag(), sampling_params=SamplingParams(n=2))
 
-    with patch("gimkit.models.utils.Generator") as mock_generator:
+    with patch("gimkit.models.base.Generator") as mock_generator:
         generator_instance = MagicMock()
         generator_instance.return_value = []
         mock_generator.return_value = generator_instance
