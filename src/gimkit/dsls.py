@@ -34,7 +34,10 @@ def validate_grammar_spec(grammar_spec: str) -> tuple[bool, list[str]]:
 
 
 def build_cfg(query: Query) -> str:
-    """Build an LLGuidance context-free grammar (CFG) output type based on the query object."""
+    """Build an LLGuidance context-free grammar (CFG) string based on the query object.
+
+    LLGuidance syntax reference: https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md
+    """
     num_tags = len(query.tags)
     grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"tag{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
 
@@ -59,7 +62,7 @@ def build_cfg(query: Query) -> str:
 
 
 def build_json_schema(query: Query) -> dict:
-    """Build a JSON schema output type based on the query object.
+    """Build a JSON schema dictionary based on the query object.
 
     The JSON schema represents the response structure where each masked tag
     becomes a field in the JSON object. The field name is "m_{id}" to match
