@@ -30,7 +30,7 @@ def test_transform_to_outlines():
     model_input, output_type = transform_to_outlines(query, output_type="cfg", use_gim_prompt=False)
     assert isinstance(model_input, str)
     assert isinstance(output_type, CFG)
-    assert 'start: "<|GIM_RESPONSE|>" MASKED_TAG_0 "<|/GIM_RESPONSE|>"' in output_type.definition
+    assert 'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"' in output_type.definition
 
     # Test JSON output type
     model_input, output_type = transform_to_outlines(

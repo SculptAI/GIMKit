@@ -10,17 +10,29 @@ from gimkit.schemas import MaskedTag
 
 def test_build_cfg():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
-    grm = (
-        'start: "<|GIM_RESPONSE|>" MASKED_TAG_0 "<|/GIM_RESPONSE|>"\n'
-        'MASKED_TAG_0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
+    whole_grammar = (
+        'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
+        'masked_tag_0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
     )
-    assert build_cfg(query) == grm
+    assert build_cfg(query) == whole_grammar
 
+    # Test with invalid regex
     with (
         pytest.warns(FutureWarning, match="Possible nested set at position 1"),
         pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"),
     ):
         build_cfg(Query(MaskedTag(regex="[[]]")))
+
+    # Test with cfg
+    cfg = 'start: obj1 ", " obj2\nobj1: "Hello" | "Hi"\nobj2: "World" | "Everyone"\n'
+    query_with_grammar = Query(MaskedTag(id=0, grammar=cfg), "!")
+    whole_grammar = (
+        'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
+        'masked_tag_0: obj1 ", " obj2\n'
+        'obj1: "Hello" | "Hi"\n'
+        'obj2: "World" | "Everyone"'
+    )
+    assert build_cfg(query_with_grammar) == whole_grammar
 
 
 def test_build_json_schema():

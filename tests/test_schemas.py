@@ -72,6 +72,8 @@ def test_masked_tag_init_invalid():
         ),
     ):
         MaskedTag(content="<|MASKED|>")
+    with pytest.raises(ValueError, match="Only one of regex or grammar can be specified"):
+        MaskedTag(regex="[a-z]+", grammar="start: 'test'")
 
 
 def test_masked_tag_init_with_regex():
@@ -83,6 +85,19 @@ def test_masked_tag_init_with_regex():
         MaskedTag(regex="/abc/")
     with pytest.raises(ValueError, match="Invalid regex pattern"):
         MaskedTag(regex="[")
+
+
+def test_masked_tag_init_with_grammar():
+    with pytest.raises(ValueError, match="Grammar should not be an empty string"):
+        MaskedTag(grammar="")
+    with pytest.raises(
+        ValueError, match="Grammar should not contain reserved rule names like `masked_tag_0`"
+    ):
+        MaskedTag(grammar="start: masked_tag_0")
+    with pytest.raises(ValueError, match="Grammar should begin with a `start:` rule"):
+        MaskedTag(grammar="rule: 'test'")
+    with pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"):
+        MaskedTag(grammar="start: invalid_syntax")
 
 
 def test_masked_tag_attr_escape():

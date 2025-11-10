@@ -184,15 +184,15 @@ class MaskedTag:
 
         if isinstance(self.grammar, str):
             if self.grammar == "":
-                raise ValueError("grammar should not be an empty string.")
+                raise ValueError("Grammar should not be an empty string.")
             if matches := re.findall(CFG_TAG_RULE_NAME_PREFIX + r"\d+", self.grammar):
                 raise ValueError(
-                    "grammar should not contain reserved rule names like "
+                    "Grammar should not contain reserved rule names like "
                     + " or ".join(f"`{x}`" for x in set(matches))
                 )
             if not self.grammar.startswith("start:"):
                 raise ValueError(
-                    "Grammar should start with a `start:` rule."
+                    "Grammar should begin with a `start:` rule."
                     "\nWe recommend checking the syntax documentation at " + LLGUIDANCE_CFG_DOCS_URL
                 )
             is_error, msgs = validate_grammar(self.grammar)

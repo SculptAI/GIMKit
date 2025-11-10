@@ -6,7 +6,7 @@
 from gimkit.contexts import Query
 
 
-CFG_TAG_RULE_NAME_PREFIX = "MASKED_TAG_"
+CFG_TAG_RULE_NAME_PREFIX = "masked_tag_"
 LLGUIDANCE_CFG_DOCS_URL = "https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md"
 
 
