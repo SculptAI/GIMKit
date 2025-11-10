@@ -86,9 +86,10 @@ def test_masked_tag_init_with_regex():
 
 
 def test_masked_tag_attr_escape():
-    original = "Example with special chars: & < > \" ' \t \n \r"
+    original = "& < > \" ' \t \n \r"
     escaped = MaskedTag.attr_escape(original)
     unescaped = MaskedTag.attr_unescape(escaped)
+    assert escaped == "&amp; &lt; &gt; &quot; &#x27; &#x09; &#x0a; &#x0d;"
     assert original == unescaped
 
     assert MaskedTag.attr_escape("&&") == "&amp;&amp;"

@@ -92,8 +92,11 @@ class MaskedTag:
     regex: str | None = None
     content: str | None = None
 
-    # Additional attribute escapes, read-only class variable
-    # Theses characters may appear in attributes like `desc`, `grammar`, etc.
+    # Read-only class variable for additional attribute escapes. These
+    # characters may appear in tag attributes such as `desc` or `grammar`.
+    # Hexadecimal numeric character references are used for consistency and
+    # compatibility with Python's built-in `html.escape` conventions.
+    # Ref: https://www.w3.org/MarkUp/html-spec/html-spec_13.html
     _ADDITIONAL_ATTR_ESCAPES: ClassVar[Mapping[str, str]] = MappingProxyType(
         {
             "\t": "&#x09;",  # Tab
@@ -111,10 +114,7 @@ class MaskedTag:
 
     @classmethod
     def attr_unescape(cls, text: str) -> str:
-        unescaped_text = text
-        for escape_seq, char in cls._ADDITIONAL_ATTR_ESCAPES.items():
-            unescaped_text = unescaped_text.replace(escape_seq, char)
-        return html.unescape(unescaped_text)
+        return html.unescape(text)
 
     def __post_init__(self):
         # 1. Validate id
