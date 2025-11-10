@@ -181,7 +181,7 @@ def test_infill_strict():
 
     with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
         result = infill(query, response, strict=False)
-        assert str(result) == 'Hello, world<|MASKED id="m_1"|><|/MASKED|>'
+        assert str(result) == 'Hello, world<|MASKED id="m_1" name="obj2"|><|/MASKED|>'
 
     with pytest.raises(
         InvalidFormatError, match=r"Mismatch in number of tags between query and response"
