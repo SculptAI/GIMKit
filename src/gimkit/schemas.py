@@ -4,10 +4,12 @@ import html
 import re
 
 from dataclasses import dataclass
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, cast
 
 from gimkit.exceptions import InvalidFormatError
 
+
+# ─── Gim Query, Response And Tag Definitions ──────────────────────────────────
 
 QUERY_PREFIX = "<|GIM_QUERY|>"
 QUERY_SUFFIX = "<|/GIM_QUERY|>"
@@ -18,7 +20,7 @@ TAG_OPEN_LEFT = "<|MASKED"
 TAG_OPEN_RIGHT = "|>"
 TAG_END = "<|/MASKED|>"
 
-MAGIC_STRINGS = [
+MAGIC_STRINGS = (
     QUERY_PREFIX,
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
@@ -26,12 +28,24 @@ MAGIC_STRINGS = [
     TAG_OPEN_LEFT,
     TAG_OPEN_RIGHT,
     TAG_END,
-]
-
-_TAG_ATTRS_REGEX = (
-    r'(?: id="m_(\d+)")?' + r'(?: name="(.*?)")?' + r'(?: desc="(.*?)")?' + r'(?: regex="(.*?)")?'
 )
-_TAG_CONTENT_REGEX = r"(.*?)"
+
+
+# ─── Tag Fields Definitions ───────────────────────────────────────────────────
+
+COMMON_ATTRS = ("name", "desc", "regex")
+ALL_ATTRS = ("id", *COMMON_ATTRS)
+ALL_FIELDS = ("id", *COMMON_ATTRS, "content")
+
+AllFields: TypeAlias = Literal["id", "name", "desc", "regex", "content"]
+
+
+# ─── Regex Patterns For Tag Parsing ───────────────────────────────────────────
+
+_TAG_ATTRS_REGEX = r'(?: id="m_(?P<id>\d+)")?' + "".join(
+    rf'(?: {field}="(?P<{field}>.*?)")?' for field in COMMON_ATTRS
+)
+_TAG_CONTENT_REGEX = r"(?P<content>.*?)"
 
 TAG_OPEN_PATTERN = re.compile(
     re.escape(TAG_OPEN_LEFT) + _TAG_ATTRS_REGEX + re.escape(TAG_OPEN_RIGHT), re.DOTALL
@@ -46,40 +60,35 @@ TAG_FULL_PATTERN = re.compile(
     re.DOTALL,
 )
 
+# !NOTE:
+# Some edge-case masked-tag strings (e.g., with embedded escaped quotes in attributes)
+# may not be matched by TAG_FULL_PATTERN. Example:
+# `<|MASKED id="m_1" desc="sample\"|>" regex="[a-zA-Z]+"|>content here<|/MASKED|>`
+# GIM expects tags to be generated via guide() helpers rather than hand-written,
+# so parsing favors simplicity and performance over covering every exotic edge case.
+
+
+# ─── MaskedTag Definition ─────────────────────────────────────────────────────
+
 
 @dataclass
 class MaskedTag:
-    """Represents a masked tag in the GIM schema. A tag consists of a tag
-    id, tag content and some other related attributes. It looks like:
+    """Represents a masked tag in the GIM schema.
 
-    `<|MASKED id="m_0" name="xxx" desc="xxx" regex="xxx"|>xxx<|/MASKED|>`
+    A masked tag consists of three main types of components:
+    1. **Tag ID**: An integer identifier for the tag, represented as `m_{id}` in the tag attributes.
+    2. **Tag content**: The content located between the opening and closing masked tag markers.
+    3. **Tag common attributes**: All other tag attributes aside from the ID (e.g., name, desc, regex).
+
+    Example of a masked tag:
+        `<|MASKED id="m_0" name="xxx" desc="xxx" regex="xxx"|>content here<|/MASKED|>`
     """
 
-    id: int | None = None
+    id: int | str | None = None
     name: str | None = None
     desc: str | None = None
     regex: str | None = None
     content: str | None = None
-
-    _attrs = ("name", "desc", "regex")
-
-    def to_string(
-        self,
-        fields: list[Literal["id", "name", "desc", "regex", "content"]] | Literal["all"] = "all",
-    ) -> str:
-        attr_part = ""
-        if fields == "all":
-            fields = ["id", "name", "desc", "regex", "content"]
-        if "id" in fields and self.id is not None:
-            attr_part += f' id="m_{self.id}"'
-        for attr in self._attrs:
-            if attr in fields and getattr(self, attr) is not None:
-                escaped_val = self.escape_in_attr_val(getattr(self, attr))
-                attr_part += f' {attr}="{escaped_val}"'
-        content_part = ""
-        if "content" in fields and self.content is not None:
-            content_part = f"{self.content}"
-        return TAG_OPEN_LEFT + attr_part + TAG_OPEN_RIGHT + content_part + TAG_END
 
     @classmethod
     def escape_in_attr_val(cls, value: str) -> str:
@@ -91,11 +100,17 @@ class MaskedTag:
 
     def __post_init__(self):
         # 1. Validate id
-        if not (self.id is None or isinstance(self.id, int)):
-            raise ValueError(f"{type(self.id)=}, {self.id=}, should be int or None")
+        if not (
+            self.id is None
+            or isinstance(self.id, int)
+            or (isinstance(self.id, str) and self.id.isdigit())
+        ):
+            raise ValueError(f"{type(self.id)=}, {self.id=}, should be int, str of digits, or None")
+        if isinstance(self.id, str):
+            self.id = int(self.id)
 
-        # 2. Validate all attrs
-        for attr in self._attrs:
+        # 2. Validate common attributes
+        for attr in COMMON_ATTRS:
             attr_val = getattr(self, attr)
             if isinstance(attr_val, str):
                 setattr(self, attr, MaskedTag.unescape_in_attr_val(attr_val))
@@ -106,8 +121,7 @@ class MaskedTag:
         if isinstance(self.content, str):
             # TAG_OPEN_RIGHT is common in text, so we allow it in content.
             # But other magic strings are not allowed.
-            special_marks = MAGIC_STRINGS.copy()
-            special_marks.remove(TAG_OPEN_RIGHT)
+            special_marks = [s for s in MAGIC_STRINGS if s != TAG_OPEN_RIGHT]
             if any(special_mark in self.content for special_mark in special_marks):
                 raise ValueError(
                     "content should not contain special marks like "
@@ -135,6 +149,24 @@ class MaskedTag:
             except re.error as e:
                 raise ValueError(f"Invalid regex pattern: {self.regex}") from e
 
+    def to_string(
+        self,
+        fields: list[AllFields] | Literal["all"] = "all",
+    ) -> str:
+        attr_part = ""
+        if fields == "all":
+            fields = cast("list[AllFields]", list(ALL_FIELDS))
+        if "id" in fields and self.id is not None:
+            attr_part += f' id="m_{self.id}"'
+        for attr in COMMON_ATTRS:
+            if attr in fields and getattr(self, attr) is not None:
+                escaped_val = self.escape_in_attr_val(getattr(self, attr))
+                attr_part += f' {attr}="{escaped_val}"'
+        content_part = ""
+        if "content" in fields and self.content is not None:
+            content_part = f"{self.content}"
+        return TAG_OPEN_LEFT + attr_part + TAG_OPEN_RIGHT + content_part + TAG_END
+
     def __str__(self):
         return self.to_string()
 
@@ -154,6 +186,9 @@ class MaskedTag:
 
 ContextPart: TypeAlias = str | MaskedTag
 ContextInput: TypeAlias = ContextPart | list[ContextPart]
+
+
+# ─── Schema Parsing And Validation ────────────────────────────────────────────
 
 
 def parse_parts(s: str) -> list[ContextPart]:
@@ -180,11 +215,8 @@ def parse_parts(s: str) -> list[ContextPart]:
         if start > last_end:
             parts.append(s[last_end:start])
 
-        tag_id = match.group(1)
-        tag_name = match.group(2)
-        tag_desc = match.group(3)
-        tag_regex = match.group(4)
-        tag_content = match.group(5)
+        fields = match.groupdict()
+        tag_id = fields.get("id")
         if tag_id is not None:
             tag_id = int(tag_id)
             if curr_tag_id is None:
@@ -195,9 +227,7 @@ def parse_parts(s: str) -> list[ContextPart]:
                 )
         if curr_tag_id is not None:
             curr_tag_id += 1
-        parts.append(
-            MaskedTag(id=tag_id, name=tag_name, desc=tag_desc, regex=tag_regex, content=tag_content)
-        )
+        parts.append(MaskedTag(**fields))
 
         last_end = end
     if last_end < len(s):

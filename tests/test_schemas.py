@@ -4,39 +4,57 @@ import pytest
 
 from gimkit.exceptions import InvalidFormatError
 from gimkit.schemas import (
+    ALL_ATTRS,
+    ALL_FIELDS,
+    COMMON_ATTRS,
     QUERY_PREFIX,
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
+    TAG_END_PATTERN,
+    TAG_FULL_PATTERN,
+    TAG_OPEN_PATTERN,
+    AllFields,
     MaskedTag,
     parse_tags,
     validate,
 )
 
 
-def test_masked_tag_str():
-    assert str(MaskedTag(id=0)) == '<|MASKED id="m_0"|><|/MASKED|>'
-    assert (
-        str(MaskedTag(id=0, desc="description"))
-        == '<|MASKED id="m_0" desc="description"|><|/MASKED|>'
-    )
-    assert (
-        str(MaskedTag(id=0, desc='desc with "quotes"'))
-        == '<|MASKED id="m_0" desc="desc with &quot;quotes&quot;"|><|/MASKED|>'
-    )
-    assert str(MaskedTag(id=0, content="content")) == '<|MASKED id="m_0"|>content<|/MASKED|>'
-    assert str(MaskedTag()) == "<|MASKED|><|/MASKED|>"
-    assert str(MaskedTag(name="content")) == '<|MASKED name="content"|><|/MASKED|>'
+def test_global_variables():
+    assert COMMON_ATTRS == ("name", "desc", "regex")
+    assert ALL_ATTRS == ("id", "name", "desc", "regex")
+    assert ALL_FIELDS == ("id", "name", "desc", "regex", "content")
+    assert tuple(MaskedTag.__dataclass_fields__.keys()) == ALL_FIELDS
+    assert len(set(ALL_FIELDS)) == len(ALL_FIELDS)
+    assert AllFields.__args__ == ("id", "name", "desc", "regex", "content")
 
 
-def test_masked_tag_repr():
-    assert repr(MaskedTag(id=0)) == '<|MASKED id="m_0"|><|/MASKED|>'
-    assert repr(MaskedTag(id=0, content="content")) == '<|MASKED id="m_0"|>content<|/MASKED|>'
+def test_regex_patterns():
+    # Test TAG_OPEN_PATTERN
+    match = re.fullmatch(TAG_OPEN_PATTERN, '<|MASKED id="m_0" name="test" desc="example"|>')
+    assert match is not None
+    assert match.group("id") == "0"
+    assert match.group("name") == "test"
+    assert match.group("desc") == "example"
+
+    # Test TAG_END_PATTERN
+    match = re.fullmatch(TAG_END_PATTERN, "<|/MASKED|>")
+    assert match is not None
+
+    # Test TAG_FULL_PATTERN
+    test_string = '<|MASKED id="m_1" desc="sample" regex="[a-zA-Z]+"|>content here<|/MASKED|>'
+    match = re.fullmatch(TAG_FULL_PATTERN, test_string)
+    assert match is not None
+    assert match.group("id") == "1"
+    assert match.group("desc") == "sample"
+    assert match.group("regex") == "[a-zA-Z]+"
+    assert match.group("content") == "content here"
 
 
 def test_masked_tag_init_invalid():
-    with pytest.raises(ValueError, match="should be int or None"):
-        MaskedTag(id="0")
+    with pytest.raises(ValueError, match="should be int, str of digits, or None"):
+        MaskedTag(id="0=")
     with pytest.raises(ValueError, match="should be str or None"):
         MaskedTag(name=123)
     with pytest.raises(ValueError, match="should be str or None"):
@@ -63,6 +81,26 @@ def test_masked_tag_init_with_regex():
         MaskedTag(regex="/abc/")
     with pytest.raises(ValueError, match="Invalid regex pattern"):
         MaskedTag(regex="[")
+
+
+def test_masked_tag_str():
+    assert str(MaskedTag(id=0)) == '<|MASKED id="m_0"|><|/MASKED|>'
+    assert (
+        str(MaskedTag(id=0, desc="description"))
+        == '<|MASKED id="m_0" desc="description"|><|/MASKED|>'
+    )
+    assert (
+        str(MaskedTag(id=0, desc='desc with "quotes"'))
+        == '<|MASKED id="m_0" desc="desc with &quot;quotes&quot;"|><|/MASKED|>'
+    )
+    assert str(MaskedTag(id=0, content="content")) == '<|MASKED id="m_0"|>content<|/MASKED|>'
+    assert str(MaskedTag()) == "<|MASKED|><|/MASKED|>"
+    assert str(MaskedTag(name="content")) == '<|MASKED name="content"|><|/MASKED|>'
+
+
+def test_masked_tag_repr():
+    assert repr(MaskedTag(id=0)) == '<|MASKED id="m_0"|><|/MASKED|>'
+    assert repr(MaskedTag(id=0, content="content")) == '<|MASKED id="m_0"|>content<|/MASKED|>'
 
 
 def test_parse_tags_valid():
