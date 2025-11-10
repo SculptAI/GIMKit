@@ -1,10 +1,11 @@
 """Defines the schema for GIM."""
 
-import html
 import re
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal, TypeAlias, cast
+from types import MappingProxyType
+from typing import ClassVar, Literal, TypeAlias, cast
 
 from gimkit.exceptions import InvalidFormatError
 
@@ -90,13 +91,34 @@ class MaskedTag:
     regex: str | None = None
     content: str | None = None
 
-    @classmethod
-    def escape_in_attr_val(cls, value: str) -> str:
-        return html.escape(value)
+    # A read-only class variable for attribute escapes
+    _ATTR_ESCAPES: ClassVar[Mapping[str, str]] = MappingProxyType(
+        {
+            # Core HTML entity escapes (correspond to html.escape / html.unescape).
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#x27;",
+            # Additional escapes that may appear in `desc`, `grammar`, etc.
+            "\t": "&#x09;",  # Tab
+            "\n": "&#x0a;",  # Line Feed
+            "\r": "&#x0d;",  # Carriage Return
+        }
+    )
 
     @classmethod
-    def unescape_in_attr_val(cls, value: str) -> str:
-        return html.unescape(value)
+    def attr_escape(cls, text: str) -> str:
+        for k, v in cls._ATTR_ESCAPES.items():
+            text = text.replace(k, v)
+        return text
+
+    @classmethod
+    def attr_unescape(cls, text: str) -> str:
+        attr_unescapes = {v: k for k, v in cls._ATTR_ESCAPES.items()}
+        for v, k in attr_unescapes.items():
+            text = text.replace(v, k)
+        return text
 
     def __post_init__(self):
         # 1. Validate id
@@ -113,7 +135,7 @@ class MaskedTag:
         for attr in COMMON_ATTRS:
             attr_val = getattr(self, attr)
             if isinstance(attr_val, str):
-                setattr(self, attr, MaskedTag.unescape_in_attr_val(attr_val))
+                setattr(self, attr, MaskedTag.attr_unescape(attr_val))
             elif attr_val is not None:
                 raise ValueError(f"{type(attr_val)=}, {attr_val=}, should be str or None")
 
@@ -160,7 +182,7 @@ class MaskedTag:
             attr_part += f' id="m_{self.id}"'
         for attr in COMMON_ATTRS:
             if attr in fields and getattr(self, attr) is not None:
-                escaped_val = self.escape_in_attr_val(getattr(self, attr))
+                escaped_val = self.attr_escape(getattr(self, attr))
                 attr_part += f' {attr}="{escaped_val}"'
         content_part = ""
         if "content" in fields and self.content is not None:

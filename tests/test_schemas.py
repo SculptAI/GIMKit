@@ -1,5 +1,7 @@
 import re
 
+from dataclasses import fields
+
 import pytest
 
 from gimkit.exceptions import InvalidFormatError
@@ -25,7 +27,7 @@ def test_global_variables():
     assert COMMON_ATTRS == ("name", "desc", "regex")
     assert ALL_ATTRS == ("id", "name", "desc", "regex")
     assert ALL_FIELDS == ("id", "name", "desc", "regex", "content")
-    assert tuple(MaskedTag.__dataclass_fields__.keys()) == ALL_FIELDS
+    assert tuple(f.name for f in fields(MaskedTag)) == ALL_FIELDS
     assert len(set(ALL_FIELDS)) == len(ALL_FIELDS)
     assert TagField.__args__ == ("id", "name", "desc", "regex", "content")
 
