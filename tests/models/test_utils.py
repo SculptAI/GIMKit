@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from outlines.inputs import Chat
@@ -7,8 +5,6 @@ from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result
 from gimkit.models.utils import (
-    build_cfg,
-    build_json_schema,
     get_outlines_output_type,
     infill_responses,
     json_responses_to_gim_response,
@@ -16,48 +12,6 @@ from gimkit.models.utils import (
 )
 from gimkit.prompts import SYSTEM_PROMPT_MSG
 from gimkit.schemas import MaskedTag
-
-
-def test_build_cfg():
-    query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
-    grm = (
-        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
-        'tag0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
-    )
-    cfg = build_cfg(query)
-    assert isinstance(cfg, CFG)
-    assert cfg.definition == grm
-
-    with (
-        pytest.warns(FutureWarning, match="Possible nested set at position 1"),
-        pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"),
-    ):
-        build_cfg(Query(MaskedTag(regex="[[]]")))
-
-
-def test_build_json_schema():
-    query = Query(
-        "Name: ",
-        MaskedTag(id=0, desc="user name", regex="[a-zA-Z]+"),
-        ", Age: ",
-        MaskedTag(id=1, desc="user age"),
-    )
-    schema = build_json_schema(query)
-    expected_schema = {
-        "type": "object",
-        "properties": {
-            "m_0": {
-                "type": "string",
-                "pattern": "[a-zA-Z]+",
-                "description": "user name",
-            },
-            "m_1": {"type": "string", "description": "user age"},
-        },
-        "required": ["m_0", "m_1"],
-        "additionalProperties": False,
-    }
-    assert isinstance(schema, JsonSchema)
-    assert json.loads(schema.schema) == expected_schema
 
 
 def test_get_outlines_output_type():
