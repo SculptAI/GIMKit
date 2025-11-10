@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
 
 from gimkit.contexts import Query, Result
-from gimkit.models.utils import _call
+from gimkit.models.base import _call
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
 
 

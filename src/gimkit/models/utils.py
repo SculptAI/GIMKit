@@ -1,6 +1,5 @@
-from typing import Any, Literal, cast, overload
+from typing import Literal, overload
 
-from outlines.generator import Generator
 from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
 
@@ -115,6 +114,7 @@ def transform_to_outlines(
     output_type: Literal["cfg", "json"] | None,
     use_gim_prompt: bool,
 ) -> tuple[str | Chat, None | CFG | JsonSchema]:
+    """Transform the model input and output type to Outlines-compatible formats."""
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_model_input: str | Chat = str(query_obj)
     if use_gim_prompt:
@@ -180,6 +180,7 @@ def infill_responses(
 def infill_responses(
     query: ContextInput | Query, responses: str | list[str], json_responses: bool = False
 ) -> Result | list[Result]:
+    """Infill the provided query with content from the GIM responses or JSON responses."""
     # Handle single string response
     if isinstance(responses, str):
         if json_responses:
@@ -197,40 +198,3 @@ def infill_responses(
         raise TypeError(f"All items in the response list must be strings, got: {responses}")
 
     return [infill_responses(query, resp, json_responses=json_responses) for resp in responses]
-
-
-def _call(
-    self,
-    model_input: ContextInput | Query,
-    output_type: Literal["cfg", "json"] | None = "cfg",
-    backend: str | None = None,
-    use_gim_prompt: bool = False,
-    **inference_kwargs: Any,
-) -> Result | list[Result]:
-    outlines_model_input, outlines_output_type = transform_to_outlines(
-        model_input, output_type, use_gim_prompt
-    )
-    raw_responses = Generator(self, outlines_output_type, backend)(
-        outlines_model_input, **inference_kwargs
-    )
-    return infill_responses(
-        model_input, cast("str | list[str]", raw_responses), json_responses=(output_type == "json")
-    )
-
-
-async def _acall(
-    self,
-    model_input: ContextInput | Query,
-    output_type: Literal["cfg", "json"] | None = "cfg",
-    backend: str | None = None,
-    use_gim_prompt: bool = False,
-    **inference_kwargs: Any,
-) -> Result | list[Result]:
-    outlines_model_input, outlines_output_type = transform_to_outlines(
-        model_input, output_type, use_gim_prompt
-    )
-    generator = Generator(self, outlines_output_type, backend)
-    raw_responses = await generator(outlines_model_input, **inference_kwargs)
-    return infill_responses(
-        model_input, cast("str | list[str]", raw_responses), json_responses=(output_type == "json")
-    )

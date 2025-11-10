@@ -10,7 +10,7 @@ from outlines.models.vllm import VLLM as OutlinesVLLM
 from outlines.models.vllm import AsyncVLLM as OutlinesAsyncVLLM
 
 from gimkit.contexts import Query, Result
-from gimkit.models.utils import _acall, _call
+from gimkit.models.base import _acall, _call
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
 
 

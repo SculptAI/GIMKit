@@ -10,7 +10,7 @@ from outlines.models.openai import AsyncOpenAI as OutlinesAsyncOpenAI
 from outlines.models.openai import OpenAI as OutlinesOpenAI
 
 from gimkit.contexts import Query, Result
-from gimkit.models.utils import _acall, _call
+from gimkit.models.base import _acall, _call
 from gimkit.schemas import ContextInput
 
 
