@@ -139,7 +139,7 @@ class Context:
                     if part.content is not None:
                         content += part.content
                     else:
-                        content += part.to_string(fields=["id", "desc", "regex", "content"])
+                        content += part.to_string(fields="all")
                 else:
                     content += part
             content = content[len(self._prefix) : len(content) - len(self._suffix)]
