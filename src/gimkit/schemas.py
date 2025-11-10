@@ -1,5 +1,6 @@
 """Defines the schema for GIM."""
 
+import html
 import re
 
 from collections.abc import Mapping
@@ -91,16 +92,10 @@ class MaskedTag:
     regex: str | None = None
     content: str | None = None
 
-    # A read-only class variable for attribute escapes
-    _ATTR_ESCAPES: ClassVar[Mapping[str, str]] = MappingProxyType(
+    # Additional attribute escapes, read-only class variable
+    # Theses characters may appear in attributes like `desc`, `grammar`, etc.
+    _ADDITIONAL_ATTR_ESCAPES: ClassVar[Mapping[str, str]] = MappingProxyType(
         {
-            # Core HTML entity escapes (correspond to html.escape / html.unescape).
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#x27;",
-            # Additional escapes that may appear in `desc`, `grammar`, etc.
             "\t": "&#x09;",  # Tab
             "\n": "&#x0a;",  # Line Feed
             "\r": "&#x0d;",  # Carriage Return
@@ -109,16 +104,17 @@ class MaskedTag:
 
     @classmethod
     def attr_escape(cls, text: str) -> str:
-        for k, v in cls._ATTR_ESCAPES.items():
-            text = text.replace(k, v)
-        return text
+        escaped_text = html.escape(text, quote=True)
+        for char, escape_seq in cls._ADDITIONAL_ATTR_ESCAPES.items():
+            escaped_text = escaped_text.replace(char, escape_seq)
+        return escaped_text
 
     @classmethod
     def attr_unescape(cls, text: str) -> str:
-        attr_unescapes = {v: k for k, v in cls._ATTR_ESCAPES.items()}
-        for v, k in attr_unescapes.items():
-            text = text.replace(v, k)
-        return text
+        unescaped_text = text
+        for escape_seq, char in cls._ADDITIONAL_ATTR_ESCAPES.items():
+            unescaped_text = unescaped_text.replace(escape_seq, char)
+        return html.unescape(unescaped_text)
 
     def __post_init__(self):
         # 1. Validate id
