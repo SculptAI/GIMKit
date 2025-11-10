@@ -11,10 +11,10 @@ from gimkit.schemas import (
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
-    AllFields,
     ContextInput,
     ContextPart,
     MaskedTag,
+    TagField,
     parse_parts,
 )
 
@@ -117,7 +117,7 @@ class Context:
 
     def to_string(
         self,
-        fields: list[AllFields] | Literal["all"] | None = None,
+        fields: list[TagField] | Literal["all"] | None = None,
         infill_mode: Literal[True] | None = None,
     ) -> str:
         if not ((fields is None) ^ (infill_mode is None)):
@@ -125,7 +125,7 @@ class Context:
         content = ""
         if fields is not None:
             if fields == "all":
-                fields = cast("list[AllFields]", list(ALL_FIELDS))
+                fields = cast("list[TagField]", list(ALL_FIELDS))
 
             for part in self._parts:
                 if isinstance(part, MaskedTag):

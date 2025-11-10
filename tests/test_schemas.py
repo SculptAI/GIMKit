@@ -14,8 +14,8 @@ from gimkit.schemas import (
     TAG_END_PATTERN,
     TAG_FULL_PATTERN,
     TAG_OPEN_PATTERN,
-    AllFields,
     MaskedTag,
+    TagField,
     parse_tags,
     validate,
 )
@@ -27,7 +27,7 @@ def test_global_variables():
     assert ALL_FIELDS == ("id", "name", "desc", "regex", "content")
     assert tuple(MaskedTag.__dataclass_fields__.keys()) == ALL_FIELDS
     assert len(set(ALL_FIELDS)) == len(ALL_FIELDS)
-    assert AllFields.__args__ == ("id", "name", "desc", "regex", "content")
+    assert TagField.__args__ == ("id", "name", "desc", "regex", "content")
 
 
 def test_regex_patterns():

@@ -37,7 +37,7 @@ COMMON_ATTRS = ("name", "desc", "regex")
 ALL_ATTRS = ("id", *COMMON_ATTRS)
 ALL_FIELDS = ("id", *COMMON_ATTRS, "content")
 
-AllFields: TypeAlias = Literal["id", "name", "desc", "regex", "content"]
+TagField: TypeAlias = Literal["id", "name", "desc", "regex", "content"]
 
 
 # ─── Regex Patterns For Tag Parsing ───────────────────────────────────────────
@@ -151,11 +151,11 @@ class MaskedTag:
 
     def to_string(
         self,
-        fields: list[AllFields] | Literal["all"] = "all",
+        fields: list[TagField] | Literal["all"] = "all",
     ) -> str:
         attr_part = ""
         if fields == "all":
-            fields = cast("list[AllFields]", list(ALL_FIELDS))
+            fields = cast("list[TagField]", list(ALL_FIELDS))
         if "id" in fields and self.id is not None:
             attr_part += f' id="m_{self.id}"'
         for attr in COMMON_ATTRS:
