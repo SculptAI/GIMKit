@@ -1,6 +1,5 @@
 # Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/vllm.py
 
-import warnings
 
 from typing import Any, Literal, overload
 
@@ -23,15 +22,6 @@ class VLLM(OutlinesVLLM):
         use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
-        # TODO: Fix the underlying issue causing instability with JSON output
-        # Same for vllm_offline.py
-        if output_type == "json":
-            warnings.warn(
-                "JSON output type is unstable due to unknown vllm issues. "
-                "We are still investigating the root cause.",
-                stacklevel=2,
-            )
-
         # TODO: Using `stop=RESPONSE_SUFFIX` is just a temporary workaround. The ending string
         # has already been defined in the lark grammar, and the intermediate regex matching is
         # non-greedy. However, for some reason, it still matches multiple ending strings. Solving
