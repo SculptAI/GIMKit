@@ -87,7 +87,7 @@ def build_json_schema(query: Query) -> dict:
 
         # Add regex pattern if specified
         if tag.regex is not None:
-            field_schema["pattern"] = tag.regex
+            field_schema["pattern"] = f"^({tag.regex})$"
 
         # Add description if available
         if tag.desc is not None:

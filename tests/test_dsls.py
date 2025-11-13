@@ -16,6 +16,14 @@ def test_build_cfg():
     )
     assert build_cfg(query) == whole_grammar
 
+    # Test with regex
+    query_with_regex = Query("Hello, ", MaskedTag(id=0, regex="[A-Za-z]{5}"), "!")
+    whole_grammar_regex = (
+        'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
+        'masked_tag_0: "<|MASKED id=\\"m_0\\"|>" /[A-Za-z]{5}/ "<|/MASKED|>"'
+    )
+    assert build_cfg(query_with_regex) == whole_grammar_regex
+
     # Test with invalid regex
     with (
         pytest.warns(FutureWarning, match="Possible nested set at position 1"),
@@ -49,7 +57,7 @@ def test_build_json_schema():
         "properties": {
             "m_0": {
                 "type": "string",
-                "pattern": "[a-zA-Z]+",
+                "pattern": "^([a-zA-Z]+)$",
                 "description": "user name",
             },
             "m_1": {"type": "string", "description": "user age"},
