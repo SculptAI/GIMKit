@@ -45,7 +45,7 @@ def test_build_json_schema():
         "properties": {
             "m_0": {
                 "type": "string",
-                "pattern": "[a-zA-Z]+",
+                "pattern": "^([a-zA-Z]+)$",
                 "description": "user name",
             },
             "m_1": {"type": "string", "description": "user age"},
