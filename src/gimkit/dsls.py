@@ -43,8 +43,16 @@ def build_cfg(query: Query) -> str:
 
     grammar_rest_lines = []
     for i, tag in enumerate(query.tags):
-        # `/(?s:.)*?/` is a non-greedy match for any character including newlines
-        content_pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.)*?/"
+        if tag.regex:
+            tag_regex = tag.regex
+            if tag.regex.startswith("^"):
+                tag_regex = tag_regex.removeprefix("^")
+            if tag.regex.endswith("$"):
+                tag_regex = tag_regex.removesuffix("$")
+            content_pattern = f"/{tag_regex}/"
+        else:
+            # `/(?s:.)*?/` is a non-greedy match for any character including newlines
+            content_pattern = "/(?s:.)*?/"
         grammar_rest_lines.append(
             f'tag{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" {content_pattern} "{TAG_END}"'
         )

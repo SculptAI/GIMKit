@@ -14,7 +14,7 @@ class TestFormMixin:
     def test_select(self):
         choices = ["apple", "banana", "cherry", "special|char"]
         tag = g.select(name="fruit", choices=choices)
-        assert tag.regex == "apple|banana|cherry|special\\|char"
+        assert tag.regex == "^apple|banana|cherry|special\\|char$"
         assert re.fullmatch(tag.regex, "banana")
         assert not re.fullmatch(tag.regex, "grape")
         assert re.fullmatch(tag.regex, "special|char")

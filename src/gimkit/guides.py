@@ -17,14 +17,14 @@ class BaseMixin:
 class FormMixin:
     def single_word(self, name: str | None = None) -> MaskedTag:
         """A single word without spaces."""
-        return MaskedTag(name=name, desc=self.single_word.__doc__, regex=r"\S+")
+        return MaskedTag(name=name, desc=self.single_word.__doc__, regex=r"^\S+$")
 
     def select(self, name: str | None = None, choices: list[str] | None = None) -> MaskedTag:
         """Choose one from the given options."""
         if not choices:
             raise ValueError("choices must be a non-empty list of strings.")
         desc = f"Choose one from the following options: {', '.join(choices)}."
-        regex = "|".join(re.escape(choice) for choice in choices)
+        regex = "^" + "|".join(re.escape(choice) for choice in choices) + "$"
         return MaskedTag(name=name, desc=desc, regex=regex)
 
 
@@ -38,7 +38,7 @@ class PersonalInfoMixin:
 
         # Adapted from https://regexr.com/38pvb
         regex = (
-            r"(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)"
+            r"^(?:\+?(\d{1,3}))?([-. (]*(\d{3})[-. )]*)?((\d{3})[-. ]*(\d{2,4})(?:[-.x ]*(\d+))?)$"
         )
         return MaskedTag(name=name, desc=self.phone_number.__doc__, regex=regex)
 
@@ -46,7 +46,7 @@ class PersonalInfoMixin:
         """An email address, e.g., john.doe@example.com, alice@example.com, etc."""
 
         # Adapted from https://regexr.com/3a2i5
-        regex = r"([\w\.]+)@([\w\.]+)\.(\w+)"
+        regex = r"^([\w\.]+)@([\w\.]+)\.(\w+)$"
         return MaskedTag(name=name, desc=self.e_mail.__doc__, regex=regex)
 
 

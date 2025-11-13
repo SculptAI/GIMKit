@@ -75,8 +75,6 @@ def test_masked_tag_init_invalid():
 
 
 def test_masked_tag_init_with_regex():
-    with pytest.raises(ValueError, match=r"regex should not start with \^ or end with \$"):
-        MaskedTag(regex="^abc$")
     with pytest.raises(ValueError, match="regex should not be an empty string"):
         MaskedTag(regex="")
     with pytest.raises(ValueError, match="regex should not start or end with /"):
