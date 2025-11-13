@@ -19,7 +19,7 @@ My favorite hobby is {g.select(name="hobby", choices=["reading", "traveling", "c
 
 ## Bio
 
-{g(name="bio", desc="Four sentences.", regex=r"^(?:[^.!?]+[.!?]){4}$")}
+{g(name="bio", desc="Four sentences.", regex=r"(?:[^.!?]+[.!?]){4}")}
 
 ## Contact
 
