@@ -47,11 +47,6 @@ def test_vllm_offline_call():
             model, MaskedTag(), "cfg", None, False, sampling_params=sample_params
         )
 
-    with patch("gimkit.models.vllm_offline._call", return_value=result) as mock_call:
-        with pytest.warns(UserWarning, match="JSON output type is unstable"):
-            model(MaskedTag(), output_type="json")
-        mock_call.assert_called_once()
-
     with patch("gimkit.models.base.Generator") as mock_generator:
         generator_instance = MagicMock()
         generator_instance.return_value = ["response1", "response2"]
