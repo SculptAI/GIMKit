@@ -4,8 +4,12 @@ from outlines.generator import Generator
 from outlines.models.base import AsyncModel, Model
 
 from gimkit.contexts import Query, Result
+from gimkit.log import get_logger
 from gimkit.models.utils import infill_responses, transform_to_outlines
 from gimkit.schemas import ContextInput
+
+
+logger = get_logger(__name__)
 
 
 def _call(
@@ -21,6 +25,7 @@ def _call(
     )
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = generator(outlines_model_input, **inference_kwargs)
+    logger.debug(f"Raw responses of {self}: {raw_responses}")
     return infill_responses(
         model_input, cast("str | list[str]", raw_responses), json_responses=(output_type == "json")
     )
@@ -39,6 +44,7 @@ async def _acall(
     )
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = await generator(outlines_model_input, **inference_kwargs)
+    logger.debug(f"Raw responses of {self}: {raw_responses}")
     return infill_responses(
         model_input, cast("str | list[str]", raw_responses), json_responses=(output_type == "json")
     )
