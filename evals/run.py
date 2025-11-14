@@ -1,6 +1,7 @@
 import argparse
 import copy
 import json
+import logging
 import os
 import re
 
@@ -12,6 +13,9 @@ from gimkit.models.vllm_offline import VLLMOffline as GIMKitvLLMOffline
 from gimkit.schemas import MaskedTag
 
 from .queries import queries
+
+
+logging.getLogger("gimkit").setLevel(logging.DEBUG)
 
 
 @dataclass
