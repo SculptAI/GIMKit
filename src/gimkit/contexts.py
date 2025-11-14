@@ -251,6 +251,7 @@ def infill(
                 id=q_tag.id,
                 name=q_tag.name,
                 desc=q_tag.desc,
+                regex=q_tag.regex,
                 content=r_tag.content if r_tag.content is not None else q_tag.content,
             )
         result_parts.append(part)

@@ -10,7 +10,7 @@ install-dev:
 lint:
 	uv run ruff check
 	uv run ruff format --diff
-	uv run mypy --config-file pyproject.toml src tests examples
+	uv run mypy --config-file pyproject.toml src tests examples evals
 
 lint-fix:
 	uv run ruff check --fix
