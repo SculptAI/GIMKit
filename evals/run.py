@@ -61,6 +61,12 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--api_key", type=str, help="OpenAI API Key")
     parser.add_argument("--api_base", type=str, help="OpenAI API Base URL")
 
+    # Sampling arguments
+    parser.add_argument(
+        "--temperature", type=float, default=0, help="Sampling temperature for generation"
+    )
+    parser.add_argument("--max_tokens", type=int, default=2048, help="Maximum tokens")
+
     # GIMKit arguments
     parser.add_argument("--use_gim_prompt", action="store_true", help="Whether to use GIM prompt")
     parser.add_argument(
@@ -100,7 +106,25 @@ def conduct_eval(
 
     eval_results = []
     for query_name, query in queries.items():
-        result = model(query, use_gim_prompt=args.use_gim_prompt, output_type=output_type)
+        if isinstance(model, GIMKitOpenAI):
+            result = model(
+                query,
+                use_gim_prompt=args.use_gim_prompt,
+                output_type=output_type,
+                max_tokens=args.max_tokens,
+                temperature=args.temperature,
+            )
+        elif isinstance(model, GIMKitvLLMOffline):
+            from vllm import SamplingParams
+
+            result = model(
+                query,
+                use_gim_prompt=args.use_gim_prompt,
+                output_type=output_type,
+                sampling_params=SamplingParams(
+                    max_tokens=args.max_tokens, temperature=args.temperature
+                ),
+            )
         if isinstance(result, list):
             raise ValueError("Expected a single result, but got a list.")
         eval_items = []
