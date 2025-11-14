@@ -6,8 +6,11 @@ import os
 import re
 
 from dataclasses import dataclass
+from typing import Literal, cast
 
 from gimkit import from_openai, from_vllm_offline
+from gimkit.contexts import Query, Result
+from gimkit.exceptions import InvalidFormatError
 from gimkit.models.openai import OpenAI as GIMKitOpenAI
 from gimkit.models.vllm_offline import VLLMOffline as GIMKitvLLMOffline
 from gimkit.schemas import MaskedTag
@@ -65,7 +68,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "--temperature", type=float, default=0, help="Sampling temperature for generation"
     )
-    parser.add_argument("--max_tokens", type=int, default=2048, help="Maximum tokens")
+    parser.add_argument("--max_tokens", type=int, default=4096, help="Maximum tokens")
 
     # GIMKit arguments
     parser.add_argument("--use_gim_prompt", action="store_true", help="Whether to use GIM prompt")
@@ -87,7 +90,6 @@ def get_model(args: argparse.Namespace) -> GIMKitOpenAI | GIMKitvLLMOffline:
         openai_client = OpenAI(api_key=args.api_key, base_url=args.api_base)
         model = from_openai(openai_client, model_name=args.model_name)
     elif args.model_type == "vllm":
-        # TODO: not working yet
         from vllm import LLM
 
         vllm_client = LLM(args.model_name)
@@ -95,6 +97,36 @@ def get_model(args: argparse.Namespace) -> GIMKitOpenAI | GIMKitvLLMOffline:
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
     return model
+
+
+def run_model(
+    model: GIMKitOpenAI | GIMKitvLLMOffline,
+    args: argparse.Namespace,
+    output_type: str | None,
+    query: str,
+) -> Result:
+    if isinstance(model, GIMKitOpenAI):
+        result = model(
+            query,
+            use_gim_prompt=args.use_gim_prompt,
+            output_type=cast('Literal["json"] | None', output_type),
+            max_tokens=args.max_tokens,
+            temperature=args.temperature,
+        )
+    elif isinstance(model, GIMKitvLLMOffline):
+        from vllm import SamplingParams
+
+        result = model(
+            query,
+            use_gim_prompt=args.use_gim_prompt,
+            output_type=cast('Literal["cfg", "json"] | None', output_type),
+            sampling_params=SamplingParams(
+                max_tokens=args.max_tokens, temperature=args.temperature
+            ),
+        )
+    if isinstance(result, list):
+        raise ValueError("Expected a single result, but got a list.")
+    return result
 
 
 def conduct_eval(
@@ -106,27 +138,24 @@ def conduct_eval(
 
     eval_results = []
     for query_name, query in queries.items():
-        if isinstance(model, GIMKitOpenAI):
-            result = model(
-                query,
-                use_gim_prompt=args.use_gim_prompt,
-                output_type=output_type,
-                max_tokens=args.max_tokens,
-                temperature=args.temperature,
+        try:
+            result = run_model(model, args, output_type, query)
+        except InvalidFormatError as e:
+            print(f"Skipping query '{query_name}' due to invalid format: {e}")
+            query_obj = Query(query)
+            eval_results.append(
+                EvalQuery(
+                    query_name=query_name,
+                    query=query,
+                    result="Invalid Format Error",
+                    eval_tags=[],
+                    num_tags=len(query_obj.tags),
+                    num_has_prediction=0,
+                    num_regex=sum(1 for tag in query_obj.tags if tag.regex is not None),
+                    num_regex_match=0,
+                )
             )
-        elif isinstance(model, GIMKitvLLMOffline):
-            from vllm import SamplingParams
-
-            result = model(
-                query,
-                use_gim_prompt=args.use_gim_prompt,
-                output_type=output_type,
-                sampling_params=SamplingParams(
-                    max_tokens=args.max_tokens, temperature=args.temperature
-                ),
-            )
-        if isinstance(result, list):
-            raise ValueError("Expected a single result, but got a list.")
+            continue
         eval_items = []
         for tag in result.tags:
             has_prediction = False
