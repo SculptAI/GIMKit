@@ -35,11 +35,11 @@ MAGIC_STRINGS = (
 
 # ─── Tag Fields Definitions ───────────────────────────────────────────────────
 
-COMMON_ATTRS = ("name", "desc", "regex", "grammar")
+COMMON_ATTRS = ("name", "desc", "regex", "cfg")
 ALL_ATTRS = ("id", *COMMON_ATTRS)
 ALL_FIELDS = ("id", *COMMON_ATTRS, "content")
 
-TagField: TypeAlias = Literal["id", "name", "desc", "regex", "grammar", "content"]
+TagField: TypeAlias = Literal["id", "name", "desc", "regex", "cfg", "content"]
 
 
 # ─── Regex Patterns For Tag Parsing ───────────────────────────────────────────
@@ -90,11 +90,11 @@ class MaskedTag:
     name: str | None = None
     desc: str | None = None
     regex: str | None = None
-    grammar: str | None = None
+    cfg: str | None = None
     content: str | None = None
 
     # Read-only class variable for additional attribute escapes. These
-    # characters may appear in tag attributes such as `desc` or `grammar`.
+    # characters may appear in tag attributes such as `desc` or `cfg`.
     # Hexadecimal numeric character references are used for consistency and
     # compatibility with Python's built-in `html.escape` conventions.
     # Ref: https://www.w3.org/MarkUp/html-spec/html-spec_13.html
@@ -119,12 +119,12 @@ class MaskedTag:
 
     def __post_init__(self):
         # Avoid circular imports
-        from gimkit.dsls import CFG_TAG_RULE_NAME_PREFIX, LLGUIDANCE_CFG_DOCS_URL, validate_grammar
+        from gimkit.dsls import CFG_TAG_RULE_NAME_PREFIX, LLGUIDANCE_CFG_DOCS_URL, validate_cfg
 
         # ─── Ensure Only One Decoding Constraint Is Specified ─────────
 
-        if sum([self.regex is not None, self.grammar is not None]) > 1:
-            raise ValueError("Only one of regex or grammar can be specified.")
+        if sum([self.regex is not None, self.cfg is not None]) > 1:
+            raise ValueError("Only one of regex or cfg can be specified.")
 
         # ─── Validate Id ──────────────────────────────────────────────
 
@@ -170,8 +170,7 @@ class MaskedTag:
                 )
             if self.regex.startswith("/") or self.regex.endswith("/"):
                 raise ValueError(
-                    "regex should not start or end with /, "
-                    "as it will be wrapped with /.../ in CFG grammar."
+                    "regex should not start or end with /, as it will be wrapped with /.../ in CFG."
                 )
             if self.regex == "":
                 raise ValueError("regex should not be an empty string.")
@@ -180,26 +179,26 @@ class MaskedTag:
             except re.error as e:
                 raise ValueError(f"Invalid regex pattern: {self.regex}") from e
 
-        # ─── Validate Grammar ─────────────────────────────────────────
+        # ─── Validate CFG ─────────────────────────────────────────────
 
-        if isinstance(self.grammar, str):
-            self.grammar = self.grammar.strip()
-            if self.grammar == "":
-                raise ValueError("Grammar should not be an empty string.")
-            if matches := re.findall(CFG_TAG_RULE_NAME_PREFIX + r"\d+", self.grammar):
+        if isinstance(self.cfg, str):
+            self.cfg = self.cfg.strip()
+            if self.cfg == "":
+                raise ValueError("CFG should not be an empty string.")
+            if matches := re.findall(CFG_TAG_RULE_NAME_PREFIX + r"\d+", self.cfg):
                 raise ValueError(
-                    "Grammar should not contain reserved rule names like "
+                    "CFG should not contain reserved rule names like "
                     + " or ".join(f"`{x}`" for x in set(matches))
                 )
-            if not self.grammar.startswith("start:"):
+            if not self.cfg.startswith("start:"):
                 raise ValueError(
-                    "Grammar should begin with a `start:` rule."
+                    "CFG should begin with a `start:` rule."
                     "\nWe recommend checking the syntax documentation at " + LLGUIDANCE_CFG_DOCS_URL
                 )
-            is_error, msgs = validate_grammar(self.grammar)
+            is_error, msgs = validate_cfg(self.cfg)
             if is_error:
                 raise ValueError(
-                    "Invalid CFG grammar constructed from the query object:\n"
+                    "Invalid CFG constructed from the query object:\n"
                     + "\n".join(msgs)
                     + "\nWe recommend checking the syntax documentation at "
                     + LLGUIDANCE_CFG_DOCS_URL

@@ -10,16 +10,16 @@ CFG_TAG_RULE_NAME_PREFIX = "masked_tag_"
 LLGUIDANCE_CFG_DOCS_URL = "https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md"
 
 
-def validate_grammar(grammar: str) -> tuple[bool, list[str]]:
+def validate_cfg(cfg: str) -> tuple[bool, list[str]]:
     from llguidance import LLMatcher, grammar_from
 
     # Borrowed from outlines source code at https://github.com/dottxt-ai/outlines/blob/87234d202924acce84ead694f8d06748608fd5f9/outlines/backends/llguidance.py#L296-L299
-    # This turns the original LLGuidance grammar to a normal grammar spec
+    # This turns the original LLGuidance CFG to a normal CFG
     # We try both lark and ebnf
     try:
-        grammar_spec = grammar_from("grammar", grammar)
+        grammar_spec = grammar_from("grammar", cfg)
     except ValueError:  # pragma: no cover
-        grammar_spec = grammar_from("lark", grammar)
+        grammar_spec = grammar_from("lark", cfg)
 
     # Validate the grammar spec
     is_error, msgs = LLMatcher.validate_grammar_with_warnings(grammar_spec)
@@ -42,33 +42,33 @@ def build_cfg(query: Query) -> str:
     )
 
     num_tags = len(query.tags)
-    grammar_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"{CFG_TAG_RULE_NAME_PREFIX}{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
+    cfg_first_line = f'''start: "{RESPONSE_PREFIX}" {" ".join(f"{CFG_TAG_RULE_NAME_PREFIX}{i}" for i in range(num_tags))} "{RESPONSE_SUFFIX}"'''
 
-    grammar_rest_lines = []
+    cfg_rest_lines = []
     for i, tag in enumerate(query.tags):
         rule_template = f'{CFG_TAG_RULE_NAME_PREFIX}{i}: "{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}" {{}} "{TAG_END}"'
         if tag.regex:
             rule = rule_template.format(f"/{tag.regex}/")
-        elif tag.grammar:
+        elif tag.cfg:
             sub_rule_0 = rule_template.format(f"{CFG_TAG_RULE_NAME_PREFIX}{i}_start")
-            sub_rule_rest = f"{CFG_TAG_RULE_NAME_PREFIX}{i}_{tag.grammar}"  # may be multiple lines
+            sub_rule_rest = f"{CFG_TAG_RULE_NAME_PREFIX}{i}_{tag.cfg}"  # may be multiple lines
             rule = sub_rule_0 + "\n" + sub_rule_rest
         else:
             # `/(?s:.)*?/` is a non-greedy match for any character including newlines
             rule = rule_template.format("/(?s:.)*?/")
-        grammar_rest_lines.append(rule)
+        cfg_rest_lines.append(rule)
 
-    grammar = grammar_first_line + "\n" + "\n".join(grammar_rest_lines)
+    cfg = cfg_first_line + "\n" + "\n".join(cfg_rest_lines)
 
-    is_error, msgs = validate_grammar(grammar)
+    is_error, msgs = validate_cfg(cfg)
     if is_error:
         raise ValueError(
-            "Invalid CFG grammar constructed from the query object:\n"
+            "Invalid CFG constructed from the query object:\n"
             + "\n".join(msgs)
             + "\nWe recommend checking the syntax documentation at "
             + LLGUIDANCE_CFG_DOCS_URL
         )
-    return grammar
+    return cfg
 
 
 def build_json_schema(query: Query) -> dict:
