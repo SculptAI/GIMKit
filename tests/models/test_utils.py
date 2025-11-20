@@ -60,6 +60,38 @@ def test_json_responses_to_gim_response():
         json_responses_to_gim_response('["John", "Doe"]')
 
 
+def test_json_responses_to_gim_response_with_valid_json_no_warning(caplog):
+    """Test that no warning is emitted when JSON is already valid."""
+    import logging
+
+    caplog.set_level(logging.WARNING)
+
+    json_str = '{"m_0": "John", "m_1": "Doe"}'
+    expected_gim_str = '<|GIM_RESPONSE|><|MASKED id="m_0"|>John<|/MASKED|><|MASKED id="m_1"|>Doe<|/MASKED|><|/GIM_RESPONSE|>'
+    result = json_responses_to_gim_response(json_str)
+
+    assert result == expected_gim_str
+    # No warning should be logged for valid JSON
+    assert "JSON response required repair" not in caplog.text
+
+
+def test_json_responses_to_gim_response_with_repaired_json_warning(caplog):
+    """Test that a warning is emitted when JSON needs repair."""
+    import logging
+
+    caplog.set_level(logging.WARNING)
+
+    # Malformed JSON with missing closing quote
+    json_str = '{"m_0": "John, "m_1": "Doe"}'
+    expected_gim_str = '<|GIM_RESPONSE|><|MASKED id="m_0"|>John<|/MASKED|><|MASKED id="m_1"|>Doe<|/MASKED|><|/GIM_RESPONSE|>'
+    result = json_responses_to_gim_response(json_str)
+
+    assert result == expected_gim_str
+    # Warning should be logged when JSON is repaired
+    assert "JSON response required repair" in caplog.text
+    assert json_str in caplog.text
+
+
 def test_infill_responses():
     query = Query("Hello, ", MaskedTag(id=0), " and ", MaskedTag(id=1))
     response_str = '<|GIM_RESPONSE|><|MASKED id="m_0"|>world<|/MASKED|><|MASKED id="m_1"|>friend<|/MASKED|><|/GIM_RESPONSE|>'
