@@ -72,7 +72,7 @@ def json_responses_to_gim_response(json_response: str) -> str:
                 json_response,
                 repair_log,
             )
-    else:
+    else:  # pragma: no cover
         # This shouldn't happen when logging=True, but handle gracefully
         json_obj = result  # type: ignore[assignment]
     if not isinstance(json_obj, dict):
