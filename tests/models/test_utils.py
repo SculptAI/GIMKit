@@ -10,7 +10,7 @@ from gimkit.models.utils import (
     json_responses_to_gim_response,
     transform_to_outlines,
 )
-from gimkit.prompts import SYSTEM_PROMPT_MSG
+from gimkit.prompts import SYSTEM_PROMPT_MSG, SYSTEM_PROMPT_MSG_JSON
 from gimkit.schemas import MaskedTag
 
 
@@ -39,11 +39,19 @@ def test_transform_to_outlines():
     assert isinstance(model_input, str)
     assert isinstance(output_type, JsonSchema)
 
-    # Test with GIM prompt
+    # Test with GIM prompt and CFG output
     model_input, output_type = transform_to_outlines(query, output_type="cfg", use_gim_prompt=True)
     assert isinstance(model_input, Chat)
     assert model_input.messages[0] == SYSTEM_PROMPT_MSG
     assert isinstance(output_type, CFG)
+
+    # Test with GIM prompt and JSON output - should use JSON-specific prompts
+    model_input, output_type = transform_to_outlines(query, output_type="json", use_gim_prompt=True)
+    assert isinstance(model_input, Chat)
+    assert model_input.messages[0] == SYSTEM_PROMPT_MSG_JSON
+    assert isinstance(output_type, JsonSchema)
+    # Verify the demo messages are JSON format
+    assert '"m_0"' in model_input.messages[2]["content"]  # Assistant response should be JSON
 
 
 def test_json_responses_to_gim_response():
