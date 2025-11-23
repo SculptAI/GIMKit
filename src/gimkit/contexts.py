@@ -225,7 +225,7 @@ class Result(Context):
         return self.to_string(infill_mode=True)
 
 
-def _repair_response_string(response_str: str, expected_tag_count: int | None = None) -> str:
+def _repair_response_string(response_str: str) -> str:
     """Repair a malformed response string to make it parseable.
 
     This function attempts to fix common issues in response strings:
@@ -234,7 +234,6 @@ def _repair_response_string(response_str: str, expected_tag_count: int | None = 
 
     Args:
         response_str: The response string to repair
-        expected_tag_count: Optional expected number of tags for validation
 
     Returns:
         A repaired response string with sequential tag IDs
@@ -242,7 +241,7 @@ def _repair_response_string(response_str: str, expected_tag_count: int | None = 
     # Pattern to match masked tags with any ID (or no ID)
     tag_pattern = re.compile(
         re.escape(TAG_OPEN_LEFT)
-        + r'(?:\s+id="m_\d+")?'  # Optional ID
+        + r'(?:\s+id="m_\d+")?'  # Optional ID (may be missing or malformed)
         + r'((?:\s+\w+="[^"]*")*)'  # Other attributes
         + re.escape(TAG_OPEN_RIGHT)
         + r"(.*?)"  # Content
@@ -300,8 +299,6 @@ def infill(
 
     # When strict=False, try to repair the response string before parsing
     if not strict and isinstance(response, str):
-        # Count expected tags from query
-        query_tag_count = len(list(query.tags))
         response_str = response
         try:
             # First attempt: try to parse as-is
@@ -310,10 +307,10 @@ def infill(
             # If parsing fails, try to repair the response string
             if "Tag ids should be in order" in str(e):
                 warnings.warn(
-                    f"Response has malformed tag IDs. Attempting to repair. Original error: {e}",
+                    "Response has malformed or out-of-order tag IDs. Attempting automatic repair.",
                     stacklevel=2,
                 )
-                repaired_response = _repair_response_string(response_str, query_tag_count)
+                repaired_response = _repair_response_string(response_str)
                 try:
                     response = Response(repaired_response)
                 except InvalidFormatError:

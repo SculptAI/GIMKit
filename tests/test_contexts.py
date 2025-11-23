@@ -108,7 +108,8 @@ def test_query_infill_invalid():
     # With the repair functionality, malformed tag IDs are now repaired with a warning
     # instead of raising an error (when strict=False, which is the default)
     with pytest.warns(
-        UserWarning, match=r"Response has malformed tag IDs\. Attempting to repair\."
+        UserWarning,
+        match=r"Response has malformed or out-of-order tag IDs\. Attempting automatic repair\.",
     ):
         result = Query(g(), g()).infill(
             '<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>'
@@ -205,7 +206,8 @@ def test_infill_repair_malformed_ids():
 
     # With strict=False, malformed IDs should be repaired
     with pytest.warns(
-        UserWarning, match=r"Response has malformed tag IDs\. Attempting to repair\."
+        UserWarning,
+        match=r"Response has malformed or out-of-order tag IDs\. Attempting automatic repair\.",
     ):
         result = infill(query, response_str, strict=False)
         assert str(result) == "Hello, John world"
@@ -224,7 +226,7 @@ def test_infill_repair_skipped_ids():
         f'<|MASKED id="m_5"|>three<|/MASKED|>{RESPONSE_SUFFIX}'
     )
 
-    with pytest.warns(UserWarning, match=r"Response has malformed tag IDs"):
+    with pytest.warns(UserWarning, match=r"Response has malformed or out-of-order tag IDs"):
         result = infill(query, response_str, strict=False)
         assert str(result) == "A one B two C three"
 
@@ -237,7 +239,7 @@ def test_infill_repair_with_attributes():
         f'<|MASKED id="m_20" name="y"|>world<|/MASKED|>{RESPONSE_SUFFIX}'
     )
 
-    with pytest.warns(UserWarning, match=r"Response has malformed tag IDs"):
+    with pytest.warns(UserWarning, match=r"Response has malformed or out-of-order tag IDs"):
         result = infill(query, response_str, strict=False)
         assert str(result) == "Hello, John world"
         # Check that the result tags have the correct attributes from the query
