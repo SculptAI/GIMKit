@@ -5,7 +5,12 @@ from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Response, Result, infill
 from gimkit.dsls import build_cfg, build_json_schema
-from gimkit.prompts import DEMO_CONVERSATION_MSGS, SYSTEM_PROMPT_MSG
+from gimkit.prompts import (
+    DEMO_CONVERSATION_MSGS,
+    DEMO_CONVERSATION_MSGS_JSON,
+    SYSTEM_PROMPT_MSG,
+    SYSTEM_PROMPT_MSG_JSON,
+)
 from gimkit.schemas import ContextInput, MaskedTag
 
 
@@ -31,10 +36,17 @@ def transform_to_outlines(
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_model_input: str | Chat = str(query_obj)
     if use_gim_prompt:
+        # Use JSON-specific prompts when output_type is "json"
+        if output_type == "json":
+            system_prompt = SYSTEM_PROMPT_MSG_JSON
+            demo_msgs = DEMO_CONVERSATION_MSGS_JSON
+        else:
+            system_prompt = SYSTEM_PROMPT_MSG
+            demo_msgs = DEMO_CONVERSATION_MSGS
         outlines_model_input = Chat(
             [
-                SYSTEM_PROMPT_MSG,
-                *DEMO_CONVERSATION_MSGS,
+                system_prompt,
+                *demo_msgs,
                 {"role": "user", "content": outlines_model_input},
             ]
         )
