@@ -10,7 +10,7 @@ from outlines.models.vllm import AsyncVLLM as OutlinesAsyncVLLM
 
 from gimkit.contexts import Query, Result
 from gimkit.models.base import _acall, _call
-from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
+from gimkit.schemas import ContextInput
 
 
 class VLLM(OutlinesVLLM):
@@ -22,19 +22,12 @@ class VLLM(OutlinesVLLM):
         use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
-        # TODO: Using `stop=RESPONSE_SUFFIX` is just a temporary workaround. The ending string
-        # has already been defined in the lark grammar, and the intermediate regex matching is
-        # non-greedy. However, for some reason, it still matches multiple ending strings. Solving
-        # this issue involves five packages, including `outlines`, `vllm`, `guidance`,
-        # `llguidance`, and `lark`. Due to its complexity, it will be addressed in future updates.
-        # Same for vllm_offline.py
         return _call(
             self,
             model_input,
             output_type,
             backend,
             use_gim_prompt,
-            stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )
 
@@ -54,7 +47,6 @@ class AsyncVLLM(OutlinesAsyncVLLM):
             output_type,
             backend,
             use_gim_prompt,
-            stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )
 

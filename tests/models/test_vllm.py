@@ -53,7 +53,8 @@ def test_sync_call():
         assert isinstance(result, Result)
         assert result.tags[0] == MaskedTag(id=0, content="world")
         mock_create.assert_called_once()
-        assert mock_create.call_args[1]["stop"] == "<|/GIM_RESPONSE|>"
+        # Verify that stop parameter is NOT passed
+        assert "stop" not in mock_create.call_args[1]
 
         # Model can accept different input types
         model(Query("Hello, ", guide()))
@@ -83,4 +84,5 @@ async def test_async_call():
         assert isinstance(result, Result)
         assert result.tags[0] == MaskedTag(id=0, content="world")
         mock_create.assert_awaited_once()
-        assert mock_create.call_args[1]["stop"] == "<|/GIM_RESPONSE|>"
+        # Verify that stop parameter is NOT passed
+        assert "stop" not in mock_create.call_args[1]

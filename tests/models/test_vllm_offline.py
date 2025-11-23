@@ -33,7 +33,6 @@ def test_vllm_offline_call():
             "cfg",
             None,
             False,
-            sampling_params=SamplingParams(stop="<|/GIM_RESPONSE|>"),
         )
 
     with patch("gimkit.models.vllm_offline._call", return_value=result) as mock_call:
@@ -42,7 +41,7 @@ def test_vllm_offline_call():
         assert isinstance(returned, Result)
         assert returned.tags[0].content == "hi"
 
-        sample_params.stop.append("<|/GIM_RESPONSE|>")
+        # Stop parameter should be unchanged - not modified by GIMKit
         mock_call.assert_called_once_with(
             model, MaskedTag(), "cfg", None, False, sampling_params=sample_params
         )
