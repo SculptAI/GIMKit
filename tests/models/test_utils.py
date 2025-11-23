@@ -24,7 +24,7 @@ def test_get_outlines_output_type():
 
 
 def test_transform_to_outlines():
-    query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
+    query = Query('Hello, <|MASKED id="m_0"|><|/MASKED|>!')
 
     # Test CFG output type without GIM prompt
     model_input, output_type = transform_to_outlines(query, output_type="cfg", use_gim_prompt=False)
@@ -45,14 +45,13 @@ def test_transform_to_outlines():
     assert model_input.messages[0] == SYSTEM_PROMPT_MSG
     assert isinstance(output_type, CFG)
 
-    # Test with GIM prompt and JSON output - should use JSON-specific prompts
+    # Test with GIM prompt and JSON output
     model_input, output_type = transform_to_outlines(query, output_type="json", use_gim_prompt=True)
     assert isinstance(model_input, Chat)
     assert model_input.messages[0] == SYSTEM_PROMPT_MSG_JSON
     assert isinstance(output_type, JsonSchema)
-    # Verify the demo messages are JSON format
-    assert '"m_0"' in model_input.messages[2]["content"]  # Assistant response should be JSON
-
+    assert model_input.messages[2]["content"].startswith('{"m_0": ')
+    assert model_input.messages[2]["content"].endswith("}")
 
 def test_json_responses_to_gim_response():
     json_str = '{"m_0": "John", "m_1": "Doe"}'
