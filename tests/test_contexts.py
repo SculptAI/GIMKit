@@ -254,3 +254,27 @@ def test_infill_repair_response_object():
     # Should work without warnings since Response is already parsed
     result = infill(query, response, strict=False)
     assert str(result) == "Hello, John world"
+
+
+def test_infill_repair_no_tags():
+    """Test repair with empty response (no tags)."""
+    query = Query(f"Hello, {g()}")
+    # Response with no tags - should not trigger repair
+    response_str = f"{RESPONSE_PREFIX}{RESPONSE_SUFFIX}"
+
+    with pytest.warns(UserWarning, match=r"Mismatch in number of tags"):
+        result = infill(query, response_str, strict=False)
+        # Query tag should remain unfilled
+        assert "<|MASKED" in str(result)
+
+
+def test_infill_repair_fails():
+    """Test that if repair fails, the original error is re-raised."""
+    query = Query(f"Hello, {g()}")
+    # Create a response with nested tags (which cannot be parsed even after repair)
+    response_str = (
+        f"{RESPONSE_PREFIX}<|MASKED|><|MASKED|>test<|/MASKED|><|/MASKED|>{RESPONSE_SUFFIX}"
+    )
+
+    with pytest.raises(InvalidFormatError, match=r"Mismatched or nested masked tags"):
+        infill(query, response_str, strict=False)
