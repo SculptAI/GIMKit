@@ -238,10 +238,13 @@ def _repair_response_string(response_str: str) -> str:
     Returns:
         A repaired response string with sequential tag IDs
     """
-    # Pattern to match masked tags with any ID (or no ID)
+    # Pattern to match masked tags with optional well-formed ID
+    # Note: This only matches IDs in correct format (m_\d+) or no ID at all.
+    # Malformed IDs that don't match this pattern won't be captured, but that's
+    # intentional - we want to renumber all tags regardless of their original IDs.
     tag_pattern = re.compile(
         re.escape(TAG_OPEN_LEFT)
-        + r'(?:\s+id="m_\d+")?'  # Optional ID (may be missing or malformed)
+        + r'(?:\s+id="m_\d+")?'  # Optional well-formed ID
         + r'((?:\s+\w+="[^"]*")*)'  # Other attributes
         + re.escape(TAG_OPEN_RIGHT)
         + r"(.*?)"  # Content
@@ -305,6 +308,10 @@ def infill(
             response = Response(response_str)
         except InvalidFormatError as e:
             # If parsing fails, try to repair the response string
+            # Note: We check the error message to identify tag ID ordering errors.
+            # This is somewhat fragile, but adding a new exception type would be a
+            # breaking change. The error message comes from schemas.parse_parts()
+            # which raises "Tag ids should be in order, got X at position Y."
             if "Tag ids should be in order" in str(e):
                 warnings.warn(
                     "Response has malformed or out-of-order tag IDs. Attempting automatic repair.",
