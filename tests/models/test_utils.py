@@ -53,6 +53,7 @@ def test_transform_to_outlines():
     assert model_input.messages[2]["content"].startswith('{"m_0": ')
     assert model_input.messages[2]["content"].endswith("}")
 
+
 def test_json_responses_to_gim_response():
     json_str = '{"m_0": "John", "m_1": "Doe"}'
     expected_gim_str = '<|GIM_RESPONSE|><|MASKED id="m_0"|>John<|/MASKED|><|MASKED id="m_1"|>Doe<|/MASKED|><|/GIM_RESPONSE|>'
