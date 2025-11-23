@@ -53,6 +53,8 @@ DEMO_CONVERSATION_MSGS = [
     },
 ]
 
+# When using JSON output, we need a different system prompt and demo messages
+
 SYSTEM_PROMPT_MSG_JSON = {
     "role": "system",
     "content": (
