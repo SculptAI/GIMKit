@@ -18,3 +18,11 @@ def test_demo_conversation_json_validity():
         gim_response = json_responses_to_gim_response(json_response)
         # Validate the converted response
         validate(user_msg, gim_response)
+
+
+def test_two_prompts_equivalence():
+    for idx in range(0, len(DEMO_CONVERSATION_MSGS), 2):
+        json_response = DEMO_CONVERSATION_MSGS_JSON[idx + 1]["content"]
+        gim_response = json_responses_to_gim_response(json_response)
+        assistant_msg = DEMO_CONVERSATION_MSGS[idx + 1]["content"]
+        assert gim_response == assistant_msg
