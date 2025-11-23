@@ -105,10 +105,16 @@ def test_query_infill_invalid():
     with pytest.raises(InvalidFormatError, match=r"Mismatched or nested masked tags in .+"):
         Query("<|MASKED|>string").infill(f"{RESPONSE_PREFIX}{RESPONSE_SUFFIX}")
 
-    with pytest.raises(
-        InvalidFormatError, match=r"Tag ids should be in order, got \d+ at position \d+"
+    # With the repair functionality, malformed tag IDs are now repaired with a warning
+    # instead of raising an error (when strict=False, which is the default)
+    with pytest.warns(
+        UserWarning, match=r"Response has malformed tag IDs\. Attempting to repair\."
     ):
-        Query(g(), g()).infill('<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>')
+        result = Query(g(), g()).infill(
+            '<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>'
+        )
+        # Verify the result is valid after repair
+        assert isinstance(result, Result)
 
     with pytest.raises(
         TypeError, match=r"Arguments must be str, MaskedTag, or list of str/MaskedTag\. Got .+"
@@ -187,3 +193,64 @@ def test_infill_strict():
         InvalidFormatError, match=r"Mismatch in number of tags between query and response"
     ):
         infill(query, response, strict=True)
+
+
+def test_infill_repair_malformed_ids():
+    """Test that infill can repair responses with malformed tag IDs when strict=False."""
+    query = Query(f"Hello, {g(name='name')} {g(name='greeting')}")
+    response_str = (
+        f'{RESPONSE_PREFIX}<|MASKED id="m_5"|>John<|/MASKED|>'
+        f'<|MASKED id="m_10"|>world<|/MASKED|>{RESPONSE_SUFFIX}'
+    )
+
+    # With strict=False, malformed IDs should be repaired
+    with pytest.warns(
+        UserWarning, match=r"Response has malformed tag IDs\. Attempting to repair\."
+    ):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, John world"
+
+    # With strict=True, should raise an error
+    with pytest.raises(InvalidFormatError, match=r"Tag ids should be in order"):
+        infill(query, response_str, strict=True)
+
+
+def test_infill_repair_skipped_ids():
+    """Test repairing responses with non-sequential IDs."""
+    query = Query(f"A {g()} B {g()} C {g()}")
+    response_str = (
+        f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>one<|/MASKED|>'
+        f'<|MASKED id="m_2"|>two<|/MASKED|>'
+        f'<|MASKED id="m_5"|>three<|/MASKED|>{RESPONSE_SUFFIX}'
+    )
+
+    with pytest.warns(UserWarning, match=r"Response has malformed tag IDs"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "A one B two C three"
+
+
+def test_infill_repair_with_attributes():
+    """Test that repair preserves other tag attributes."""
+    query = Query(f"Hello, {g(name='obj1')} {g(name='obj2')}")
+    response_str = (
+        f'{RESPONSE_PREFIX}<|MASKED id="m_10" name="x"|>John<|/MASKED|>'
+        f'<|MASKED id="m_20" name="y"|>world<|/MASKED|>{RESPONSE_SUFFIX}'
+    )
+
+    with pytest.warns(UserWarning, match=r"Response has malformed tag IDs"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, John world"
+        # Check that the result tags have the correct attributes from the query
+        assert result.tags[0].name == "obj1"
+        assert result.tags[1].name == "obj2"
+
+
+def test_infill_repair_response_object():
+    """Test that repair is not triggered when passing a Response object."""
+    query = Query(f"Hello, {g()} {g()}")
+    # Create a valid Response object
+    response = Response(f"{g(content='John')}{g(content='world')}")
+
+    # Should work without warnings since Response is already parsed
+    result = infill(query, response, strict=False)
+    assert str(result) == "Hello, John world"

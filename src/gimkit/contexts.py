@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 
 from typing import TYPE_CHECKING, Literal, cast, overload
@@ -11,6 +12,9 @@ from gimkit.schemas import (
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
+    TAG_END,
+    TAG_OPEN_LEFT,
+    TAG_OPEN_RIGHT,
     ContextInput,
     ContextPart,
     MaskedTag,
@@ -221,13 +225,104 @@ class Result(Context):
         return self.to_string(infill_mode=True)
 
 
+def _repair_response_string(response_str: str, expected_tag_count: int | None = None) -> str:
+    """Repair a malformed response string to make it parseable.
+
+    This function attempts to fix common issues in response strings:
+    1. Renumbers tag IDs to be sequential (0, 1, 2, ...)
+    2. Handles responses with missing or incorrect tag IDs
+
+    Args:
+        response_str: The response string to repair
+        expected_tag_count: Optional expected number of tags for validation
+
+    Returns:
+        A repaired response string with sequential tag IDs
+    """
+    # Pattern to match masked tags with any ID (or no ID)
+    tag_pattern = re.compile(
+        re.escape(TAG_OPEN_LEFT)
+        + r'(?:\s+id="m_\d+")?'  # Optional ID
+        + r'((?:\s+\w+="[^"]*")*)'  # Other attributes
+        + re.escape(TAG_OPEN_RIGHT)
+        + r"(.*?)"  # Content
+        + re.escape(TAG_END),
+        re.DOTALL,
+    )
+
+    # Find all tags in the response
+    matches = list(tag_pattern.finditer(response_str))
+
+    if not matches:
+        return response_str
+
+    # Build repaired string by renumbering tags sequentially
+    repaired = response_str
+    offset = 0
+    for idx, match in enumerate(matches):
+        old_tag = match.group(0)
+        attrs = match.group(1)  # Other attributes
+        content = match.group(2)  # Content
+
+        # Build new tag with sequential ID
+        new_tag = f'{TAG_OPEN_LEFT} id="m_{idx}"{attrs}{TAG_OPEN_RIGHT}{content}{TAG_END}'
+
+        # Calculate positions with offset
+        start_pos = match.start() + offset
+        end_pos = match.end() + offset
+
+        # Replace in repaired string
+        repaired = repaired[:start_pos] + new_tag + repaired[end_pos:]
+        offset += len(new_tag) - len(old_tag)
+
+    return repaired
+
+
 def infill(
     query: Query | ContextInput, response: Response | ContextInput, strict: bool = False
 ) -> Result:
-    """Combines query and response by infilling missing content."""
+    """Combines query and response by infilling missing content.
+
+    Args:
+        query: The query containing masked tags to be filled
+        response: The response containing content to fill the tags
+        strict: If True, raises errors on format mismatches. If False, attempts to repair
+                and merge responses in a best-effort manner.
+
+    Returns:
+        A Result object with tags filled from the response
+
+    Raises:
+        InvalidFormatError: If strict=True and there are format mismatches
+    """
     if not isinstance(query, Query):
         query = Query(query)
-    if not isinstance(response, Response):
+
+    # When strict=False, try to repair the response string before parsing
+    if not strict and isinstance(response, str):
+        # Count expected tags from query
+        query_tag_count = len(list(query.tags))
+        response_str = response
+        try:
+            # First attempt: try to parse as-is
+            response = Response(response_str)
+        except InvalidFormatError as e:
+            # If parsing fails, try to repair the response string
+            if "Tag ids should be in order" in str(e):
+                warnings.warn(
+                    f"Response has malformed tag IDs. Attempting to repair. Original error: {e}",
+                    stacklevel=2,
+                )
+                repaired_response = _repair_response_string(response_str, query_tag_count)
+                try:
+                    response = Response(repaired_response)
+                except InvalidFormatError:
+                    # If repair also fails, re-raise the original error
+                    raise e from None
+            else:
+                # For other errors, just re-raise
+                raise
+    elif not isinstance(response, Response):
         response = Response(response)
 
     query_tags = list(query.tags)
