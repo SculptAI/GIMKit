@@ -70,7 +70,23 @@ def json_responses_to_gim_response(json_response: str) -> str:
 
     import json_repair
 
-    json_obj = json_repair.loads(json_response)
+    from gimkit.log import get_logger
+
+    logger = get_logger(__name__)
+
+    result = json_repair.loads(json_response, logging=True)
+    # When logging=True, json_repair.loads returns a tuple (json_obj, repair_log)
+    if isinstance(result, tuple):
+        json_obj, repair_log = result
+        if repair_log:
+            logger.warning(
+                "JSON response required repair. Original: %s, Repair actions: %s",
+                json_response,
+                repair_log,
+            )
+    else:  # pragma: no cover
+        # This shouldn't happen when logging=True, but handle gracefully
+        json_obj = result  # type: ignore[assignment]
     if not isinstance(json_obj, dict):
         raise ValueError(f"Expected JSON response to be a dictionary, got {type(json_obj)}")
 
