@@ -21,6 +21,26 @@ class TestFormMixin:
         with pytest.raises(ValueError, match="choices must be a non-empty list of strings"):
             g.select(name="fruit", choices=None)
 
+    def test_datetime(self):
+        tag1 = g.datetime(name="dt1", require_date=True, require_time=True)
+        assert re.fullmatch(tag1.regex, "2023-10-05 14:30:00")
+        assert re.fullmatch(tag1.regex, "2023-10-05T14:30")
+        assert not re.fullmatch(tag1.regex, "2023-10-05")
+        assert not re.fullmatch(tag1.regex, "14:30")
+
+        tag2 = g.datetime(name="dt2", require_date=True, require_time=False)
+        assert re.fullmatch(tag2.regex, "2023-10-05")
+        assert not re.fullmatch(tag2.regex, "14:30")
+
+        tag3 = g.datetime(name="dt3", require_date=False, require_time=True)
+        assert re.fullmatch(tag3.regex, "14:30:00")
+        assert not re.fullmatch(tag3.regex, "2023-10-05")
+
+        with pytest.raises(
+            ValueError, match="At least one of require_date or require_time must be True"
+        ):
+            g.datetime(name="dt4", require_date=False, require_time=False)
+
 
 class TestPersonalInfoMixin:
     def test_person_name(self):
