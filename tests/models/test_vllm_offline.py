@@ -13,7 +13,9 @@ from gimkit.models.vllm_offline import from_vllm_offline
 from gimkit.schemas import MaskedTag
 
 
-pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="vLLM offline tests only run on Linux")
+pytestmark = pytest.mark.skipif(
+    not sys.platform.startswith("linux"), reason="vLLM offline tests only run on Linux"
+)
 
 
 def test_from_vllm_offline():
