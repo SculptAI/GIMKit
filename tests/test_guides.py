@@ -36,8 +36,11 @@ class TestFormMixin:
         assert re.fullmatch(tag3.regex, "14:30:00")
         assert not re.fullmatch(tag3.regex, "2023-10-05")
 
-        with pytest.raises(ValueError, match="At least one of require_date or require_time must be True"):
+        with pytest.raises(
+            ValueError, match="At least one of require_date or require_time must be True"
+        ):
             g.datetime(name="dt4", require_date=False, require_time=False)
+
 
 class TestPersonalInfoMixin:
     def test_person_name(self):
