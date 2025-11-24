@@ -30,7 +30,7 @@ class FormMixin:
     def datetime(
         self, name: str | None = None, require_date: bool = True, require_time: bool = True
     ) -> MaskedTag:
-        """A date and/or time string."""
+        """A date and/or time string, e.g., 2023-10-05, 14:30:00, 2023-10-05 14:30:00, etc."""
         date_regex = r"(?:\d{4}-\d{2}-\d{2})"  # YYYY-MM-DD
         time_regex = r"(?:\d{2}:\d{2}(?::\d{2})?)"  # HH:MM or HH:MM:SS
 
