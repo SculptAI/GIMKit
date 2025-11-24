@@ -1,3 +1,5 @@
+import sys
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +11,9 @@ from gimkit.contexts import Result
 from gimkit.models.vllm_offline import VLLMOffline as GIMVLLMOffline
 from gimkit.models.vllm_offline import from_vllm_offline
 from gimkit.schemas import MaskedTag
+
+
+pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="vLLM offline tests only run on Linux")
 
 
 def test_from_vllm_offline():

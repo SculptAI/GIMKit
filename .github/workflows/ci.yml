@@ -53,8 +53,13 @@ jobs:
         python-version: ${{ matrix.python-version }}
         enable-cache: true
 
-    - name: Install the project
-      run: uv sync --locked --all-extras --dev
+    - name: Install the project (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: uv sync --locked --extra vllm --dev
+
+    - name: Install the project (Non-Linux)
+      if: matrix.os != 'ubuntu-latest'
+      run: uv sync --locked --dev
 
     - name: Run tests
       run: uv run pytest tests --cov=gimkit --cov-report=xml:coverage.xml -vv --durations=10
