@@ -1087,7 +1087,7 @@ dev = [
 requires-dist = [
     { name = "json-repair", specifier = ">=0.52.5" },
     { name = "llguidance", specifier = ">=0.7.30" },
-    { name = "outlines", extras = ["openai"], specifier = ">=1.2.5" },
+    { name = "outlines", extras = ["openai"], specifier = ">=1.2.9" },
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.10.2" },
 ]
 provides-extras = ["vllm"]
@@ -2350,7 +2350,7 @@ wheels = [
 
 [[package]]
 name = "outlines"
-version = "1.2.5"
+version = "1.2.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cloudpickle" },
@@ -2364,9 +2364,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b5/2a/dc8a08972e87974e0adae13910ee9b2f5298b1ad6756f335c844bd143979/outlines-1.2.5.tar.gz", hash = "sha256:24a2ef40dffd6529bf5f913f30a8997802a9c49903339421b1712f03c05aa788", size = 2825333, upload-time = "2025-09-15T20:08:46.519Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/15/b378d55a5a44253462adb6e5ab9deade92a5960ab2eab47e9fe8c728c6ea/outlines-1.2.9.tar.gz", hash = "sha256:dcd0b08b4cb173fec01c7cacc09efebf4b16f4710adcaaf94ecbdb70d0f82f2e", size = 2866022, upload-time = "2025-11-24T12:49:03.231Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/6d/31ad4cb24590a36fab776e413f67a56f4c97109bac1db4d3e9aed54fe834/outlines-1.2.5-py3-none-any.whl", hash = "sha256:60bd9dfaa4b7c5895a67695f0966bc06c6f0b8d98cda8fef2fb76ad5bc1bdef8", size = 93854, upload-time = "2025-09-15T20:08:44.775Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/15/efb96450da2292088c51e516f705b41b7ea94436e21ee5c23f30b8154487/outlines-1.2.9-py3-none-any.whl", hash = "sha256:0448eb5747e9c4ef1a061bd8881816ac5abd9ad7135294471c0753efa8cfafdb", size = 98380, upload-time = "2025-11-24T12:49:01.677Z" },
 ]
 
 [package.optional-dependencies]
