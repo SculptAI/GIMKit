@@ -37,9 +37,10 @@ jobs:
           - "macos-latest"
         python-version:
           - "3.10"
-          # - "3.11"  # Uncomment these when open sourcing
-          # - "3.12"
-          # - "3.13"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
