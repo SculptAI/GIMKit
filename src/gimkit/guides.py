@@ -9,9 +9,10 @@ class BaseMixin:
         name: str | None = None,
         desc: str | None = None,
         regex: str | None = None,
+        cfg: str | None = None,
         content: str | None = None,
     ) -> MaskedTag:
-        return MaskedTag(name=name, desc=desc, regex=regex, content=content)
+        return MaskedTag(name=name, desc=desc, regex=regex, cfg=cfg, content=content)
 
 
 class FormMixin:

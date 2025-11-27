@@ -10,26 +10,35 @@ from gimkit.schemas import MaskedTag
 
 def test_build_cfg():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
-    grm = (
-        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
-        'tag0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
+    assert build_cfg(query) == (
+        'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
+        'masked_tag_0: "<|MASKED id=\\"m_0\\"|>" /(?s:.)*?/ "<|/MASKED|>"'
     )
-    assert build_cfg(query) == grm
 
     # Test with regex
     query_with_regex = Query("Hello, ", MaskedTag(id=0, regex="[A-Za-z]{5}"), "!")
-    whole_grammar_regex = (
-        'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"\n'
-        'tag0: "<|MASKED id=\\"m_0\\"|>" /[A-Za-z]{5}/ "<|/MASKED|>"'
+    assert build_cfg(query_with_regex) == (
+        'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
+        'masked_tag_0: "<|MASKED id=\\"m_0\\"|>" /[A-Za-z]{5}/ "<|/MASKED|>"'
     )
-    assert build_cfg(query_with_regex) == whole_grammar_regex
 
     # Test with invalid regex
     with (
         pytest.warns(FutureWarning, match="Possible nested set at position 1"),
-        pytest.raises(ValueError, match="Invalid CFG grammar constructed from the query object"),
+        pytest.raises(ValueError, match="Invalid CFG constructed from the query object"),
     ):
         build_cfg(Query(MaskedTag(regex="[[]]")))
+
+    # Test with cfg
+    cfg = 'start: obj1 ", " obj2\nobj1: "Hello" | "Hi"\nobj2: "World" | "Everyone"\n'
+    query_with_cfg = Query(MaskedTag(id=0, cfg=cfg), "!")
+    assert build_cfg(query_with_cfg) == (
+        'start: "<|GIM_RESPONSE|>" masked_tag_0 "<|/GIM_RESPONSE|>"\n'
+        'masked_tag_0: "<|MASKED id=\\"m_0\\"|>" masked_tag_0_start "<|/MASKED|>"\n'
+        'masked_tag_0_start: obj1 ", " obj2\n'
+        'obj1: "Hello" | "Hi"\n'
+        'obj2: "World" | "Everyone"'
+    )
 
 
 def test_build_json_schema():

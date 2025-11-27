@@ -24,12 +24,12 @@ from gimkit.schemas import (
 
 
 def test_global_variables():
-    assert COMMON_ATTRS == ("name", "desc", "regex")
-    assert ALL_ATTRS == ("id", "name", "desc", "regex")
-    assert ALL_FIELDS == ("id", "name", "desc", "regex", "content")
+    assert COMMON_ATTRS == ("name", "desc", "regex", "cfg")
+    assert ALL_ATTRS == ("id", "name", "desc", "regex", "cfg")
+    assert ALL_FIELDS == ("id", "name", "desc", "regex", "cfg", "content")
     assert tuple(f.name for f in fields(MaskedTag)) == ALL_FIELDS
     assert len(set(ALL_FIELDS)) == len(ALL_FIELDS)
-    assert TagField.__args__ == ("id", "name", "desc", "regex", "content")
+    assert TagField.__args__ == ("id", "name", "desc", "regex", "cfg", "content")
 
 
 def test_regex_patterns():
@@ -72,6 +72,8 @@ def test_masked_tag_init_invalid():
         ),
     ):
         MaskedTag(content="<|MASKED|>")
+    with pytest.raises(ValueError, match="Only one of regex or cfg can be specified"):
+        MaskedTag(regex="[a-z]+", cfg="start: 'test'")
 
 
 def test_masked_tag_init_with_regex():
@@ -83,6 +85,20 @@ def test_masked_tag_init_with_regex():
         MaskedTag(regex="/abc/")
     with pytest.raises(ValueError, match="Invalid regex pattern"):
         MaskedTag(regex="[")
+
+
+def test_masked_tag_init_with_cfg():
+    with pytest.raises(ValueError, match="CFG should not be an empty string"):
+        MaskedTag(cfg="")
+    with pytest.raises(
+        ValueError, match="CFG should not contain reserved rule names like `masked_tag_0`"
+    ):
+        MaskedTag(cfg="start: masked_tag_0")
+    with pytest.raises(ValueError, match="CFG should begin with a `start:` rule"):
+        MaskedTag(cfg='rule: "test"')
+    MaskedTag(cfg='   \nstart: "test"')
+    with pytest.raises(ValueError, match="Invalid CFG constructed from the query object"):
+        MaskedTag(cfg="start: invalid_syntax")
 
 
 def test_masked_tag_attr_escape():
