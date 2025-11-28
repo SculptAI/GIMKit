@@ -41,5 +41,6 @@ class VLLMOffline(OutlinesVLLMOffline):
             inference_kwargs["sampling_params"].stop.append(RESPONSE_SUFFIX)
         return inference_kwargs
 
+
 def from_vllm_offline(model: "LLM") -> VLLMOffline:
     return VLLMOffline(model)
