@@ -37,6 +37,15 @@ def test_get_outlines_model_input():
     assert model_input_json.messages[0] == SYSTEM_PROMPT_MSG_JSON
     assert model_input_json.messages[2]["content"] == '{"m_0": "nice to meet you"}'
 
+    # Test force_chat_input
+    model_input_force_chat = get_outlines_model_input(
+        "Hello, world!", output_type=None, use_gim_prompt=False, force_chat_input=True
+    )
+    assert isinstance(model_input_force_chat, Chat)
+    assert (
+        model_input_force_chat.messages[0]["content"] == "<|GIM_QUERY|>Hello, world!<|/GIM_QUERY|>"
+    )
+
 
 def test_get_outlines_output_type():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
