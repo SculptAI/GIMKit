@@ -1,14 +1,18 @@
 # Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/vllm_offline.py
 
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
+from outlines.generator import Generator
 from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
 
 from gimkit.contexts import Query, Result
-from gimkit.models.base import _call
+from gimkit.log import get_logger
+from gimkit.models.utils import get_outlines_model_input, get_outlines_output_type, infill_responses
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
 
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from vllm import LLM
@@ -24,7 +28,21 @@ class VLLMOffline(OutlinesVLLMOffline):
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
-        return _call(self, model_input, output_type, backend, use_gim_prompt, **inference_kwargs)
+
+        # Use force_chat_input=True to ensure proper prompt formatting.
+        # TODO: Remove this once Outlines fixes https://github.com/dottxt-ai/outlines/issues/1784
+        outlines_model_input = get_outlines_model_input(
+            model_input, output_type, use_gim_prompt, force_chat_input=True
+        )
+        outlines_output_type = get_outlines_output_type(model_input, output_type)
+        generator = Generator(self, outlines_output_type, backend)
+        raw_responses = generator(outlines_model_input, **inference_kwargs)
+        logger.debug(f"Raw responses of {self}: {raw_responses}")
+        return infill_responses(
+            model_input,
+            cast("str | list[str]", raw_responses),
+            json_responses=(output_type == "json"),
+        )
 
     def _ensure_response_suffix(self, inference_kwargs: dict[str, Any]) -> dict[str, Any]:
         # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
