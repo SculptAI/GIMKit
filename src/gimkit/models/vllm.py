@@ -22,12 +22,9 @@ class VLLM(OutlinesVLLM):
         use_gim_prompt: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
-        # TODO: Using `stop=RESPONSE_SUFFIX` is just a temporary workaround. The ending string
-        # has already been defined in the lark grammar, and the intermediate regex matching is
-        # non-greedy. However, for some reason, it still matches multiple ending strings. Solving
-        # this issue involves five packages, including `outlines`, `vllm`, `guidance`,
-        # `llguidance`, and `lark`. Due to its complexity, it will be addressed in future updates.
-        # Same for vllm_offline.py
+        # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
+        # 1. The model might not be trained well enough to generate EOS tokens immediately after RESPONSE_SUFFIX.
+        # 2. Even with CFG, inference engines like vLLM do not guarantee termination when the CFG is satisfied (See https://github.com/vllm-project/vllm/issues/29632).
         return _call(
             self,
             model_input,
