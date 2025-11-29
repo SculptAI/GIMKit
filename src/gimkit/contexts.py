@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import warnings
 
 from typing import TYPE_CHECKING, Literal, cast, overload
@@ -12,9 +11,6 @@ from gimkit.schemas import (
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
-    TAG_END,
-    TAG_OPEN_LEFT,
-    TAG_OPEN_RIGHT,
     ContextInput,
     ContextPart,
     MaskedTag,
@@ -225,57 +221,62 @@ class Result(Context):
         return self.to_string(infill_mode=True)
 
 
-def _repair_response_string(response_str: str) -> str:
-    """Repair a malformed response string to make it parseable.
+def _repair_missing_endings(response_str: str) -> str:
+    """Repair a response string by adding missing ending tags.
 
-    This function attempts to fix common issues in response strings:
-    1. Renumbers tag IDs to be sequential (0, 1, 2, ...)
-    2. Handles responses with missing or incorrect tag IDs
+    This function fixes responses that are missing ending tags like:
+    - <|/MASKED|> (TAG_END)
+    - <|/GIM_RESPONSE|> (RESPONSE_SUFFIX)
+
+    It also handles partial prefixes of these endings.
 
     Args:
         response_str: The response string to repair
 
     Returns:
-        A repaired response string with sequential tag IDs
+        A repaired response string with missing endings added
     """
-    # Pattern to match masked tags with optional well-formed ID
-    # Note: This only matches IDs in correct format (m_\d+) or no ID at all.
-    # Malformed IDs that don't match this pattern won't be captured, but that's
-    # intentional - we want to renumber all tags regardless of their original IDs.
-    tag_pattern = re.compile(
-        re.escape(TAG_OPEN_LEFT)
-        + r'(?:\s+id="m_\d+")?'  # Optional well-formed ID
-        + r'((?:\s+\w+="[^"]*")*)'  # Other attributes
-        + re.escape(TAG_OPEN_RIGHT)
-        + r"(.*?)"  # Content
-        + re.escape(TAG_END),
-        re.DOTALL,
-    )
+    from gimkit.schemas import RESPONSE_SUFFIX, TAG_END, TAG_OPEN_LEFT, TAG_OPEN_RIGHT
 
-    # Find all tags in the response
-    matches = list(tag_pattern.finditer(response_str))
-
-    if not matches:
-        return response_str
-
-    # Build repaired string by renumbering tags sequentially
     repaired = response_str
-    offset = 0
-    for idx, match in enumerate(matches):
-        old_tag = match.group(0)
-        attrs = match.group(1)  # Other attributes
-        content = match.group(2)  # Content
 
-        # Build new tag with sequential ID
-        new_tag = f'{TAG_OPEN_LEFT} id="m_{idx}"{attrs}{TAG_OPEN_RIGHT}{content}{TAG_END}'
+    # Check if response ends with a partial TAG_END prefix
+    # TAG_END is "<|/MASKED|>"
+    for i in range(1, len(TAG_END)):
+        prefix = TAG_END[:i]
+        if repaired.endswith(prefix):
+            repaired = repaired[: -len(prefix)] + TAG_END
+            break
 
-        # Calculate positions with offset
-        start_pos = match.start() + offset
-        end_pos = match.end() + offset
+    # Check if response ends with a partial RESPONSE_SUFFIX prefix
+    # RESPONSE_SUFFIX is "<|/GIM_RESPONSE|>"
+    for i in range(1, len(RESPONSE_SUFFIX)):
+        prefix = RESPONSE_SUFFIX[:i]
+        if repaired.endswith(prefix):
+            repaired = repaired[: -len(prefix)] + RESPONSE_SUFFIX
+            break
 
-        # Replace in repaired string
-        repaired = repaired[:start_pos] + new_tag + repaired[end_pos:]
-        offset += len(new_tag) - len(old_tag)
+    # Check if TAG_END is missing after the last tag content
+    # Count open tags and end tags
+    open_count = repaired.count(TAG_OPEN_LEFT)
+    end_count = repaired.count(TAG_END)
+    if open_count > end_count:
+        # Find the last position that looks like we're inside a tag (after |>)
+        last_open_right = repaired.rfind(TAG_OPEN_RIGHT)
+        if last_open_right != -1:
+            # Check if there's no TAG_END after this position
+            after_open = repaired[last_open_right + len(TAG_OPEN_RIGHT) :]
+            if TAG_END not in after_open:
+                # Insert TAG_END before RESPONSE_SUFFIX if present, otherwise at end
+                if repaired.rstrip().endswith(RESPONSE_SUFFIX):
+                    insert_pos = repaired.rfind(RESPONSE_SUFFIX)
+                    repaired = repaired[:insert_pos] + TAG_END + repaired[insert_pos:]
+                else:
+                    repaired += TAG_END
+
+    # Check if RESPONSE_SUFFIX is missing
+    if not repaired.rstrip().endswith(RESPONSE_SUFFIX):
+        repaired = repaired.rstrip() + RESPONSE_SUFFIX
 
     return repaired
 
@@ -289,7 +290,7 @@ def infill(
         query: The query containing masked tags to be filled
         response: The response containing content to fill the tags
         strict: If True, raises errors on format mismatches. If False, attempts to repair
-                and merge responses in a best-effort manner.
+                missing ending tags in a best-effort manner.
 
     Returns:
         A Result object with tags filled from the response
@@ -300,31 +301,21 @@ def infill(
     if not isinstance(query, Query):
         query = Query(query)
 
-    # When strict=False, try to repair the response string before parsing
+    # When strict=False, try to repair missing endings before parsing
     if not strict and isinstance(response, str):
         response_str = response
         try:
-            # First attempt: try to parse as-is
             response = Response(response_str)
-        except InvalidFormatError as e:
-            # If parsing fails, try to repair the response string
-            # Note: We check the error message to identify tag ID ordering errors.
-            # This is somewhat fragile, but adding a new exception type would be a
-            # breaking change. The error message comes from schemas.parse_parts()
-            # which raises "Tag ids should be in order, got X at position Y."
-            if "Tag ids should be in order" in str(e):
+        except InvalidFormatError:
+            # Try to repair missing endings
+            repaired = _repair_missing_endings(response_str)
+            if repaired != response_str:
                 warnings.warn(
-                    "Response has malformed or out-of-order tag IDs. Attempting automatic repair.",
+                    "Response has missing ending tags. Attempting automatic repair.",
                     stacklevel=2,
                 )
-                repaired_response = _repair_response_string(response_str)
-                try:
-                    response = Response(repaired_response)
-                except InvalidFormatError:
-                    # If repair also fails, re-raise the original error
-                    raise e from None
+                response = Response(repaired)
             else:
-                # For other errors, just re-raise
                 raise
     elif not isinstance(response, Response):
         response = Response(response)
