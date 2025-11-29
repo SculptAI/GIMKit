@@ -27,6 +27,27 @@ class FormMixin:
         regex = "|".join(re.escape(choice) for choice in choices)
         return MaskedTag(name=name, desc=desc, regex=regex)
 
+    def datetime(
+        self, name: str | None = None, require_date: bool = True, require_time: bool = True
+    ) -> MaskedTag:
+        """A date and/or time string, e.g., 2023-10-05, 14:30:00, 2023-10-05 14:30:00, etc."""
+        date_regex = r"(?:\d{4}-\d{2}-\d{2})"  # YYYY-MM-DD
+        time_regex = r"(?:\d{2}:\d{2}(?::\d{2})?)"  # HH:MM or HH:MM:SS
+
+        if require_date and require_time:
+            regex = rf"{date_regex}[ T]{time_regex}"
+            desc = "A date and time in the format YYYY-MM-DD HH:MM[:SS]."
+        elif require_date:
+            regex = date_regex
+            desc = "A date in the format YYYY-MM-DD."
+        elif require_time:
+            regex = time_regex
+            desc = "A time in the format HH:MM[:SS]."
+        else:
+            raise ValueError("At least one of require_date or require_time must be True.")
+
+        return MaskedTag(name=name, desc=desc, regex=regex)
+
 
 class PersonalInfoMixin:
     def person_name(self, name: str | None = None) -> MaskedTag:

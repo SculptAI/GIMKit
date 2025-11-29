@@ -1,6 +1,6 @@
 [project]
 name = "gimkit"
-version = "0.1.0a7"
+version = "0.1.0a8"
 description = "Guided Infilling Modeling"
 readme = "README.md"
 authors = [
@@ -31,7 +31,7 @@ classifiers = [
 dependencies = [
     "json-repair>=0.52.5",
     "llguidance>=0.7.30",
-    "outlines[openai]>=1.2.5",
+    "outlines[openai]>=1.2.9",
 ]
 
 [project.optional-dependencies]

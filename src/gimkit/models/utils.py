@@ -14,27 +14,16 @@ from gimkit.prompts import (
 from gimkit.schemas import ContextInput, MaskedTag
 
 
-def get_outlines_output_type(
-    output_type: Literal["cfg", "json"] | None, query: Query
-) -> None | CFG | JsonSchema:
-    if output_type is None:
-        return None
-    elif output_type == "cfg":
-        return CFG(build_cfg(query))
-    elif output_type == "json":
-        return JsonSchema(build_json_schema(query))
-    else:
-        raise ValueError(f"Invalid output type: {output_type}")
-
-
-def transform_to_outlines(
+def get_outlines_model_input(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None,
     use_gim_prompt: bool,
-) -> tuple[str | Chat, None | CFG | JsonSchema]:
-    """Transform the model input and output type to Outlines-compatible formats."""
+    force_chat_input: bool = False,
+) -> str | Chat:
+    """Transform the model input to an Outlines-compatible format."""
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_model_input: str | Chat = str(query_obj)
+
     if use_gim_prompt:
         # Use JSON-specific prompts when output_type is "json"
         if output_type == "json":
@@ -50,8 +39,26 @@ def transform_to_outlines(
                 {"role": "user", "content": outlines_model_input},
             ]
         )
-    outlines_output_type = get_outlines_output_type(output_type, query_obj)
-    return outlines_model_input, outlines_output_type
+
+    if force_chat_input and isinstance(outlines_model_input, str):
+        outlines_model_input = Chat([{"role": "user", "content": outlines_model_input}])
+
+    return outlines_model_input
+
+
+def get_outlines_output_type(
+    model_input: ContextInput | Query, output_type: Literal["cfg", "json"] | None
+) -> None | CFG | JsonSchema:
+    """Transform the output type to an Outlines-compatible format."""
+    query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
+    if output_type is None:
+        return None
+    elif output_type == "cfg":
+        return CFG(build_cfg(query_obj))
+    elif output_type == "json":
+        return JsonSchema(build_json_schema(query_obj))
+    else:
+        raise ValueError(f"Invalid output type: {output_type}")
 
 
 def json_responses_to_gim_response(json_response: str) -> str:
