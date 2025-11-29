@@ -9,23 +9,47 @@ GIM (Guided Infilling Modeling) is a Python toolkit for structured text generati
 ### Core Components
 
 - **MaskedTag**: The fundamental building block (`src/gimkit/schemas.py`)
-  - Defines placeholders in text with optional id, name, desc, and content
+  - Defines placeholders in text with optional id, name, desc, regex, and content
   - Uses special markers: `<|MASKED|>...<|/MASKED|>`
   - Supports HTML-escaped attributes for safety
+  - Includes parsing utilities via `TAG_FULL_PATTERN`, `TAG_OPEN_PATTERN`, `TAG_END_PATTERN`
 
 - **Guide**: Helper class for creating common tag types (`src/gimkit/guides.py`)
-  - Provides convenience methods like `single_word()`, `person_name()`, `phone_number()`, etc.
+  - Provides convenience methods like `single_word()`, `person_name()`, `phone_number()`, `e_mail()`, `select()`, etc.
   - Uses mixins for organization (BaseMixin, FormMixin, PersonalInfoMixin)
+  - Accessible as singleton instance via `from gimkit import guide`
 
 - **Contexts**: Query and Response classes (`src/gimkit/contexts.py`)
   - Query: Input with masked tags to be filled
   - Response: Output with filled masked tags
-  - Support wrapping with special prefixes/suffixes
+  - Support wrapping with special prefixes/suffixes (`<|GIM_QUERY|>`, `<|GIM_RESPONSE|>`)
+  - Provides TagsView for accessing and modifying tags by index or name
+  - Supports infilling operations
+
+- **DSLs**: Domain-specific language builders (`src/gimkit/dsls.py`)
+  - `build_cfg()`: Constructs context-free grammars using LLGuidance syntax
+  - `build_json_schema()`: Builds JSON schema representations
+  - `get_grammar_spec()` and `validate_grammar_spec()`: Grammar utilities
+
+- **Prompts**: System prompts for non-GIM models (`src/gimkit/prompts.py`)
+  - SYSTEM_PROMPT_MSG: Instructions for models not trained with GIM
+  - DEMO_CONVERSATION_MSGS: Few-shot examples for prompting
 
 - **Models**: Adapters for different LLM backends (`src/gimkit/models/`)
-  - OpenAI client support
-  - vLLM support (both server and offline modes)
-  - Unified interface across backends
+  - `openai.py`: OpenAI client support
+  - `vllm.py`: vLLM server support
+  - `vllm_offline.py`: vLLM offline mode support
+  - `base.py`: Base model interface
+  - `utils.py`: Shared utilities for output transformation
+  - Unified interface across backends with both sync and async call support
+
+- **Logging**: Centralized logging configuration (`src/gimkit/log.py`)
+  - `get_logger()`: Factory for creating loggers
+  - Configured with custom formatters and handlers
+
+- **Exceptions**: Custom exception hierarchy (`src/gimkit/exceptions.py`)
+  - `GIMError`: Base exception class
+  - `InvalidFormatError`: For invalid query/response formats
 
 ## Code Style and Quality
 
@@ -58,7 +82,7 @@ GIM (Guided Infilling Modeling) is a Python toolkit for structured text generati
 ### Package Manager
 
 - **uv**: Fast Python package manager
-  - Install dependencies: `uv sync --locked --dev`
+  - Install dependencies: `uv sync --locked --all-groups --all-extras`
   - Run commands: `uv run <command>`
 
 ### Common Commands
@@ -111,6 +135,8 @@ make clean        # Clean build artifacts
 
 1. **Docstrings**: Use Google-style docstrings
 2. **Examples**: Provide usage examples in `examples/` directory
+   - `gimkit_quickstart.py`: Quick start guide
+   - `cases.ipynb`: Jupyter notebook with various use cases
 3. **Type information**: Include `py.typed` marker for PEP 561 compliance
 
 ## Key Patterns
@@ -151,6 +177,8 @@ result = model(query)
 ## Dependencies
 
 ### Core Dependencies
+- `json-repair>=0.52.5`: JSON repair utilities
+- `llguidance>=0.7.30`: LLGuidance framework for grammar-based generation
 - `outlines[openai]>=1.2.5`: Structured generation framework
 
 ### Optional Dependencies
@@ -164,7 +192,12 @@ result = model(query)
 ## Important Notes
 
 - **Magic strings**: Defined in `src/gimkit/schemas.py` as module constants
-- **Tag IDs**: Must be sequential (0, 1, 2, ...) when present
+  - Query markers: `QUERY_PREFIX`, `QUERY_SUFFIX`
+  - Response markers: `RESPONSE_PREFIX`, `RESPONSE_SUFFIX`
+  - Tag markers: `TAG_OPEN_LEFT`, `TAG_OPEN_RIGHT`, `TAG_END`
+- **Tag IDs**: Must be sequential (0, 1, 2, ...) when present and formatted as `m_{id}`
 - **Content restrictions**: MaskedTag content cannot contain magic strings (except TAG_OPEN_RIGHT)
 - **Async support**: Models support both sync and async calls
 - **Python versions**: Supports Python 3.10, 3.11, 3.12, 3.13
+- **CI/CD**: GitHub Actions workflows for linting and testing across multiple platforms (Ubuntu, Windows, macOS)
+- **Coverage**: Target is 100% test coverage with detailed reports
