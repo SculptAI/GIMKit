@@ -236,13 +236,14 @@ def _repair_missing_endings(response_str: str) -> str:
     Returns:
         A repaired response string with missing endings added
     """
-    from gimkit.schemas import RESPONSE_SUFFIX, TAG_END, TAG_OPEN_LEFT, TAG_OPEN_RIGHT
+    from gimkit.schemas import TAG_END, TAG_OPEN_LEFT, TAG_OPEN_RIGHT
 
     repaired = response_str
 
     # Check if response ends with a partial TAG_END prefix
     # TAG_END is "<|/MASKED|>"
-    for i in range(1, len(TAG_END)):
+    # Iterate from longest to shortest prefix to avoid incorrect replacements
+    for i in range(len(TAG_END) - 1, 0, -1):
         prefix = TAG_END[:i]
         if repaired.endswith(prefix):
             repaired = repaired[: -len(prefix)] + TAG_END
@@ -250,7 +251,8 @@ def _repair_missing_endings(response_str: str) -> str:
 
     # Check if response ends with a partial RESPONSE_SUFFIX prefix
     # RESPONSE_SUFFIX is "<|/GIM_RESPONSE|>"
-    for i in range(1, len(RESPONSE_SUFFIX)):
+    # Iterate from longest to shortest prefix to avoid incorrect replacements
+    for i in range(len(RESPONSE_SUFFIX) - 1, 0, -1):
         prefix = RESPONSE_SUFFIX[:i]
         if repaired.endswith(prefix):
             repaired = repaired[: -len(prefix)] + RESPONSE_SUFFIX
@@ -268,9 +270,11 @@ def _repair_missing_endings(response_str: str) -> str:
             after_open = repaired[last_open_right + len(TAG_OPEN_RIGHT) :]
             if TAG_END not in after_open:
                 # Insert TAG_END before RESPONSE_SUFFIX if present, otherwise at end
-                if repaired.rstrip().endswith(RESPONSE_SUFFIX):
-                    insert_pos = repaired.rfind(RESPONSE_SUFFIX)
-                    repaired = repaired[:insert_pos] + TAG_END + repaired[insert_pos:]
+                stripped = repaired.rstrip()
+                if stripped.endswith(RESPONSE_SUFFIX):
+                    # Calculate exact position at the end of the string
+                    insert_pos = len(stripped) - len(RESPONSE_SUFFIX)
+                    repaired = stripped[:insert_pos] + TAG_END + stripped[insert_pos:]
                 else:
                     repaired += TAG_END
 
