@@ -187,3 +187,42 @@ def test_infill_strict():
         InvalidFormatError, match=r"Mismatch in number of tags between query and response"
     ):
         infill(query, response, strict=True)
+
+
+def test_infill_repair_missing_tag_end():
+    """Test repair of missing <|/MASKED|> ending."""
+    query = Query(f"Hello, {g(name='obj')}")
+
+    # Missing <|/MASKED|> (with RESPONSE_SUFFIX present)
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world{RESPONSE_SUFFIX}'
+    with pytest.warns(UserWarning, match=r"Response has missing ending tags"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, world"
+
+    # Partial <|/MASKED|> ending (e.g., "<|/MASKE")
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world<|/MASKE'
+    with pytest.warns(UserWarning, match=r"Response has missing ending tags"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, world"
+
+    # Partial <|/MASKED|> ending (e.g., "<|/")
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world<|/'
+    with pytest.warns(UserWarning, match=r"Response has missing ending tags"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, world"
+
+    # Missing both endings
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world'
+    with pytest.warns(UserWarning, match=r"Response has missing ending tags"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, world"
+
+
+def test_infill_repair_strict_mode():
+    """Test that strict mode does not repair."""
+    query = Query(f"Hello, {g(name='obj')}")
+
+    # Missing endings should fail in strict mode
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world'
+    with pytest.raises(InvalidFormatError):
+        infill(query, response_str, strict=True)

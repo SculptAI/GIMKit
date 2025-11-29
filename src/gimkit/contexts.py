@@ -221,13 +221,107 @@ class Result(Context):
         return self.to_string(infill_mode=True)
 
 
+def _repair_missing_endings(response_str: str) -> str:
+    """Repair a response string by adding missing ending tags.
+
+    This function fixes responses that are missing ending tags like:
+    - <|/MASKED|> (TAG_END)
+    - <|/GIM_RESPONSE|> (RESPONSE_SUFFIX)
+
+    It also handles partial prefixes of these endings.
+
+    Args:
+        response_str: The response string to repair
+
+    Returns:
+        A repaired response string with missing endings added
+    """
+    from gimkit.schemas import TAG_END, TAG_OPEN_LEFT, TAG_OPEN_RIGHT
+
+    repaired = response_str
+
+    # Check if response ends with a partial TAG_END prefix
+    # TAG_END is "<|/MASKED|>"
+    # Iterate from longest to shortest prefix to avoid incorrect replacements
+    for i in range(len(TAG_END) - 1, 0, -1):
+        prefix = TAG_END[:i]
+        if repaired.endswith(prefix):
+            repaired = repaired[: -len(prefix)] + TAG_END
+            break
+
+    # Check if response ends with a partial RESPONSE_SUFFIX prefix
+    # RESPONSE_SUFFIX is "<|/GIM_RESPONSE|>"
+    # Iterate from longest to shortest prefix to avoid incorrect replacements
+    for i in range(len(RESPONSE_SUFFIX) - 1, 0, -1):
+        prefix = RESPONSE_SUFFIX[:i]
+        if repaired.endswith(prefix):
+            repaired = repaired[: -len(prefix)] + RESPONSE_SUFFIX
+            break
+
+    # Check if TAG_END is missing after the last tag content
+    # Count open tags and end tags
+    open_count = repaired.count(TAG_OPEN_LEFT)
+    end_count = repaired.count(TAG_END)
+    if open_count > end_count:
+        # Find the last position that looks like we're inside a tag (after |>)
+        last_open_right = repaired.rfind(TAG_OPEN_RIGHT)
+        if last_open_right != -1:
+            # Check if there's no TAG_END after this position
+            after_open = repaired[last_open_right + len(TAG_OPEN_RIGHT) :]
+            if TAG_END not in after_open:
+                # Insert TAG_END before RESPONSE_SUFFIX if present, otherwise at end
+                stripped = repaired.rstrip()
+                if stripped.endswith(RESPONSE_SUFFIX):
+                    # Calculate exact position at the end of the string
+                    insert_pos = len(stripped) - len(RESPONSE_SUFFIX)
+                    repaired = stripped[:insert_pos] + TAG_END + stripped[insert_pos:]
+                else:
+                    repaired += TAG_END
+
+    # Check if RESPONSE_SUFFIX is missing
+    if not repaired.rstrip().endswith(RESPONSE_SUFFIX):
+        repaired = repaired.rstrip() + RESPONSE_SUFFIX
+
+    return repaired
+
+
 def infill(
     query: Query | ContextInput, response: Response | ContextInput, strict: bool = False
 ) -> Result:
-    """Combines query and response by infilling missing content."""
+    """Combines query and response by infilling missing content.
+
+    Args:
+        query: The query containing masked tags to be filled
+        response: The response containing content to fill the tags
+        strict: If True, raises errors on format mismatches. If False, attempts to repair
+                missing ending tags in a best-effort manner.
+
+    Returns:
+        A Result object with tags filled from the response
+
+    Raises:
+        InvalidFormatError: If strict=True and there are format mismatches
+    """
     if not isinstance(query, Query):
         query = Query(query)
-    if not isinstance(response, Response):
+
+    # When strict=False, try to repair missing endings before parsing
+    if not strict and isinstance(response, str):
+        response_str = response
+        try:
+            response = Response(response_str)
+        except InvalidFormatError:
+            # Try to repair missing endings
+            repaired = _repair_missing_endings(response_str)
+            if repaired != response_str:
+                warnings.warn(
+                    "Response has missing ending tags. Attempting automatic repair.",
+                    stacklevel=2,
+                )
+                response = Response(repaired)
+            else:
+                raise
+    elif not isinstance(response, Response):
         response = Response(response)
 
     query_tags = list(query.tags)
