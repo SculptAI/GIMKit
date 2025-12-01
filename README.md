@@ -1,13 +1,4 @@
-# GIMKit - Guided Infilling Modeling
-
-A Python toolkit for structured text generation using language models. GIMKit enables precise control over LLM outputs through a masked tag system that guides the model to fill in specific content.
-
-## Features
-
-- **Masked Tags**: Define placeholders in text that the model fills in
-- **Guide Helpers**: Convenient methods for common patterns like names, emails, phone numbers, and more
-- **Multiple Backends**: Support for OpenAI API and vLLM (server and offline modes)
-- **Regex Constraints**: Optionally constrain generated content with regular expressions
+# GIMKit - Guided Infilling Modeling Toolkit
 
 ## Installation
 
@@ -104,6 +95,7 @@ print(result.tags["name"].content)
 result.tags["email"].content = "REDACTED"
 ```
 
-## License
+## Design Philosophy
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- Stable over feature
+- Small open-source model first
