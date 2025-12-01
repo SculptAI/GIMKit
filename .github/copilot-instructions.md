@@ -180,12 +180,12 @@ result = model(query)
 ## Dependencies
 
 ### Core Dependencies
-- `json-repair>=0.52.5`: JSON repair utilities
-- `llguidance>=0.7.30`: LLGuidance framework for grammar-based generation
-- `outlines[openai]>=1.2.9`: Structured generation framework
+- `json-repair`: JSON repair utilities
+- `llguidance`: LLGuidance framework for grammar-based generation
+- `outlines[openai]`: Structured generation framework
 
 ### Optional Dependencies
-- `vllm>=0.10.2`: For vLLM backend support
+- `vllm`: For vLLM backend support
 
 ### Development Dependencies
 - Testing: pytest, pytest-cov, pytest-asyncio
