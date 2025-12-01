@@ -1,8 +1,8 @@
-# Copilot Instructions for GIM (Guided Infilling Modeling)
+# Copilot Instructions for GIMKit
 
 ## Project Overview
 
-GIM (Guided Infilling Modeling) is a Python toolkit for structured text generation using language models. It enables precise control over LLM outputs through a masked tag system that guides the model to fill in specific content.
+GIMKit (Guided Infilling Modeling Toolkit) is a Python toolkit for structured text generation using language models. It enables precise control over LLM outputs through a masked tag system that guides the model to fill in specific content.
 
 ## Architecture
 
