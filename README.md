@@ -90,7 +90,7 @@ print(result)
 ### Accessing Results: Access filled tags from the result
 
 ```python
-result = model(query)
+result = model(query, use_gim_prompt=True)
 
 # Iterate over all tags
 for tag in result.tags:
