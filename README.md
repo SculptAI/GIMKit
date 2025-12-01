@@ -2,7 +2,6 @@
 
 <p align="center">
 
-
 <a href="https://pypi.org/project/gimkit">
   <img src="https://img.shields.io/pypi/v/gimkit?label=pypi%20package" alt="PyPI Version">
 </a>
@@ -12,6 +11,7 @@
 <a href="https://pypi.org/project/gimkit">
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey" alt="Supported Platforms">
 </a>
+
 </p>
 
 ## Installation
