@@ -15,7 +15,7 @@ GIM (Guided Infilling Modeling) is a Python toolkit for structured text generati
   - Includes parsing utilities via `TAG_FULL_PATTERN`, `TAG_OPEN_PATTERN`, `TAG_END_PATTERN`
 
 - **Guide**: Helper class for creating common tag types (`src/gimkit/guides.py`)
-  - Provides convenience methods like `single_word()`, `person_name()`, `phone_number()`, `e_mail()`, `select()`, etc.
+  - Provides convenience methods like `single_word()`, `person_name()`, `phone_number()`, `e_mail()`, `select()`, `datetime()`, etc.
   - Uses mixins for organization (BaseMixin, FormMixin, PersonalInfoMixin)
   - Accessible as singleton instance via `from gimkit import guide`
 
@@ -32,8 +32,10 @@ GIM (Guided Infilling Modeling) is a Python toolkit for structured text generati
   - `get_grammar_spec()` and `validate_grammar_spec()`: Grammar utilities
 
 - **Prompts**: System prompts for non-GIM models (`src/gimkit/prompts.py`)
-  - SYSTEM_PROMPT_MSG: Instructions for models not trained with GIM
-  - DEMO_CONVERSATION_MSGS: Few-shot examples for prompting
+  - `SYSTEM_PROMPT_MSG`: Instructions for models not trained with GIM
+  - `DEMO_CONVERSATION_MSGS`: Few-shot examples for prompting
+  - `SYSTEM_PROMPT_MSG_JSON`: Instructions for JSON-format output
+  - `DEMO_CONVERSATION_MSGS_JSON`: Few-shot examples for JSON output
 
 - **Models**: Adapters for different LLM backends (`src/gimkit/models/`)
   - `openai.py`: OpenAI client support
@@ -136,6 +138,7 @@ make clean        # Clean build artifacts
 1. **Docstrings**: Use Google-style docstrings
 2. **Examples**: Provide usage examples in `examples/` directory
    - `gimkit_quickstart.py`: Quick start guide
+   - `hello_world.py`: Simple hello world example
    - `cases.ipynb`: Jupyter notebook with various use cases
 3. **Type information**: Include `py.typed` marker for PEP 561 compliance
 
@@ -179,7 +182,7 @@ result = model(query)
 ### Core Dependencies
 - `json-repair>=0.52.5`: JSON repair utilities
 - `llguidance>=0.7.30`: LLGuidance framework for grammar-based generation
-- `outlines[openai]>=1.2.5`: Structured generation framework
+- `outlines[openai]>=1.2.9`: Structured generation framework
 
 ### Optional Dependencies
 - `vllm>=0.10.2`: For vLLM backend support
