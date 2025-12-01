@@ -5,45 +5,55 @@ from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result
 from gimkit.models.utils import (
+    get_outlines_model_input,
     get_outlines_output_type,
     infill_responses,
     json_responses_to_gim_response,
-    transform_to_outlines,
 )
-from gimkit.prompts import SYSTEM_PROMPT_MSG
+from gimkit.prompts import SYSTEM_PROMPT_MSG, SYSTEM_PROMPT_MSG_JSON
 from gimkit.schemas import MaskedTag
+
+
+def test_get_outlines_model_input():
+    query = Query('Hello, <|MASKED id="m_0"|><|/MASKED|>!')
+
+    # Test without GIM prompt
+    model_input = get_outlines_model_input(query, output_type=None, use_gim_prompt=False)
+    assert isinstance(model_input, str)
+    assert model_input == '<|GIM_QUERY|>Hello, <|MASKED id="m_0"|><|/MASKED|>!<|/GIM_QUERY|>'
+
+    # Test with GIM prompt
+    model_input_with_prompt = get_outlines_model_input(query, output_type=None, use_gim_prompt=True)
+    assert isinstance(model_input_with_prompt, Chat)
+    assert model_input_with_prompt.messages[0] == SYSTEM_PROMPT_MSG
+    assert (
+        model_input_with_prompt.messages[2]["content"]
+        == '<|GIM_RESPONSE|><|MASKED id="m_0"|>nice to meet you<|/MASKED|><|/GIM_RESPONSE|>'
+    )
+
+    # Test with JSON mode
+    model_input_json = get_outlines_model_input(query, output_type="json", use_gim_prompt=True)
+    assert isinstance(model_input_json, Chat)
+    assert model_input_json.messages[0] == SYSTEM_PROMPT_MSG_JSON
+    assert model_input_json.messages[2]["content"] == '{"m_0": "nice to meet you"}'
+
+    # Test force_chat_input
+    model_input_force_chat = get_outlines_model_input(
+        "Hello, world!", output_type=None, use_gim_prompt=False, force_chat_input=True
+    )
+    assert isinstance(model_input_force_chat, Chat)
+    assert (
+        model_input_force_chat.messages[0]["content"] == "<|GIM_QUERY|>Hello, world!<|/GIM_QUERY|>"
+    )
 
 
 def test_get_outlines_output_type():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
-    assert get_outlines_output_type(None, query) is None
-    assert isinstance(get_outlines_output_type("cfg", query), CFG)
-    assert isinstance(get_outlines_output_type("json", query), JsonSchema)
+    assert get_outlines_output_type(query, None) is None
+    assert isinstance(get_outlines_output_type(query, "cfg"), CFG)
+    assert isinstance(get_outlines_output_type(query, "json"), JsonSchema)
     with pytest.raises(ValueError, match="Invalid output type: xxx"):
-        get_outlines_output_type("xxx", query)
-
-
-def test_transform_to_outlines():
-    query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
-
-    # Test CFG output type without GIM prompt
-    model_input, output_type = transform_to_outlines(query, output_type="cfg", use_gim_prompt=False)
-    assert isinstance(model_input, str)
-    assert isinstance(output_type, CFG)
-    assert 'start: "<|GIM_RESPONSE|>" tag0 "<|/GIM_RESPONSE|>"' in output_type.definition
-
-    # Test JSON output type
-    model_input, output_type = transform_to_outlines(
-        query, output_type="json", use_gim_prompt=False
-    )
-    assert isinstance(model_input, str)
-    assert isinstance(output_type, JsonSchema)
-
-    # Test with GIM prompt
-    model_input, output_type = transform_to_outlines(query, output_type="cfg", use_gim_prompt=True)
-    assert isinstance(model_input, Chat)
-    assert model_input.messages[0] == SYSTEM_PROMPT_MSG
-    assert isinstance(output_type, CFG)
+        get_outlines_output_type(query, "xxx")
 
 
 def test_json_responses_to_gim_response():
@@ -58,6 +68,38 @@ def test_json_responses_to_gim_response():
     # Test non-dict response
     with pytest.raises(ValueError, match="Expected JSON response to be a dictionary, got"):
         json_responses_to_gim_response('["John", "Doe"]')
+
+
+def test_json_responses_to_gim_response_with_valid_json_no_warning(caplog):
+    """Test that no warning is emitted when JSON is already valid."""
+    import logging
+
+    caplog.set_level(logging.WARNING)
+
+    json_str = '{"m_0": "John", "m_1": "Doe"}'
+    expected_gim_str = '<|GIM_RESPONSE|><|MASKED id="m_0"|>John<|/MASKED|><|MASKED id="m_1"|>Doe<|/MASKED|><|/GIM_RESPONSE|>'
+    result = json_responses_to_gim_response(json_str)
+
+    assert result == expected_gim_str
+    # No warning should be logged for valid JSON
+    assert "JSON response required repair" not in caplog.text
+
+
+def test_json_responses_to_gim_response_with_repaired_json_warning(caplog):
+    """Test that a warning is emitted when JSON needs repair."""
+    import logging
+
+    caplog.set_level(logging.WARNING)
+
+    # Malformed JSON with missing closing quote
+    json_str = '{"m_0": "John, "m_1": "Doe"}'
+    expected_gim_str = '<|GIM_RESPONSE|><|MASKED id="m_0"|>John<|/MASKED|><|MASKED id="m_1"|>Doe<|/MASKED|><|/GIM_RESPONSE|>'
+    result = json_responses_to_gim_response(json_str)
+
+    assert result == expected_gim_str
+    # Warning should be logged when JSON is repaired
+    assert "JSON response required repair" in caplog.text
+    assert json_str in caplog.text
 
 
 def test_infill_responses():

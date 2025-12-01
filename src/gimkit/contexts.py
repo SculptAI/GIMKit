@@ -11,6 +11,10 @@ from gimkit.schemas import (
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
+    TAG_END,
+    TAG_END_PATTERN,
+    TAG_FULL_PATTERN,
+    TAG_OPEN_PATTERN,
     ContextInput,
     ContextPart,
     MaskedTag,
@@ -221,13 +225,81 @@ class Result(Context):
         return self.to_string(infill_mode=True)
 
 
+def _repair_missing_endings(response_str: str) -> str:
+    """Repair a response string by adding missing ending tags.
+
+    This function fixes responses that are missing ending tags like:
+    - <|/MASKED|> (TAG_END)
+    - <|/GIM_RESPONSE|> (RESPONSE_SUFFIX)
+
+    It also handles partial prefixes of these endings.
+
+    Args:
+        response_str: The response string to repair
+
+    Returns:
+        A repaired response string with missing endings added
+    """
+
+    repaired = response_str.replace(RESPONSE_PREFIX, "").replace(RESPONSE_SUFFIX, "").strip()
+
+    # Check if response ends with a partial TAG_END prefix
+    # TAG_END is "<|/MASKED|>"
+    for i in range(len(TAG_END) - 1, 2, -1):  # Minimum length to check is 3 ("<|/")
+        prefix = TAG_END[:i]
+        if repaired.endswith(prefix):
+            repaired = repaired[: -len(prefix)] + TAG_END
+            break
+
+    # Count opening and closing tags to see if any are missing
+    open_matches = list(TAG_OPEN_PATTERN.finditer(repaired))
+    end_matches = list(TAG_END_PATTERN.finditer(repaired))
+    full_matches = list(TAG_FULL_PATTERN.finditer(repaired))
+    if len(open_matches) == len(end_matches) + 1 and len(full_matches) == len(end_matches):
+        repaired += TAG_END
+
+    # Wrap with RESPONSE_PREFIX and RESPONSE_SUFFIX
+    repaired = RESPONSE_PREFIX + repaired + RESPONSE_SUFFIX
+    return repaired
+
+
 def infill(
     query: Query | ContextInput, response: Response | ContextInput, strict: bool = False
 ) -> Result:
-    """Combines query and response by infilling missing content."""
+    """Combines query and response by infilling missing content.
+
+    Args:
+        query: The query containing masked tags to be filled
+        response: The response containing content to fill the tags
+        strict: If True, raises errors on format mismatches. If False, attempts to repair
+                missing ending tags in a best-effort manner.
+
+    Returns:
+        A Result object with tags filled from the response
+
+    Raises:
+        InvalidFormatError: If strict=True and there are format mismatches
+    """
     if not isinstance(query, Query):
         query = Query(query)
-    if not isinstance(response, Response):
+
+    # When strict=False, try to repair missing endings before parsing
+    if not strict and isinstance(response, str):
+        response_str = response
+        try:
+            response = Response(response_str)
+        except InvalidFormatError:
+            # Try to repair missing endings
+            repaired = _repair_missing_endings(response_str)
+            if repaired != response_str:
+                warnings.warn(
+                    "Response has missing ending tags. Attempting automatic repair.",
+                    stacklevel=2,
+                )
+                response = Response(repaired)
+            else:
+                raise
+    elif not isinstance(response, Response):
         response = Response(response)
 
     query_tags = list(query.tags)
@@ -251,6 +323,7 @@ def infill(
                 id=q_tag.id,
                 name=q_tag.name,
                 desc=q_tag.desc,
+                regex=q_tag.regex,
                 content=r_tag.content if r_tag.content is not None else q_tag.content,
             )
         result_parts.append(part)

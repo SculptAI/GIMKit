@@ -5,41 +5,60 @@ from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Response, Result, infill
 from gimkit.dsls import build_cfg, build_json_schema
-from gimkit.prompts import DEMO_CONVERSATION_MSGS, SYSTEM_PROMPT_MSG
+from gimkit.prompts import (
+    DEMO_CONVERSATION_MSGS,
+    DEMO_CONVERSATION_MSGS_JSON,
+    SYSTEM_PROMPT_MSG,
+    SYSTEM_PROMPT_MSG_JSON,
+)
 from gimkit.schemas import ContextInput, MaskedTag
 
 
-def get_outlines_output_type(
-    output_type: Literal["cfg", "json"] | None, query: Query
-) -> None | CFG | JsonSchema:
-    if output_type is None:
-        return None
-    elif output_type == "cfg":
-        return CFG(build_cfg(query))
-    elif output_type == "json":
-        return JsonSchema(build_json_schema(query))
-    else:
-        raise ValueError(f"Invalid output type: {output_type}")
-
-
-def transform_to_outlines(
+def get_outlines_model_input(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None,
     use_gim_prompt: bool,
-) -> tuple[str | Chat, None | CFG | JsonSchema]:
-    """Transform the model input and output type to Outlines-compatible formats."""
+    force_chat_input: bool = False,
+) -> str | Chat:
+    """Transform the model input to an Outlines-compatible format."""
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_model_input: str | Chat = str(query_obj)
+
     if use_gim_prompt:
+        # Use JSON-specific prompts when output_type is "json"
+        if output_type == "json":
+            system_prompt = SYSTEM_PROMPT_MSG_JSON
+            demo_msgs = DEMO_CONVERSATION_MSGS_JSON
+        else:
+            system_prompt = SYSTEM_PROMPT_MSG
+            demo_msgs = DEMO_CONVERSATION_MSGS
         outlines_model_input = Chat(
             [
-                SYSTEM_PROMPT_MSG,
-                *DEMO_CONVERSATION_MSGS,
+                system_prompt,
+                *demo_msgs,
                 {"role": "user", "content": outlines_model_input},
             ]
         )
-    outlines_output_type = get_outlines_output_type(output_type, query_obj)
-    return outlines_model_input, outlines_output_type
+
+    if force_chat_input and isinstance(outlines_model_input, str):
+        outlines_model_input = Chat([{"role": "user", "content": outlines_model_input}])
+
+    return outlines_model_input
+
+
+def get_outlines_output_type(
+    model_input: ContextInput | Query, output_type: Literal["cfg", "json"] | None
+) -> None | CFG | JsonSchema:
+    """Transform the output type to an Outlines-compatible format."""
+    query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
+    if output_type is None:
+        return None
+    elif output_type == "cfg":
+        return CFG(build_cfg(query_obj))
+    elif output_type == "json":
+        return JsonSchema(build_json_schema(query_obj))
+    else:
+        raise ValueError(f"Invalid output type: {output_type}")
 
 
 def json_responses_to_gim_response(json_response: str) -> str:
@@ -58,7 +77,23 @@ def json_responses_to_gim_response(json_response: str) -> str:
 
     import json_repair
 
-    json_obj = json_repair.loads(json_response)
+    from gimkit.log import get_logger
+
+    logger = get_logger(__name__)
+
+    result = json_repair.loads(json_response, logging=True)
+    # When logging=True, json_repair.loads returns a tuple (json_obj, repair_log)
+    if isinstance(result, tuple):
+        json_obj, repair_log = result
+        if repair_log:
+            logger.warning(
+                "JSON response required repair. Original: %s, Repair actions: %s",
+                json_response,
+                repair_log,
+            )
+    else:  # pragma: no cover
+        # This shouldn't happen when logging=True, but handle gracefully
+        json_obj = result  # type: ignore[assignment]
     if not isinstance(json_obj, dict):
         raise ValueError(f"Expected JSON response to be a dictionary, got {type(json_obj)}")
 
