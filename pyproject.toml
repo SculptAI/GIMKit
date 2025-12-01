@@ -16,7 +16,7 @@ keywords=[
     "guided infilling",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
     "Intended Audience :: Science/Research",
@@ -40,9 +40,9 @@ vllm = [
 ]
 
 [project.urls]
-# Homepage = "TODO"
-# Documentation = "TODO"
-Repository = "https://github.com/SculptAI/GIM"
+Homepage = "https://github.com/SculptAI/GIMKit"
+Documentation = "https://github.com/SculptAI/GIMKit"
+Repository = "https://github.com/SculptAI/GIMKit"
 Issues = "https://github.com/SculptAI/GIM/issues"
 
 [dependency-groups]
