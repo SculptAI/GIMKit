@@ -245,7 +245,7 @@ def _repair_missing_endings(response_str: str) -> str:
 
     # Check if response ends with a partial TAG_END prefix
     # TAG_END is "<|/MASKED|>"
-    for i in range(len(TAG_END) - 1, 0, -1):
+    for i in range(len(TAG_END) - 1, 2, -1):  # Minimum length to check is 3 ("<|/")
         prefix = TAG_END[:i]
         if repaired.endswith(prefix):
             repaired = repaired[: -len(prefix)] + TAG_END

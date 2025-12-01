@@ -207,6 +207,18 @@ def test_infill_non_strict():
         result = infill(query, response_str, strict=False)
         assert str(result) == "Hello, world"
 
+    # Content ending with "<" should be preserved (not treated as partial tag)
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world<'
+    with pytest.warns(UserWarning, match=r"Response has missing ending tags"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, world<"
+
+    # Content ending with "<|" should be preserved (not treated as partial tag)
+    response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world<|'
+    with pytest.warns(UserWarning, match=r"Response has missing ending tags"):
+        result = infill(query, response_str, strict=False)
+        assert str(result) == "Hello, world<|"
+
 
 def test_infill_strict():
     query = Query(f"Hello, {g(name='obj')}")
