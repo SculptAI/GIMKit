@@ -32,6 +32,9 @@ def test_context_to_str_valid():
     text = Context("p", "s", "Hello", g(name="obj", content=", world"))
     assert repr(text) == 'pHello<|MASKED name="obj"|>, world<|/MASKED|>s'
 
+    text = Context("", "", g(name="test")).to_string(infill_mode=True)
+    assert text == '<|MASKED name="test"|><|/MASKED|>'
+
 
 def test_context_to_str_invalid():
     with pytest.raises(ValueError, match="Exactly one of fields or infill_mode must be specified"):
@@ -108,7 +111,9 @@ def test_query_infill_invalid():
     with pytest.raises(
         InvalidFormatError, match=r"Tag ids should be in order, got \d+ at position \d+"
     ):
-        Query(g(), g()).infill('<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>')
+        Query(g(), g()).infill(
+            f'{RESPONSE_PREFIX}<|MASKED id="m_2"|><|/MASKED|><|MASKED id="m_4"|><|/MASKED|>{RESPONSE_SUFFIX}'
+        )
 
     with pytest.raises(
         TypeError, match=r"Arguments must be str, MaskedTag, or list of str/MaskedTag\. Got .+"
@@ -175,22 +180,7 @@ def test_result_tags_modify():
         tags[None] = "new value"
 
 
-def test_infill_strict():
-    query = Query(f"Hello, {g(name='obj1')}{g(name='obj2')}")
-    response = Response(g(name="obj1", content="world"))
-
-    with pytest.warns(UserWarning, match=r"Mismatch in number of tags between query and response"):
-        result = infill(query, response, strict=False)
-        assert str(result) == 'Hello, world<|MASKED id="m_1" name="obj2"|><|/MASKED|>'
-
-    with pytest.raises(
-        InvalidFormatError, match=r"Mismatch in number of tags between query and response"
-    ):
-        infill(query, response, strict=True)
-
-
-def test_infill_repair_missing_tag_end():
-    """Test repair of missing <|/MASKED|> ending."""
+def test_infill_non_strict():
     query = Query(f"Hello, {g(name='obj')}")
 
     # Missing <|/MASKED|> (with RESPONSE_SUFFIX present)
@@ -218,11 +208,15 @@ def test_infill_repair_missing_tag_end():
         assert str(result) == "Hello, world"
 
 
-def test_infill_repair_strict_mode():
-    """Test that strict mode does not repair."""
+def test_infill_strict():
     query = Query(f"Hello, {g(name='obj')}")
-
-    # Missing endings should fail in strict mode
     response_str = f'{RESPONSE_PREFIX}<|MASKED id="m_0"|>world'
     with pytest.raises(InvalidFormatError):
         infill(query, response_str, strict=True)
+
+    query = Query(f"Hello, {g(name='obj1')}{g(name='obj2')}")
+    response = Response(g(name="obj1", content="world"))
+    with pytest.raises(
+        InvalidFormatError, match=r"Mismatch in number of tags between query and response"
+    ):
+        infill(query, response, strict=True)

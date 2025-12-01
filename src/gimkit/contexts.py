@@ -11,6 +11,10 @@ from gimkit.schemas import (
     QUERY_SUFFIX,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
+    TAG_END,
+    TAG_END_PATTERN,
+    TAG_FULL_PATTERN,
+    TAG_OPEN_PATTERN,
     ContextInput,
     ContextPart,
     MaskedTag,
@@ -236,52 +240,26 @@ def _repair_missing_endings(response_str: str) -> str:
     Returns:
         A repaired response string with missing endings added
     """
-    from gimkit.schemas import TAG_END, TAG_OPEN_LEFT, TAG_OPEN_RIGHT
 
-    repaired = response_str
+    repaired = response_str.replace(RESPONSE_PREFIX, "").replace(RESPONSE_SUFFIX, "").strip()
 
     # Check if response ends with a partial TAG_END prefix
     # TAG_END is "<|/MASKED|>"
-    # Iterate from longest to shortest prefix to avoid incorrect replacements
     for i in range(len(TAG_END) - 1, 0, -1):
         prefix = TAG_END[:i]
         if repaired.endswith(prefix):
             repaired = repaired[: -len(prefix)] + TAG_END
             break
 
-    # Check if response ends with a partial RESPONSE_SUFFIX prefix
-    # RESPONSE_SUFFIX is "<|/GIM_RESPONSE|>"
-    # Iterate from longest to shortest prefix to avoid incorrect replacements
-    for i in range(len(RESPONSE_SUFFIX) - 1, 0, -1):
-        prefix = RESPONSE_SUFFIX[:i]
-        if repaired.endswith(prefix):
-            repaired = repaired[: -len(prefix)] + RESPONSE_SUFFIX
-            break
+    # Count opening and closing tags to see if any are missing
+    open_matches = list(TAG_OPEN_PATTERN.finditer(repaired))
+    end_matches = list(TAG_END_PATTERN.finditer(repaired))
+    full_matches = list(TAG_FULL_PATTERN.finditer(repaired))
+    if len(open_matches) == len(end_matches) + 1 and len(full_matches) == len(end_matches):
+        repaired += TAG_END
 
-    # Check if TAG_END is missing after the last tag content
-    # Count open tags and end tags
-    open_count = repaired.count(TAG_OPEN_LEFT)
-    end_count = repaired.count(TAG_END)
-    if open_count > end_count:
-        # Find the last position that looks like we're inside a tag (after |>)
-        last_open_right = repaired.rfind(TAG_OPEN_RIGHT)
-        if last_open_right != -1:
-            # Check if there's no TAG_END after this position
-            after_open = repaired[last_open_right + len(TAG_OPEN_RIGHT) :]
-            if TAG_END not in after_open:
-                # Insert TAG_END before RESPONSE_SUFFIX if present, otherwise at end
-                stripped = repaired.rstrip()
-                if stripped.endswith(RESPONSE_SUFFIX):
-                    # Calculate exact position at the end of the string
-                    insert_pos = len(stripped) - len(RESPONSE_SUFFIX)
-                    repaired = stripped[:insert_pos] + TAG_END + stripped[insert_pos:]
-                else:
-                    repaired += TAG_END
-
-    # Check if RESPONSE_SUFFIX is missing
-    if not repaired.rstrip().endswith(RESPONSE_SUFFIX):
-        repaired = repaired.rstrip() + RESPONSE_SUFFIX
-
+    # Wrap with RESPONSE_PREFIX and RESPONSE_SUFFIX
+    repaired = RESPONSE_PREFIX + repaired + RESPONSE_SUFFIX
     return repaired
 
 
