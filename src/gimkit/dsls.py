@@ -39,7 +39,7 @@ def build_cfg(query: Query) -> str:
     Constructs a flattened grammar structure compatible with LLGuidance's suffix/capture logic.
 
     Ref:
-    - https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md: Incomplete doc of llguidance grammar syntax
+    - https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md: Incomplete documentation of llguidance grammar syntax
     - https://github.com/guidance-ai/guidance/blob/main/guidance/_ast.py: LarkSerializer implementation
     - https://github.com/guidance-ai/llguidance: Source code
 
