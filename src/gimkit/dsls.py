@@ -43,77 +43,61 @@ def build_cfg(query: Query) -> str:
     - https://github.com/guidance-ai/guidance/blob/main/guidance/_ast.py: LarkSerializer implementation
     - https://github.com/guidance-ai/llguidance: Source code
 
-    Example:
+    Real-World Example:
     ```python
-    print(build_cfg(query))
-    %llguidance {}
-
-    start: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\"m_0\"|>" m_0 REGEX "<|MASKED id=\"m_1\"|>" m_1 REGEX "<|MASKED id=\"m_2\"|>" m_2 REGEX "<|MASKED id=\"m_3\"|>" m_3 REGEX "<|MASKED id=\"m_4\"|>" m_4 REGEX "<|MASKED id=\"m_5\"|>" m_5 REGEX "<|MASKED id=\"m_6\"|>" m_6 REGEX "<|/GIM_RESPONSE|>"
-    REGEX: /\s*/
-    m_0[capture, suffix="<|/MASKED|>"]: M_0
-    M_0: /CO₂|二氧化碳/
-    m_1[capture, suffix="<|/MASKED|>"]: M_1
-    M_1: /(?s:.*)/
-    m_2[capture, suffix="<|/MASKED|>"]: M_2
-    M_2: /(?s:.*)/
-    m_3[capture, suffix="<|/MASKED|>"]: M_3
-    M_3: /(?s:.*)/
-    m_4[capture, suffix="<|/MASKED|>"]: M_4
-    M_4: /(?s:.*)/
-    m_5[capture, suffix="<|/MASKED|>"]: M_5
-    M_5: /(?s:.*)/
-    m_6[capture, suffix="<|/MASKED|>"]: M_6
-    M_6: /(?s:.*)/
+    query = '<|GIM_QUERY|>The capital of <|MASKED desc="single word" regex="中国|法国"|><|/MASKED|> is Beijing<|MASKED desc="punctuation mark" regex="\\."|><|/MASKED|><|/GIM_QUERY|>'
+    print(repr(build_cfg(Query(query))))
+    >>> '%llguidance {}\nstart: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|MASKED id=\\"m_1\\"|>" m_1 REGEX "<|/GIM_RESPONSE|>"\nREGEX: /\\s*/\nm_0[capture, suffix="<|/MASKED|>"]: M_0\nM_0: /中国|法国/\nm_1[capture, suffix="<|/MASKED|>"]: M_1\nM_1: /\\./\n'
     ```
     """
     num_tags = len(query.tags)
 
-    # 1. 头部声明
+    # 1. Header declaration
     lines = ["%llguidance {}"]
 
-    # 2. 构建 start 规则
-    # 目标格式: start: "PREFIX" REGEX "OPEN_TAG_0" m_0 REGEX "OPEN_TAG_1" m_1 ... REGEX "SUFFIX"
+    # 2. Build start rule
+    # Target format: start: "PREFIX" REGEX "OPEN_TAG_0" m_0 REGEX "OPEN_TAG_1" m_1 ... REGEX "SUFFIX"
     start_parts = [f'"{RESPONSE_PREFIX}"']
 
     for i in range(num_tags):
-        # 添加空白符规则引用
+        # Add whitespace rule reference
         start_parts.append("REGEX")
 
-        # 添加开始标签的字面量，例如: "<|MASKED id=\"m_0\"|>"
-        # 注意转义: id=\"m_{i}\"
+        # Add opening tag literal, e.g.: "<|MASKED id=\"m_0\"|>"
+        # Note escaping: id=\"m_{i}\"
         open_tag_str = f'"{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}"'
         start_parts.append(open_tag_str)
 
-        # 添加内容规则引用 (小写 m_i)
+        # Add content rule reference (lowercase m_i)
         start_parts.append(f"m_{i}")
 
-    # 添加结尾的空白符和后缀
+    # Add trailing whitespace and suffix
     start_parts.append("REGEX")
     start_parts.append(f'"{RESPONSE_SUFFIX}"')
 
     lines.append(f"start: {' '.join(start_parts)}")
 
-    # 3. 定义空白符规则 (命名为 REGEX 以匹配你的合法示例，通常也可以叫 WS)
+    # 3. Define whitespace rule (named REGEX to match examples, usually can also be called WS)
     lines.append(r"REGEX: /\s*/")
 
-    # 4. 生成每个 tag 的具体规则
+    # 4. Generate specific rules for each tag
     for i, tag in enumerate(query.tags):
-        # 注意：配合 suffix 使用时，使用贪婪匹配 /(?s:.*)/ 而不是 /(?s:.)*?/ 是正确且合法的。
+        # Note: When used with suffix, using greedy match /(?s:.*)/ instead of /(?s:.)*?/ is correct and legal.
         pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.*)/"
 
-        # 规则 m_i (逻辑层):
-        # - capture: 告诉引擎捕获这个部分。
-        # - suffix: 指定结束标签，引擎遇到它会停止并消费它。
-        # 注意：这里引用 TAG_END 常量 (即 "<|/MASKED|>")
+        # Rule m_i (logical layer):
+        # - capture: tells the engine to capture this part.
+        # - suffix: specifies the ending tag, the engine stops and consumes it when encountered.
+        # Note: Here we reference the TAG_END constant (i.e., "<|/MASKED|>")
         lines.append(f'm_{i}[capture, suffix="{TAG_END}"]: M_{i}')
 
-        # 规则 M_i (正则层):
-        # 定义实际的匹配模式
+        # Rule M_i (regex layer):
+        # Define the actual matching pattern for this tag.
         lines.append(f"M_{i}: {pattern}")
 
-        # TODO: "/(?s:.*)/" 的 tags 可能有很多个, 可以将具有相同 pattern 的规则合并以优化效率
+        # TODO: There may be many tags with "/(?s:.*)/" pattern, which can be inefficient.
 
-    # 5. 组合最终字符串
+    # 5. Assemble final string
     grammar = "\n".join(lines) + "\n"
 
     is_error, msgs = validate_grammar_spec(get_grammar_spec(grammar))
