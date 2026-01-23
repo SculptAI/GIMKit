@@ -11,22 +11,22 @@ from gimkit.schemas import MaskedTag
 def test_build_cfg():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')
     grm = (
-        '%llguidance {}\n'
+        "%llguidance {}\n"
         'start: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|/GIM_RESPONSE|>"\n'
-        'REGEX: /\\s*/\n'
+        "REGEX: /\\s*/\n"
         'm_0[capture, suffix="<|/MASKED|>"]: M_0\n'
-        'M_0: /(?s:.*)/\n'
+        "M_0: /(?s:.*)/\n"
     )
     assert build_cfg(query) == grm
 
     # Test with regex
     query_with_regex = Query("Hello, ", MaskedTag(id=0, regex=r"\w+\.com"), "!")
     whole_grammar_regex = (
-        '%llguidance {}\n'
+        "%llguidance {}\n"
         'start: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|/GIM_RESPONSE|>"\n'
-        'REGEX: /\\s*/\n'
+        "REGEX: /\\s*/\n"
         'm_0[capture, suffix="<|/MASKED|>"]: M_0\n'
-        'M_0: /\\w+\\.com/\n'
+        "M_0: /\\w+\\.com/\n"
     )
     assert build_cfg(query_with_regex) == whole_grammar_regex
 
