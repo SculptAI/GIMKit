@@ -35,14 +35,14 @@ def validate_grammar_spec(grammar_spec: str) -> tuple[bool, list[str]]:
 
 def build_cfg(query: Query) -> str:
     """Build an LLGuidance context-free grammar (CFG) string based on the query object.
-    
+
     Constructs a flattened grammar structure compatible with LLGuidance's suffix/capture logic.
 
-    Ref: 
+    Ref:
     - https://github.com/guidance-ai/llguidance/blob/main/docs/syntax.md: Incomplete doc of llguidance grammar syntax
     - https://github.com/guidance-ai/guidance/blob/main/guidance/_ast.py: LarkSerializer implementation
     - https://github.com/guidance-ai/llguidance: Source code
-    
+
     Example:
     ```python
     print(build_cfg(query))
@@ -67,30 +67,30 @@ def build_cfg(query: Query) -> str:
     ```
     """
     num_tags = len(query.tags)
-    
+
     # 1. 头部声明
     lines = ["%llguidance {}"]
 
     # 2. 构建 start 规则
     # 目标格式: start: "PREFIX" REGEX "OPEN_TAG_0" m_0 REGEX "OPEN_TAG_1" m_1 ... REGEX "SUFFIX"
     start_parts = [f'"{RESPONSE_PREFIX}"']
-    
+
     for i in range(num_tags):
         # 添加空白符规则引用
         start_parts.append("REGEX")
-        
+
         # 添加开始标签的字面量，例如: "<|MASKED id=\"m_0\"|>"
         # 注意转义: id=\"m_{i}\"
         open_tag_str = f'"{TAG_OPEN_LEFT} id=\\"m_{i}\\"{TAG_OPEN_RIGHT}"'
         start_parts.append(open_tag_str)
-        
+
         # 添加内容规则引用 (小写 m_i)
         start_parts.append(f"m_{i}")
 
     # 添加结尾的空白符和后缀
     start_parts.append("REGEX")
     start_parts.append(f'"{RESPONSE_SUFFIX}"')
-    
+
     lines.append(f"start: {' '.join(start_parts)}")
 
     # 3. 定义空白符规则 (命名为 REGEX 以匹配你的合法示例，通常也可以叫 WS)
@@ -100,17 +100,17 @@ def build_cfg(query: Query) -> str:
     for i, tag in enumerate(query.tags):
         # 注意：配合 suffix 使用时，使用贪婪匹配 /(?s:.*)/ 而不是 /(?s:.)*?/ 是正确且合法的。
         pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.*)/"
-        
+
         # 规则 m_i (逻辑层):
         # - capture: 告诉引擎捕获这个部分。
         # - suffix: 指定结束标签，引擎遇到它会停止并消费它。
         # 注意：这里引用 TAG_END 常量 (即 "<|/MASKED|>")
         lines.append(f'm_{i}[capture, suffix="{TAG_END}"]: M_{i}')
-        
+
         # 规则 M_i (正则层):
         # 定义实际的匹配模式
-        lines.append(f'M_{i}: {pattern}')
-        
+        lines.append(f"M_{i}: {pattern}")
+
         # TODO: "/(?s:.*)/" 的 tags 可能有很多个, 可以将具有相同 pattern 的规则合并以优化效率
 
     # 5. 组合最终字符串
