@@ -47,7 +47,7 @@ def build_cfg(query: Query) -> str:
     ```python
     query = '<|GIM_QUERY|>The capital of <|MASKED desc="single word" regex="中国|法国"|><|/MASKED|> is Beijing<|MASKED desc="punctuation mark" regex="\\."|><|/MASKED|><|/GIM_QUERY|>'
     print(repr(build_cfg(Query(query))))
-    >>> '%llguidance {}\nstart: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|MASKED id=\\"m_1\\"|>" m_1 REGEX "<|/GIM_RESPONSE|>"\nREGEX: /\\s*/\nm_0[capture, suffix="<|/MASKED|>"]: M_0\nM_0: /中国|法国/\nm_1[capture, suffix="<|/MASKED|>"]: M_1\nM_1: /\\./\n'
+    >>> '%llguidance {}\nstart: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|MASKED id=\\"m_1\\"|>" m_1 REGEX "<|/GIM_RESPONSE|>"\nREGEX: /\\s*/\nm_0[capture, suffix="<|/MASKED|>"]: T_0\nm_1[capture, suffix="<|/MASKED|>"]: T_1\nT_0: /中国|法国/\nT_1: /\\./\n'
     ```
     """
     num_tags = len(query.tags)
