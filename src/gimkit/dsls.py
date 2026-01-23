@@ -82,7 +82,7 @@ def build_cfg(query: Query) -> str:
 
     # 4. Collect unique patterns and create a mapping for terminal reuse
     # This optimization avoids creating duplicate terminal rules for tags with the same regex
-    pattern_to_terminal: dict[str, str] = {}
+    unique_pattern_terminals: dict[str, str] = {}
     terminal_definitions: list[str] = []
 
     for i, tag in enumerate(query.tags):
@@ -90,13 +90,13 @@ def build_cfg(query: Query) -> str:
         pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.*)/"
 
         # Get or create a shared terminal for this pattern
-        if pattern not in pattern_to_terminal:
+        if pattern not in unique_pattern_terminals:
             # Create a new terminal name for this unique pattern
-            terminal_name = f"T_{len(pattern_to_terminal)}"
-            pattern_to_terminal[pattern] = terminal_name
+            terminal_name = f"T_{len(unique_pattern_terminals)}"
+            unique_pattern_terminals[pattern] = terminal_name
             terminal_definitions.append(f"{terminal_name}: {pattern}")
 
-        terminal_name = pattern_to_terminal[pattern]
+        terminal_name = unique_pattern_terminals[pattern]
 
         # Rule m_i (logical layer):
         # - capture: tells the engine to capture this part.
