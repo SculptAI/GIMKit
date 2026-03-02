@@ -35,6 +35,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+transformers = [
+    "transformers>=4.50.0",
+]
 vllm = [
     "vllm>=0.14.0",
 ]

@@ -1485,6 +1485,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+transformers = [
+    { name = "transformers" },
+]
 vllm = [
     { name = "vllm" },
 ]
@@ -1505,9 +1508,10 @@ requires-dist = [
     { name = "json-repair", specifier = ">=0.55.1" },
     { name = "llguidance", specifier = ">=1.3.0" },
     { name = "outlines", extras = ["openai"], specifier = ">=1.2.9" },
+    { name = "transformers", marker = "extra == 'transformers'", specifier = ">=4.50.0" },
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.14.0" },
 ]
-provides-extras = ["vllm"]
+provides-extras = ["transformers", "vllm"]
 
 [package.metadata.requires-dev]
 dev = [
