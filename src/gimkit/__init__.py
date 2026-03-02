@@ -1,7 +1,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from gimkit.guides import guide
-from gimkit.models import from_openai, from_vllm, from_vllm_offline
+from gimkit.models import from_openai, from_transformers, from_vllm, from_vllm_offline
 
 
 try:
@@ -12,6 +12,7 @@ except PackageNotFoundError:  # pragma: no cover
 
 __all__ = [
     "from_openai",
+    "from_transformers",
     "from_vllm",
     "from_vllm_offline",
     "guide",
