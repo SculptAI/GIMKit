@@ -1,14 +1,12 @@
-from openai import OpenAI
-
-from gimkit import from_vllm
+from vllm import LLM, SamplingParams
+from gimkit import from_vllm_offline
 from gimkit import guide as g
 
 
 # ─── 1. Use A Model ───────────────────────────────────────────────────────────
 
-# You must have a separate vLLM server running on http://localhost:8000/v1
-openai_client = OpenAI(api_key="", base_url="http://localhost:8000/v1")
-model = from_vllm(openai_client, model_name="artifacts/09251-gim-sft-tmp/sft-gim")
+llm = LLM(model="Sculpt-AI/GIM-4B", max_model_len=8192)
+model = from_vllm_offline(llm)
 
 
 # ─── 2. Define A Query With Guide ─────────────────────────────────────────────
@@ -32,7 +30,8 @@ print("=" * 80)
 
 # ─── 3. Get The Result ────────────────────────────────────────────────────────
 
-result = model(query)
+sampling_params = SamplingParams(temperature=0.0, max_tokens=8192, presence_penalty=1, seed=0)
+result = model(query, output_type="cfg", sampling_params=sampling_params)
 result = result if not isinstance(result, list) else result[0]
 print(result)
 print("=" * 80)
