@@ -1,0 +1,49 @@
+name: Preview docs on PR
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "src/gimkit/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        if: github.event.action != 'closed'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MkDocs
+        if: github.event.action != 'closed'
+        run: pip install -r docs/requirements.txt
+
+      - name: Build docs
+        if: github.event.action != 'closed'
+        run: mkdocs build --strict
+
+      - name: Deploy preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: ./site
+          preview-branch: gh-pages
+          wait-for-pages-deployment: true

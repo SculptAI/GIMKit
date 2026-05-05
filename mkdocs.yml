@@ -1,0 +1,57 @@
+site_name: GIMKit
+site_url: https://sculptai.github.io/GIMKit
+site_description: Guided Infilling Modeling Toolkit — precise structured text generation with language models.
+site_author: Shichao Song
+repo_name: SculptAI/GIMKit
+repo_url: https://github.com/SculptAI/GIMKit
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quick Start: quickstart.md
+  - Usage Guide: usage.md
+  - API Reference: api.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+exclude_docs: |
+  requirements.txt

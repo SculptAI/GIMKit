@@ -41,7 +41,7 @@ vllm = [
 
 [project.urls]
 Homepage = "https://github.com/SculptAI/GIMKit"
-Documentation = "https://github.com/SculptAI/GIMKit"
+Documentation = "https://sculptai.github.io/GIMKit"
 Repository = "https://github.com/SculptAI/GIMKit"
 Issues = "https://github.com/SculptAI/GIM/issues"
 

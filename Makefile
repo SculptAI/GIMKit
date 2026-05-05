@@ -6,6 +6,8 @@ install:
 
 install-dev:
 	uv sync --all-groups --all-extras
+	uv run pre-commit install
+	uv pip install -r docs/requirements.txt
 
 lint:
 	uv run ruff check
@@ -22,9 +24,16 @@ test:
 pre-commit:
 	uv run pre-commit run --all-files
 
+docs-build:
+	uv run mkdocs build --strict
+
+docs-serve:
+	uv run mkdocs serve
+
 clean:
 	rm -rf .coverage
 	rm -rf dist
 	rm -rf .mypy_cache
 	rm -rf .pytest_cache
 	rm -rf .ruff_cache
+	rm -rf site
