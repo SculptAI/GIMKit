@@ -46,6 +46,14 @@ def test_get_outlines_model_input():
         model_input_force_chat.messages[0]["content"] == "<|GIM_QUERY|>Hello, world!<|/GIM_QUERY|>"
     )
 
+    # Test include_grammar
+    query_with_grammar = Query('"Hello, ', MaskedTag(regex=r'\w+"'))
+    model_input_with_grammar = get_outlines_model_input(
+        query_with_grammar, output_type=None, use_gim_prompt=False, include_grammar=True
+    )
+    assert isinstance(model_input_with_grammar, str)
+    assert model_input_with_grammar == r'<|GIM_QUERY|>"Hello, <|MASKED id="m_0" regex="\w+&quot;"|><|/MASKED|><|/GIM_QUERY|>'
+
 
 def test_get_outlines_output_type():
     query = Query('Hello, <|MASKED id="m_0"|>world<|/MASKED|>!')

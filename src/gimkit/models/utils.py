@@ -18,11 +18,14 @@ def get_outlines_model_input(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None,
     use_gim_prompt: bool,
+    include_grammar: bool = False,
     force_chat_input: bool = False,
 ) -> str | Chat:
     """Transform the model input to an Outlines-compatible format."""
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
-    outlines_model_input: str | Chat = str(query_obj)
+    outlines_model_input: str | Chat = (
+        query_obj.to_string_with_grammar() if include_grammar else str(query_obj)
+    )
 
     if use_gim_prompt:
         # Use JSON-specific prompts when output_type is "json"

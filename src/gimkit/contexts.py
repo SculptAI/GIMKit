@@ -204,6 +204,9 @@ class Query(Context):
     def __str__(self) -> str:
         return self.to_string(fields=["id", "desc", "content"])
 
+    def to_string_with_grammar(self) -> str:
+        return self.to_string(fields=["id", "desc", "content", "regex"])
+
 
 class Response(Context):
     def __init__(self, *args: ContextInput) -> None:

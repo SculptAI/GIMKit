@@ -20,6 +20,7 @@ class VLLM(OutlinesVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
+        include_grammar: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
@@ -31,6 +32,7 @@ class VLLM(OutlinesVLLM):
             output_type,
             backend,
             use_gim_prompt,
+            include_grammar,
             stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )
@@ -43,6 +45,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
+        include_grammar: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         return await _acall(
@@ -51,6 +54,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
             output_type,
             backend,
             use_gim_prompt,
+            include_grammar,
             stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )
