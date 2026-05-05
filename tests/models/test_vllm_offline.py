@@ -41,6 +41,8 @@ def test_vllm_offline_call():
         assert isinstance(returned, Result)
         assert returned.tags[0].content == "hi"
 
+        model(MaskedTag(), include_grammar=True)
+
 
 def test_vllm_offline_call_invalid_response():
     from vllm import LLM, SamplingParams

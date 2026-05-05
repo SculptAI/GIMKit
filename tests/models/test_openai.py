@@ -60,7 +60,7 @@ def test_sync_call():
         mock_create.assert_called_once()
 
         # Model can accept different input types
-        model(Query("Hello, ", guide()), output_type=None)
+        model(Query("Hello, ", guide()), output_type=None, include_grammar=True)
         model(["Hello, " + guide()], output_type=None)
 
 

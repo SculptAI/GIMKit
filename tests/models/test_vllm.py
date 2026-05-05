@@ -56,7 +56,7 @@ def test_sync_call():
         assert mock_create.call_args[1]["stop"] == "<|/GIM_RESPONSE|>"
 
         # Model can accept different input types
-        model(Query("Hello, ", guide()))
+        model(Query("Hello, ", guide()), include_grammar=True)
         model(["Hello, " + guide()])
 
         # Model raises error on invalid output type

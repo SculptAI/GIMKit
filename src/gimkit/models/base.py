@@ -18,9 +18,13 @@ def _call(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     use_gim_prompt: bool = False,
+    include_grammar: bool = False,
     **inference_kwargs: Any,
 ) -> Result | list[Result]:
-    outlines_model_input = get_outlines_model_input(model_input, output_type, use_gim_prompt)
+    outlines_model_input = get_outlines_model_input(
+        model_input, output_type, use_gim_prompt, include_grammar
+    )
+    logger.debug(f"Outlines model input of {self}: {outlines_model_input}")
     outlines_output_type = get_outlines_output_type(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = generator(outlines_model_input, **inference_kwargs)
@@ -36,9 +40,13 @@ async def _acall(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     use_gim_prompt: bool = False,
+    include_grammar: bool = False,
     **inference_kwargs: Any,
 ) -> Result | list[Result]:
-    outlines_model_input = get_outlines_model_input(model_input, output_type, use_gim_prompt)
+    outlines_model_input = get_outlines_model_input(
+        model_input, output_type, use_gim_prompt, include_grammar
+    )
+    logger.debug(f"Outlines model input of {self}: {outlines_model_input}")
     outlines_output_type = get_outlines_output_type(model_input, output_type)
     generator = Generator(self, outlines_output_type, backend)
     raw_responses = await generator(outlines_model_input, **inference_kwargs)
