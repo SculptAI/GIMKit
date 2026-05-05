@@ -1,42 +1,46 @@
-name: Deploy docs to GitHub Pages
+name: Preview docs on PR
 
 on:
-  push:
-    branches:
-      - "main"
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
     paths:
       - "docs/**"
       - "mkdocs.yml"
-  workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
-  group: docs-deploy
+  group: pr-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  preview:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v5
 
       - name: Set up Python
+        if: github.event.action != 'closed'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install MkDocs
+        if: github.event.action != 'closed'
         run: pip install -r docs/requirements.txt
 
       - name: Build docs
+        if: github.event.action != 'closed'
         run: mkdocs build --strict
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Deploy preview
+        uses: rossjrw/pr-preview-action@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-          keep_files: true
+          source-dir: ./site
