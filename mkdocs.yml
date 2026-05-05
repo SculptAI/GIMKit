@@ -7,22 +7,24 @@ repo_url: https://github.com/SculptAI/GIMKit
 
 theme:
   name: material
+  language: en
   palette:
     - scheme: default
       primary: indigo
       accent: indigo
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
       primary: indigo
       accent: indigo
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-sunny
         name: Switch to light mode
   features:
     - navigation.top
     - content.code.copy
+    - search.suggest
 
 nav:
   - Home: index.md
@@ -31,14 +33,25 @@ nav:
   - Usage Guide: usage.md
   - API Reference: api.md
 
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+  - minify:
+      minify_html: true
+
 markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.superfences
-  - pymdownx.inlinehilite
   - admonition
-  - attr_list
-  - tables
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 
 exclude_docs: |
   requirements.txt
