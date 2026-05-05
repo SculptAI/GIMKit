@@ -25,6 +25,7 @@ class VLLMOffline(OutlinesVLLMOffline):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
+        include_grammar: bool = False,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
@@ -40,7 +41,11 @@ class VLLMOffline(OutlinesVLLMOffline):
             pass
 
         outlines_model_input = get_outlines_model_input(
-            model_input, output_type, use_gim_prompt, force_chat_input=force_chat_input
+            model_input,
+            output_type,
+            use_gim_prompt,
+            force_chat_input=force_chat_input,
+            include_grammar=include_grammar,
         )
         outlines_output_type = get_outlines_output_type(model_input, output_type)
         generator = Generator(self, outlines_output_type, backend)
