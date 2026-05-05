@@ -10,6 +10,7 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "src/gimkit/**"
 
 permissions:
   contents: write
@@ -44,3 +45,5 @@ jobs:
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: ./site
+          preview-branch: gh-pages
+          wait-for-pages-deployment: true

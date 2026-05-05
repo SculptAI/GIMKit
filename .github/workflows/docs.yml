@@ -7,6 +7,7 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "src/gimkit/**"
   workflow_dispatch:
 
 permissions:
