@@ -47,12 +47,24 @@ def test_get_outlines_model_input():
     )
 
     # Test include_grammar
-    query_with_grammar = Query('"Hello, ', MaskedTag(regex=r'\w+"'))
-    model_input_with_grammar = get_outlines_model_input(
-        query_with_grammar, output_type=None, use_gim_prompt=False, include_grammar=True
+    assert (
+        get_outlines_model_input(
+            Query('"Hello, ', MaskedTag(regex=r'\w+"')),
+            output_type=None,
+            use_gim_prompt=False,
+            include_grammar=True,
+        )
+        == r'<|GIM_QUERY|>"Hello, <|MASKED id="m_0" regex="\w+&quot;"|><|/MASKED|><|/GIM_QUERY|>'
     )
-    assert isinstance(model_input_with_grammar, str)
-    assert model_input_with_grammar == r'<|GIM_QUERY|>"Hello, <|MASKED id="m_0" regex="\w+&quot;"|><|/MASKED|><|/GIM_QUERY|>'
+    assert (
+        get_outlines_model_input(
+            Query('"Hello, ', MaskedTag(regex=r'\w+"')),
+            output_type=None,
+            use_gim_prompt=False,
+            include_grammar=False,
+        )
+        == r'<|GIM_QUERY|>"Hello, <|MASKED id="m_0"|><|/MASKED|><|/GIM_QUERY|>'
+    )
 
 
 def test_get_outlines_output_type():
