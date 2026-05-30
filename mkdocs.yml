@@ -1,6 +1,6 @@
 site_name: GIMKit
 site_url: https://sculptai.github.io/GIMKit
-site_description: Guided Infilling Modeling Toolkit — precise structured text generation with language models.
+site_description: Structured text generation and information extraction toolkit for language models.
 site_author: Shichao Song
 repo_name: SculptAI/GIMKit
 repo_url: https://github.com/SculptAI/GIMKit
@@ -26,13 +26,6 @@ theme:
     - content.code.copy
     - search.suggest
 
-nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Quick Start: quickstart.md
-  - Usage Guide: usage.md
-  - API Reference: api.md
-
 plugins:
   - search
   - mkdocstrings:
@@ -46,6 +39,39 @@ plugins:
             show_root_toc_entry: true
   - minify:
       minify_html: true
+  - i18n:
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+          nav_translations:
+            Home: 首页
+            Installation: 安装
+            Quick Start: 快速开始
+            Usage Guide: 使用指南
+            Use Cases: 应用案例
+            Privacy & PII Protection: 隐私与 PII 保护
+            API Reference: API 参考
+          nav:
+            - 首页: index.md
+            - 安装: installation.md
+            - 快速开始: quickstart.md
+            - 使用指南: usage.md
+            - 应用案例: use-cases.md
+            - 隐私与 PII 保护: privacy.md
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quick Start: quickstart.md
+  - Usage Guide: usage.md
+  - Use Cases: use-cases.md
+  - Privacy & PII Protection: privacy.md
+  - API Reference: api.md
 
 markdown_extensions:
   - admonition
