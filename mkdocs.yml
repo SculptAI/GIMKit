@@ -1,6 +1,6 @@
 site_name: GIMKit
 site_url: https://sculptai.github.io/GIMKit
-site_description: Guided Infilling Modeling Toolkit — precise structured text generation with language models.
+site_description: Structured text generation and information extraction toolkit for language models.
 site_author: Shichao Song
 repo_name: SculptAI/GIMKit
 repo_url: https://github.com/SculptAI/GIMKit
@@ -26,15 +26,10 @@ theme:
     - content.code.copy
     - search.suggest
 
-nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Quick Start: quickstart.md
-  - Usage Guide: usage.md
-  - API Reference: api.md
-
 plugins:
   - search
+  - autorefs:
+      resolve_closest: true
   - mkdocstrings:
       handlers:
         python:
@@ -46,10 +41,69 @@ plugins:
             show_root_toc_entry: true
   - minify:
       minify_html: true
+  - i18n:
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+          nav_translations:
+            Home: 首页
+            Installation: 安装
+            How GIMKit Works: GIMKit 原理
+            Quick Start: 快速开始
+            Model Usage: 模型使用
+            Overview: 总览
+            OpenAI Client: OpenAI 客户端
+            vLLM Client (Server Mode): vLLM 客户端（服务端）
+            vLLM Offline Client: vLLM 离线客户端
+            Use Cases: 应用案例
+            Classic IE Use Cases: 经典信息抽取案例
+            Privacy and PII Use Cases: 隐私与 PII 案例
+            Other Use Cases: 其他应用案例
+            API Reference: API 参考
+          nav:
+            - 首页: index.md
+            - 安装: installation.md
+            - GIMKit 原理: principles.md
+            - 快速开始: quickstart.md
+            - 模型使用:
+                - 总览: models/index.md
+                - OpenAI 客户端: models/openai.md
+                - vLLM 客户端（服务端）: models/vllm.md
+                - vLLM 离线客户端: models/vllm-offline.md
+            - 应用案例:
+              - 经典信息抽取案例: use-cases/classic.md
+              - 隐私与 PII 案例: use-cases/privacy-pii.md
+              - 其他应用案例: use-cases/others.md
+            - API 参考: api.md
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - How GIMKit Works: principles.md
+  - Quick Start: quickstart.md
+  - Model Usage:
+      - Overview: models/index.md
+      - OpenAI Client: models/openai.md
+      - vLLM Client (Server Mode): models/vllm.md
+      - vLLM Offline Client: models/vllm-offline.md
+  - Use Cases:
+      - Classic IE Use Cases: use-cases/classic.md
+      - Privacy and PII Use Cases: use-cases/privacy-pii.md
+      - Other Use Cases: use-cases/others.md
+  - API Reference: api.md
 
 markdown_extensions:
   - admonition
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
 
