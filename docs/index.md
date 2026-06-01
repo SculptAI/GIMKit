@@ -25,7 +25,7 @@ GIMKit is a **general-purpose information extraction framework**. Write a natura
 | **Product review analysis** | Parse product, price, rating, pros and cons |
 | **Privacy & PII protection** | Extract, classify, redact, and filter PII |
 
-See the [Use Cases](use-cases.md) and [Privacy & PII Protection](privacy.md) pages for full code examples.
+See the [Classic IE Use Cases](use-cases/classic.md), [Privacy and PII Use Cases](use-cases/privacy-pii.md), and [Other Use Cases](use-cases/others.md) pages for full code examples.
 
 ---
 
@@ -36,8 +36,3 @@ See the [Use Cases](use-cases.md) and [Privacy & PII Protection](privacy.md) pag
 - **Named access** — retrieve results by tag name or index.
 - **Multiple backends** — OpenAI, vLLM (server and offline).
 - **Small-model friendly** — designed to work well with compact open-source models.
-
-## Design Philosophy
-
-- **Stable over feature** — reliability and correctness are prioritized above new features.
-- **Small open-source model first** — designed to work well with small, freely available language models.

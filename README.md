@@ -91,8 +91,3 @@ print(result.tags["name"].content)
 print(result.tags["email"].content)
 print(result.tags["color"].content)
 ```
-
-## Design Philosophy
-
-- Stable over feature
-- Small open-source model first
