@@ -22,6 +22,13 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/installation/"/>
     </url>
     <url>
+        <loc>https://sculptai.github.io/GIMKit/principles/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/principles/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/principles/"/>
+    </url>
+    <url>
         <loc>https://sculptai.github.io/GIMKit/privacy/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
@@ -36,18 +43,53 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/quickstart/"/>
     </url>
     <url>
-        <loc>https://sculptai.github.io/GIMKit/usage/</loc>
+        <loc>https://sculptai.github.io/GIMKit/models/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/usage/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/usage/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/"/>
     </url>
     <url>
-        <loc>https://sculptai.github.io/GIMKit/use-cases/</loc>
+        <loc>https://sculptai.github.io/GIMKit/models/openai/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/openai/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/openai/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/models/vllm-offline/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/vllm-offline/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/vllm-offline/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/models/vllm/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/vllm/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/vllm/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/use-cases/classic/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/classic/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/classic/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/use-cases/others/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/others/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/others/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/use-cases/privacy-pii/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/privacy-pii/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/privacy-pii/"/>
     </url>
     <url>
         <loc>https://sculptai.github.io/GIMKit/zh/</loc>
@@ -71,6 +113,13 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/installation/"/>
     </url>
     <url>
+        <loc>https://sculptai.github.io/GIMKit/zh/principles/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/principles/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/principles/"/>
+    </url>
+    <url>
         <loc>https://sculptai.github.io/GIMKit/zh/privacy/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
@@ -85,17 +134,52 @@
         <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/quickstart/"/>
     </url>
     <url>
-        <loc>https://sculptai.github.io/GIMKit/zh/usage/</loc>
+        <loc>https://sculptai.github.io/GIMKit/zh/models/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/usage/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/usage/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/"/>
     </url>
     <url>
-        <loc>https://sculptai.github.io/GIMKit/zh/use-cases/</loc>
+        <loc>https://sculptai.github.io/GIMKit/zh/models/openai/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/openai/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/openai/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/zh/models/vllm-offline/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/vllm-offline/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/vllm-offline/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/zh/models/vllm/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/models/vllm/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/models/vllm/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/zh/use-cases/classic/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/classic/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/classic/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/zh/use-cases/others/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/others/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/others/"/>
+    </url>
+    <url>
+        <loc>https://sculptai.github.io/GIMKit/zh/use-cases/privacy-pii/</loc>
+        <lastmod>2026-06-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/use-cases/privacy-pii/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/use-cases/privacy-pii/"/>
     </url>
 </urlset>
