@@ -43,11 +43,6 @@ This page compares supported clients and explains when to use each mode.
 - Prefer `output_type="cfg"` for both GIM-trained and non-GIM models.
 - `output_type="json"` is available when JSON output is specifically needed.
 
-### `output_type="json"`
-
-- Uses JSON schema constraints.
-- Returned JSON is converted back to GIM tag results.
-
 ## Common Optional Flags
 
 - `include_grammar=True`: include grammar text in query input.

@@ -43,11 +43,6 @@
 - 无论 GIM 训练模型还是非训练模型，都推荐 `output_type="cfg"`。
 - 当你明确需要 JSON 输出时可改用 `output_type="json"`。
 
-### `output_type="json"`
-
-- 使用 JSON Schema 约束。
-- 返回 JSON 后会转换回 GIM 标签结果。
-
 ## 常用可选参数
 
 - `include_grammar=True`：在输入中注入语法文本。

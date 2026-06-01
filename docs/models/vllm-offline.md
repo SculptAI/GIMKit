@@ -30,7 +30,11 @@ Event: {g(name="event", desc="event type")}
 Date: {g.datetime(name="date")}
 """
 
-result = model(query, use_gim_prompt=True)
+# GIM-trained model path
+result = model(query)
+
+# Non-GIM-trained model path
+result_non_gim = model(query, use_gim_prompt=True)
 ```
 
 ## Output types

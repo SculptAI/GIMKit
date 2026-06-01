@@ -1,6 +1,6 @@
 # Privacy and PII Use Cases
 
-This chapter shows privacy-oriented extraction workflows. For a deeper walkthrough, see [Privacy & PII Protection](../privacy.md).
+This chapter shows privacy-oriented extraction workflows.
 
 ## PII Extraction from Chat Logs
 

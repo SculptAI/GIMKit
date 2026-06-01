@@ -57,7 +57,7 @@ GIMKit is a **general-purpose information extraction framework**. Write a natura
 | **Resume parsing** | Extract name, title, education, experience |
 | **Review analysis** | Parse product, price, rating, pros/cons |
 
-See the [Use Cases](https://sculptai.github.io/GIMKit/use-cases/) page for full examples.
+See the [Classic IE Use Cases](https://sculptai.github.io/GIMKit/use-cases/classic/), [Privacy and PII Use Cases](https://sculptai.github.io/GIMKit/use-cases/privacy-pii/), and [Other Use Cases](https://sculptai.github.io/GIMKit/use-cases/others/) pages for full examples.
 
 ## Why GIMKit?
 

@@ -64,7 +64,6 @@ plugins:
             Classic IE Use Cases: 经典信息抽取案例
             Privacy and PII Use Cases: 隐私与 PII 案例
             Other Use Cases: 其他应用案例
-            Privacy & PII Protection: 隐私与 PII 保护
             API Reference: API 参考
           nav:
             - 首页: index.md
@@ -80,7 +79,6 @@ plugins:
               - 经典信息抽取案例: use-cases/classic.md
               - 隐私与 PII 案例: use-cases/privacy-pii.md
               - 其他应用案例: use-cases/others.md
-            - 隐私与 PII 保护: privacy.md
             - API 参考: api.md
 
 nav:
@@ -97,7 +95,6 @@ nav:
       - Classic IE Use Cases: use-cases/classic.md
       - Privacy and PII Use Cases: use-cases/privacy-pii.md
       - Other Use Cases: use-cases/others.md
-  - Privacy & PII Protection: privacy.md
   - API Reference: api.md
 
 markdown_extensions:
@@ -106,7 +103,7 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: pymdownx.superfences.fence_code_format
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
 

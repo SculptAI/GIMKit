@@ -27,7 +27,11 @@ Name: {g.person_name(name="name")}
 Phone: {g.phone_number(name="phone")}
 """
 
-result = model(query, use_gim_prompt=True)
+# GIM-trained model path
+result = model(query)
+
+# Non-GIM-trained model path
+result_non_gim = model(query, use_gim_prompt=True)
 ```
 
 ## Output types
