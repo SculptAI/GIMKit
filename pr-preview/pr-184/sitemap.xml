@@ -29,13 +29,6 @@
         <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/principles/"/>
     </url>
     <url>
-        <loc>https://sculptai.github.io/GIMKit/privacy/</loc>
-        <lastmod>2026-06-01</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/privacy/"/>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/privacy/"/>
-    </url>
-    <url>
         <loc>https://sculptai.github.io/GIMKit/quickstart/</loc>
         <lastmod>2026-06-01</lastmod>
         <changefreq>daily</changefreq>
@@ -118,13 +111,6 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/principles/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/principles/"/>
-    </url>
-    <url>
-        <loc>https://sculptai.github.io/GIMKit/zh/privacy/</loc>
-        <lastmod>2026-06-01</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="zh" href="https://sculptai.github.io/GIMKit/zh/privacy/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://sculptai.github.io/GIMKit/privacy/"/>
     </url>
     <url>
         <loc>https://sculptai.github.io/GIMKit/zh/quickstart/</loc>
