@@ -28,6 +28,8 @@ theme:
 
 plugins:
   - search
+  - autorefs:
+      resolve_closest: true
   - mkdocstrings:
       handlers:
         python:
@@ -63,6 +65,7 @@ plugins:
             - 使用指南: usage.md
             - 应用案例: use-cases.md
             - 隐私与 PII 保护: privacy.md
+            - API 参考: api.md
 
 nav:
   - Home: index.md
