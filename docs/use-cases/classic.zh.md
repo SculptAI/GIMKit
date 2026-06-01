@@ -84,3 +84,41 @@ query = f"""从以下文本中提取实体和关系：
 
 result = model(query, use_gim_prompt=True)
 ```
+
+## 表格补全
+
+```python
+question = f"""
+请根据已有值补全下列表格中的缺失项。
+| 周次 | 牛奶（升）          | 面包（条）          | 鸡蛋（打）     |
+| ---- | ------------------ | ------------------ | ------------ |
+| 1    | 6                  | 4                  | 2            |
+| 2    | 6                  | 5                  | 3            |
+| 3    | {g(desc="number")} | 4                  | 2            |
+| 4    | 6                  | 5                  | 3            |
+"""
+
+result = model(question, use_gim_prompt=True)
+```
+
+## 知识图谱三元组抽取
+
+```python
+question = f"""## 内容
+
+This small ebook is here to teach you a programming language called Forth.
+
+## 抽取任务
+
+从上述内容中抽取知识图谱三元组（头实体、关系、尾实体）。
+
+1. ({g()}, {g()}, {g()})
+2. ({g()}, {g()}, {g()})
+3. ({g()}, {g()}, {g()})
+4. ({g()}, {g()}, {g()})
+5. ({g()}, {g()}, {g()})
+6. ({g()}, {g()}, {g()})
+"""
+
+result = model(question, use_gim_prompt=True)
+```

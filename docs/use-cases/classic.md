@@ -84,3 +84,41 @@ Relationship: {g(name="relation", desc="relationship between person and organiza
 
 result = model(query, use_gim_prompt=True)
 ```
+
+## Table Completion
+
+```python
+question = f"""
+Please fill in the missing values in the following table based on the existing values.
+| Week | Milk (liters)      | Bread (loaves)     | Eggs (dozen) |
+| ---- | ------------------ | ------------------ | ------------ |
+| 1    | 6                  | 4                  | 2            |
+| 2    | 6                  | 5                  | 3            |
+| 3    | {g(desc="number")} | 4                  | 2            |
+| 4    | 6                  | 5                  | 3            |
+"""
+
+result = model(question, use_gim_prompt=True)
+```
+
+## Knowledge Graph Extraction
+
+```python
+question = f"""## Content
+
+This small ebook is here to teach you a programming language called Forth.
+
+## Extraction
+
+Extract knowledge graph triplets (head, relation, tail) from the content.
+
+1. ({g()}, {g()}, {g()})
+2. ({g()}, {g()}, {g()})
+3. ({g()}, {g()}, {g()})
+4. ({g()}, {g()}, {g()})
+5. ({g()}, {g()}, {g()})
+6. ({g()}, {g()}, {g()})
+"""
+
+result = model(question, use_gim_prompt=True)
+```
