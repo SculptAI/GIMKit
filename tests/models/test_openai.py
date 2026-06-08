@@ -60,7 +60,11 @@ def test_sync_call():
         mock_create.assert_called_once()
 
         # Model can accept different input types
-        model(Query("Hello, ", guide()), output_type=None, visible_tag_fields=["id", "desc", "content", "regex"])
+        model(
+            Query("Hello, ", guide()),
+            output_type=None,
+            visible_tag_fields=["id", "desc", "content", "regex"],
+        )
         model(["Hello, " + guide()], output_type=None)
 
 
