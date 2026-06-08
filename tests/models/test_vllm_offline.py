@@ -41,7 +41,7 @@ def test_vllm_offline_call():
         assert isinstance(returned, Result)
         assert returned.tags[0].content == "hi"
 
-        model(MaskedTag(), include_grammar=True)
+        model(MaskedTag(), visible_tag_fields=["id", "desc", "content", "regex"])
 
 
 def test_vllm_offline_call_invalid_response():

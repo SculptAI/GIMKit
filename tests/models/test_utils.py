@@ -46,13 +46,13 @@ def test_get_outlines_model_input():
         model_input_force_chat.messages[0]["content"] == "<|GIM_QUERY|>Hello, world!<|/GIM_QUERY|>"
     )
 
-    # Test include_grammar
+    # Test visible_tag_fields
     assert (
         get_outlines_model_input(
             Query('"Hello, ', MaskedTag(regex=r'\w+"')),
             output_type=None,
             use_gim_prompt=False,
-            include_grammar=True,
+            visible_tag_fields=["id", "desc", "content", "regex"],
         )
         == r'<|GIM_QUERY|>"Hello, <|MASKED id="m_0" regex="\w+&quot;"|><|/MASKED|><|/GIM_QUERY|>'
     )
@@ -61,9 +61,19 @@ def test_get_outlines_model_input():
             Query('"Hello, ', MaskedTag(regex=r'\w+"')),
             output_type=None,
             use_gim_prompt=False,
-            include_grammar=False,
+            visible_tag_fields=None,
         )
         == r'<|GIM_QUERY|>"Hello, <|MASKED id="m_0"|><|/MASKED|><|/GIM_QUERY|>'
+    )
+    # Test with name visible
+    assert (
+        get_outlines_model_input(
+            Query('"Hello, ', MaskedTag(name="greeting", regex=r'\w+"')),
+            output_type=None,
+            use_gim_prompt=False,
+            visible_tag_fields=["id", "name", "desc", "content"],
+        )
+        == '<|GIM_QUERY|>"Hello, <|MASKED id="m_0" name="greeting"|><|/MASKED|><|/GIM_QUERY|>'
     )
 
 
