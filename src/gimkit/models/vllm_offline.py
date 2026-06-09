@@ -30,21 +30,10 @@ class VLLMOffline(OutlinesVLLMOffline):
     ) -> Result | list[Result]:
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
 
-        # Use force_chat_input=True to ensure proper prompt formatting.
-        # TODO: Remove this once Outlines fixes https://github.com/dottxt-ai/outlines/issues/1784
-        force_chat_input = False
-        try:
-            chat_template = self.model.get_tokenizer().get_chat_template()  # type: ignore[union-attr]
-            if chat_template:
-                force_chat_input = True
-        except ValueError:  # pragma: no cover
-            pass
-
         outlines_model_input = get_outlines_model_input(
             model_input,
             output_type,
             use_gim_prompt,
-            force_chat_input=force_chat_input,
             visible_tag_fields=visible_tag_fields,
         )
         outlines_output_type = get_outlines_output_type(model_input, output_type)
