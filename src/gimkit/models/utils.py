@@ -11,20 +11,33 @@ from gimkit.prompts import (
     SYSTEM_PROMPT_MSG,
     SYSTEM_PROMPT_MSG_JSON,
 )
-from gimkit.schemas import ContextInput, MaskedTag
+from gimkit.schemas import ContextInput, MaskedTag, TagField
 
 
 def get_outlines_model_input(
     model_input: ContextInput | Query,
     output_type: Literal["cfg", "json"] | None,
     use_gim_prompt: bool,
-    include_grammar: bool = False,
+    visible_tag_fields: list[TagField] | None = None,
     force_chat_input: bool = False,
 ) -> str | Chat:
-    """Transform the model input to an Outlines-compatible format."""
+    """Transform the model input to an Outlines-compatible format.
+
+    Args:
+        model_input: The query input, either a raw context or a Query object.
+        output_type: The output type for the model ("cfg", "json", or None).
+        use_gim_prompt: Whether to wrap the input with a GIM system prompt.
+        visible_tag_fields: The tag fields to include in the serialized query string.
+            Controls which attributes of each MaskedTag are visible to the model.
+            If None, uses the Query default (["id", "desc", "content"]).
+            Example: ["id", "name", "desc", "content", "regex"] to expose all fields.
+        force_chat_input: Whether to force the input into a chat format.
+    """
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_model_input: str | Chat = (
-        query_obj.to_string_with_grammar() if include_grammar else str(query_obj)
+        query_obj.to_string(fields=visible_tag_fields)
+        if visible_tag_fields is not None
+        else str(query_obj)
     )
 
     if use_gim_prompt:

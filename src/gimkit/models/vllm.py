@@ -10,7 +10,7 @@ from outlines.models.vllm import AsyncVLLM as OutlinesAsyncVLLM
 
 from gimkit.contexts import Query, Result
 from gimkit.models.base import _acall, _call
-from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
+from gimkit.schemas import RESPONSE_SUFFIX, ContextInput, TagField
 
 
 class VLLM(OutlinesVLLM):
@@ -20,7 +20,7 @@ class VLLM(OutlinesVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
-        include_grammar: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
@@ -32,7 +32,7 @@ class VLLM(OutlinesVLLM):
             output_type,
             backend,
             use_gim_prompt,
-            include_grammar,
+            visible_tag_fields,
             stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )
@@ -45,7 +45,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
-        include_grammar: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         return await _acall(
@@ -54,7 +54,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
             output_type,
             backend,
             use_gim_prompt,
-            include_grammar,
+            visible_tag_fields,
             stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )

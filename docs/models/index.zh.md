@@ -45,6 +45,6 @@
 
 ## 常用可选参数
 
-- `include_grammar=True`：在输入中注入语法文本。
+- `visible_tag_fields`：控制哪些 `MaskedTag` 字段对模型可见（如 `["id", "name", "desc", "content", "regex"]`）。默认为 `None`（仅基础字段：`["id", "desc", "content"]`）。
 - `backend`：选择 Outlines 后端实现。
 - `**inference_kwargs`：透传底层后端生成参数。

@@ -11,7 +11,7 @@ from outlines.models.openai import OpenAI as OutlinesOpenAI
 
 from gimkit.contexts import Query, Result
 from gimkit.models.base import _acall, _call
-from gimkit.schemas import ContextInput
+from gimkit.schemas import ContextInput, TagField
 
 
 class OpenAI(OutlinesOpenAI):
@@ -21,7 +21,7 @@ class OpenAI(OutlinesOpenAI):
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         use_gim_prompt: bool = False,
-        include_grammar: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         return _call(
@@ -30,7 +30,7 @@ class OpenAI(OutlinesOpenAI):
             output_type,
             backend,
             use_gim_prompt,
-            include_grammar,
+            visible_tag_fields,
             **inference_kwargs,
         )
 
@@ -42,7 +42,7 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
         output_type: Literal["json"] | None = None,
         backend: str | None = None,
         use_gim_prompt: bool = False,
-        include_grammar: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         return await _acall(
@@ -51,7 +51,7 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
             output_type,
             backend,
             use_gim_prompt,
-            include_grammar,
+            visible_tag_fields,
             **inference_kwargs,
         )
 

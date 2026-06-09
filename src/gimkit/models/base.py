@@ -6,7 +6,7 @@ from outlines.models.base import AsyncModel, Model
 from gimkit.contexts import Query, Result
 from gimkit.log import get_logger
 from gimkit.models.utils import get_outlines_model_input, get_outlines_output_type, infill_responses
-from gimkit.schemas import ContextInput
+from gimkit.schemas import ContextInput, TagField
 
 
 logger = get_logger(__name__)
@@ -18,11 +18,11 @@ def _call(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     use_gim_prompt: bool = False,
-    include_grammar: bool = False,
+    visible_tag_fields: list[TagField] | None = None,
     **inference_kwargs: Any,
 ) -> Result | list[Result]:
     outlines_model_input = get_outlines_model_input(
-        model_input, output_type, use_gim_prompt, include_grammar
+        model_input, output_type, use_gim_prompt, visible_tag_fields
     )
     logger.debug(f"Outlines model input of {self}: {outlines_model_input}")
     outlines_output_type = get_outlines_output_type(model_input, output_type)
@@ -40,11 +40,11 @@ async def _acall(
     output_type: Literal["cfg", "json"] | None = "cfg",
     backend: str | None = None,
     use_gim_prompt: bool = False,
-    include_grammar: bool = False,
+    visible_tag_fields: list[TagField] | None = None,
     **inference_kwargs: Any,
 ) -> Result | list[Result]:
     outlines_model_input = get_outlines_model_input(
-        model_input, output_type, use_gim_prompt, include_grammar
+        model_input, output_type, use_gim_prompt, visible_tag_fields
     )
     logger.debug(f"Outlines model input of {self}: {outlines_model_input}")
     outlines_output_type = get_outlines_output_type(model_input, output_type)

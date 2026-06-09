@@ -55,6 +55,6 @@ print(result.tags["email"].content)
 
 ## 高级参数
 
-- `include_grammar=True`：在查询文本中注入语法定义。
+- `visible_tag_fields`：控制哪些 `MaskedTag` 字段对模型可见（如 `["id", "name", "desc", "content", "regex"]`）。默认为 `None`（仅基础字段：`["id", "desc", "content"]`）。
 - `backend`：透传给 Outlines 生成器后端选择。
 - `**inference_kwargs`：透传到底层 OpenAI 推理参数。

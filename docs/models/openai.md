@@ -55,6 +55,6 @@ print(result.tags["email"].content)
 
 ## Advanced options
 
-- `include_grammar=True`: inject grammar text into the query string before generation.
+- `visible_tag_fields`: control which `MaskedTag` fields are visible to the model (e.g. `["id", "name", "desc", "content", "regex"]`). Defaults to `None` (basic fields only: `["id", "desc", "content"]`).
 - `backend`: pass through to Outlines generator backend selection.
 - `**inference_kwargs`: forwarded to the underlying OpenAI call.

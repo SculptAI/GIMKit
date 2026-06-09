@@ -9,7 +9,7 @@ from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
 from gimkit.contexts import Query, Result
 from gimkit.log import get_logger
 from gimkit.models.utils import get_outlines_model_input, get_outlines_output_type, infill_responses
-from gimkit.schemas import RESPONSE_SUFFIX, ContextInput
+from gimkit.schemas import RESPONSE_SUFFIX, ContextInput, TagField
 
 
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ class VLLMOffline(OutlinesVLLMOffline):
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
-        include_grammar: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
         **inference_kwargs: Any,
     ) -> Result | list[Result]:
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
@@ -45,7 +45,7 @@ class VLLMOffline(OutlinesVLLMOffline):
             output_type,
             use_gim_prompt,
             force_chat_input=force_chat_input,
-            include_grammar=include_grammar,
+            visible_tag_fields=visible_tag_fields,
         )
         outlines_output_type = get_outlines_output_type(model_input, output_type)
         generator = Generator(self, outlines_output_type, backend)

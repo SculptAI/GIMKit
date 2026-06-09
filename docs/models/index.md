@@ -45,6 +45,6 @@ This page compares supported clients and explains when to use each mode.
 
 ## Common Optional Flags
 
-- `include_grammar=True`: include grammar text in query input.
+- `visible_tag_fields`: control which `MaskedTag` fields are visible to the model (e.g. `["id", "name", "desc", "content", "regex"]`). Defaults to `None` (basic fields only: `["id", "desc", "content"]`).
 - `backend`: choose Outlines backend implementation.
 - `**inference_kwargs`: pass generation parameters to the underlying backend.
