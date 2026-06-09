@@ -34,7 +34,7 @@ classifiers = [
 dependencies = [
     "json-repair>=0.55.1",
     "llguidance>=1.3.0",
-    "outlines[openai]>=1.2.9",
+    "outlines[openai]>=1.3.0",
 ]
 
 [project.optional-dependencies]

@@ -19,7 +19,6 @@ def get_outlines_model_input(
     output_type: Literal["cfg", "json"] | None,
     use_gim_prompt: bool,
     visible_tag_fields: list[TagField] | None = None,
-    force_chat_input: bool = False,
 ) -> str | Chat:
     """Transform the model input to an Outlines-compatible format.
 
@@ -31,7 +30,6 @@ def get_outlines_model_input(
             Controls which attributes of each MaskedTag are visible to the model.
             If None, uses the Query default (["id", "desc", "content"]).
             Example: ["id", "name", "desc", "content", "regex"] to expose all fields.
-        force_chat_input: Whether to force the input into a chat format.
     """
     query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
     outlines_model_input: str | Chat = (
@@ -55,9 +53,6 @@ def get_outlines_model_input(
                 {"role": "user", "content": outlines_model_input},
             ]
         )
-
-    if force_chat_input and isinstance(outlines_model_input, str):
-        outlines_model_input = Chat([{"role": "user", "content": outlines_model_input}])
 
     return outlines_model_input
 
