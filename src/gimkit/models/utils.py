@@ -1,4 +1,5 @@
-from typing import Literal, overload
+from collections.abc import Sequence
+from typing import Literal, cast, overload
 
 from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
@@ -12,6 +13,10 @@ from gimkit.prompts import (
     SYSTEM_PROMPT_MSG_JSON,
 )
 from gimkit.schemas import ContextInput, MaskedTag, TagField
+
+
+def _ensure_query(model_input: ContextInput | Query) -> Query:
+    return model_input if isinstance(model_input, Query) else Query(model_input)
 
 
 def get_outlines_model_input(
@@ -31,7 +36,7 @@ def get_outlines_model_input(
             If None, uses the Query default (["id", "desc", "content"]).
             Example: ["id", "name", "desc", "content", "regex"] to expose all fields.
     """
-    query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
+    query_obj = _ensure_query(model_input)
     outlines_model_input: str | Chat = (
         query_obj.to_string(fields=visible_tag_fields)
         if visible_tag_fields is not None
@@ -57,11 +62,31 @@ def get_outlines_model_input(
     return outlines_model_input
 
 
+def get_outlines_model_inputs(
+    model_inputs: Sequence[ContextInput | Query],
+    output_type: Literal["cfg", "json"] | None,
+    use_gim_prompt: bool,
+    visible_tag_fields: list[TagField] | None = None,
+) -> list[str | Chat]:
+    """Transform a batch of model inputs to Outlines-compatible formats."""
+    if len(model_inputs) == 0:
+        raise ValueError("Batch input list is empty.")
+    return [
+        get_outlines_model_input(
+            model_input,
+            output_type,
+            use_gim_prompt,
+            visible_tag_fields=visible_tag_fields,
+        )
+        for model_input in model_inputs
+    ]
+
+
 def get_outlines_output_type(
     model_input: ContextInput | Query, output_type: Literal["cfg", "json"] | None
 ) -> None | CFG | JsonSchema:
     """Transform the output type to an Outlines-compatible format."""
-    query_obj = Query(model_input) if not isinstance(model_input, Query) else model_input
+    query_obj = _ensure_query(model_input)
     if output_type is None:
         return None
     elif output_type == "cfg":
@@ -157,3 +182,53 @@ def infill_responses(
         raise TypeError(f"All items in the response list must be strings, got: {responses}")
 
     return [infill_responses(query, resp, json_responses=json_responses) for resp in responses]
+
+
+@overload
+def infill_batch_responses(
+    queries: Sequence[ContextInput | Query], responses: list[str], json_responses: bool = False
+) -> list[Result]: ...
+
+
+@overload
+def infill_batch_responses(
+    queries: Sequence[ContextInput | Query],
+    responses: list[list[str]],
+    json_responses: bool = False,
+) -> list[list[Result]]: ...
+
+
+def infill_batch_responses(
+    queries: Sequence[ContextInput | Query],
+    responses: list[str] | list[list[str]],
+    json_responses: bool = False,
+) -> list[Result] | list[list[Result]]:
+    """Infill each query in a batch with its corresponding response(s)."""
+    if len(queries) == 0:
+        raise ValueError("Batch input list is empty.")
+    if not isinstance(responses, list):
+        raise TypeError(f"Expected batch responses to be a list, got {type(responses)}")
+    if len(queries) != len(responses):
+        raise ValueError(
+            "Mismatched number of batch inputs and responses: "
+            f"{len(queries)} input(s), {len(responses)} response(s)."
+        )
+
+    if all(isinstance(response, str) for response in responses):
+        return [
+            infill_responses(query, cast("str", response), json_responses=json_responses)
+            for query, response in zip(queries, responses, strict=True)
+        ]
+
+    if all(isinstance(response, list) for response in responses):
+        return [
+            infill_responses(query, cast("list[str]", response), json_responses=json_responses)
+            for query, response in zip(queries, responses, strict=True)
+        ]
+
+    invalid_response = next(
+        response for response in responses if not isinstance(response, (str, list))
+    )
+    raise TypeError(
+        f"Each batch response must be a string or a list of strings, got {type(invalid_response)}"
+    )

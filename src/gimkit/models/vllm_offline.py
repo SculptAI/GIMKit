@@ -1,14 +1,23 @@
 # Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/vllm_offline.py
 
 
-from typing import TYPE_CHECKING, Any, Literal, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from outlines.generator import Generator
+from outlines.inputs import Chat
 from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
+from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result
 from gimkit.log import get_logger
-from gimkit.models.utils import get_outlines_model_input, get_outlines_output_type, infill_responses
+from gimkit.models.utils import (
+    get_outlines_model_input,
+    get_outlines_model_inputs,
+    get_outlines_output_type,
+    infill_batch_responses,
+    infill_responses,
+)
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput, TagField
 
 
@@ -16,6 +25,12 @@ logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from vllm import LLM
+    from vllm.sampling_params import SamplingParams
+
+
+OutlinesModelInput: TypeAlias = str | Chat
+OutlinesOutputType: TypeAlias = CFG | JsonSchema | None
+VLLMFormattedInput: TypeAlias = str | list[object]
 
 
 class VLLMOffline(OutlinesVLLMOffline):
@@ -46,6 +61,92 @@ class VLLMOffline(OutlinesVLLMOffline):
             json_responses=(output_type == "json"),
         )
 
+    def batch(
+        self,
+        model_input: Sequence[ContextInput | Query],
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        **inference_kwargs: Any,
+    ) -> list[list[Result]]:  # type: ignore[override]
+        inference_kwargs = self._ensure_response_suffix(inference_kwargs)
+
+        outlines_model_inputs = get_outlines_model_inputs(
+            model_input,
+            output_type,
+            use_gim_prompt,
+            visible_tag_fields=visible_tag_fields,
+        )
+        outlines_output_types = [
+            get_outlines_output_type(batch_item, output_type) for batch_item in model_input
+        ]
+        raw_responses = self._generate_batch_with_output_types(
+            outlines_model_inputs,
+            outlines_output_types,
+            inference_kwargs,
+        )
+        logger.debug(f"Raw batch responses of {self}: {raw_responses}")
+        return cast(
+            "list[list[Result]]",
+            infill_batch_responses(
+                model_input,
+                raw_responses,
+                json_responses=(output_type == "json"),
+            ),
+        )
+
+    def _generate_batch_with_output_types(
+        self,
+        model_inputs: list[OutlinesModelInput],
+        output_types: list[OutlinesOutputType],
+        inference_kwargs: dict[str, Any],
+    ) -> list[list[str]]:
+        generation_kwargs = dict(inference_kwargs)
+        sampling_params = generation_kwargs.pop("sampling_params", None)
+        sampling_params_list = self._build_batch_sampling_params(sampling_params, output_types)
+
+        formatted_inputs = [
+            cast("VLLMFormattedInput", self.type_adapter.format_input(item))
+            for item in model_inputs
+        ]
+        if formatted_inputs and isinstance(formatted_inputs[0], list):
+            chat_messages = cast("list[list[Any]]", formatted_inputs)
+            results = self.model.chat(
+                messages=chat_messages,
+                sampling_params=sampling_params_list,
+                **generation_kwargs,
+            )
+        else:
+            prompts = cast("list[str]", formatted_inputs)
+            results = self.model.generate(
+                prompts=prompts,
+                sampling_params=sampling_params_list,
+                **generation_kwargs,
+            )
+        return [[sample.text for sample in batch.outputs] for batch in results]
+
+    def _build_batch_sampling_params(
+        self,
+        sampling_params: "SamplingParams | list[SamplingParams] | None",
+        output_types: list[OutlinesOutputType],
+    ) -> list["SamplingParams"]:
+        if isinstance(sampling_params, list):
+            if len(sampling_params) != len(output_types):
+                raise ValueError(
+                    "sampling_params list must have the same length as model_input: "
+                    f"{len(sampling_params)} sampling params for {len(output_types)} input(s)."
+                )
+            return [
+                self._build_generation_args({"sampling_params": params}, output_type)
+                for params, output_type in zip(sampling_params, output_types, strict=True)
+            ]
+
+        return [
+            self._build_generation_args({"sampling_params": sampling_params}, output_type)
+            for output_type in output_types
+        ]
+
     def _ensure_response_suffix(self, inference_kwargs: dict[str, Any]) -> dict[str, Any]:
         # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
         # 1. The model might not be trained well enough to generate EOS tokens immediately after RESPONSE_SUFFIX.
@@ -54,12 +155,21 @@ class VLLMOffline(OutlinesVLLMOffline):
             from vllm import SamplingParams
 
             inference_kwargs["sampling_params"] = SamplingParams(stop=[RESPONSE_SUFFIX])
-        elif (
-            isinstance(inference_kwargs["sampling_params"].stop, list)
-            and RESPONSE_SUFFIX not in inference_kwargs["sampling_params"].stop
-        ):
-            inference_kwargs["sampling_params"].stop.append(RESPONSE_SUFFIX)
+        elif isinstance(inference_kwargs["sampling_params"], list):
+            for sampling_params in inference_kwargs["sampling_params"]:
+                self._ensure_sampling_params_response_suffix(sampling_params)
+        else:
+            self._ensure_sampling_params_response_suffix(inference_kwargs["sampling_params"])
         return inference_kwargs
+
+    def _ensure_sampling_params_response_suffix(self, sampling_params: "SamplingParams") -> None:
+        if sampling_params.stop is None:
+            sampling_params.stop = [RESPONSE_SUFFIX]
+        elif isinstance(sampling_params.stop, str):
+            if sampling_params.stop != RESPONSE_SUFFIX:
+                sampling_params.stop = [sampling_params.stop, RESPONSE_SUFFIX]
+        elif RESPONSE_SUFFIX not in sampling_params.stop:
+            sampling_params.stop.append(RESPONSE_SUFFIX)
 
 
 def from_vllm_offline(model: "LLM") -> VLLMOffline:

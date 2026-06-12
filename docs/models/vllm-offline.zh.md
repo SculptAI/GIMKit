@@ -37,6 +37,16 @@ result = model(query)
 result_non_gim = model(query, use_gim_prompt=True)
 ```
 
+## 批量推理
+
+`model.batch(...)` 会包装 Outlines 的 vLLM offline batch API。
+每条 query 都可以使用各自从 GIM 推导出的结构化输出 schema。
+
+```python
+batch_results = model.batch([query, query])
+first_result = batch_results[0][0]
+```
+
 ## 输出类型
 
 ### `output_type="cfg"`（默认）
