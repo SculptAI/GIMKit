@@ -1,5 +1,6 @@
 import sys
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -111,6 +112,22 @@ def test_vllm_offline_batch_sampling_params_list():
     assert str(returned[1][0]) == "Goodbye, friend"
     assert RESPONSE_SUFFIX in sampling_params[0].stop
     assert RESPONSE_SUFFIX in sampling_params[1].stop
+
+
+def test_vllm_offline_ensure_sampling_params_response_suffix():
+    model = from_vllm_offline(_mock_vllm_client())
+
+    sampling_params = SimpleNamespace(stop=None)
+    model._ensure_sampling_params_response_suffix(sampling_params)
+    assert sampling_params.stop == [RESPONSE_SUFFIX]
+
+    sampling_params = SimpleNamespace(stop="<END>")
+    model._ensure_sampling_params_response_suffix(sampling_params)
+    assert sampling_params.stop == ["<END>", RESPONSE_SUFFIX]
+
+    sampling_params = SimpleNamespace(stop=RESPONSE_SUFFIX)
+    model._ensure_sampling_params_response_suffix(sampling_params)
+    assert sampling_params.stop == RESPONSE_SUFFIX
 
 
 def test_vllm_offline_batch_invalid_sampling_params_list_length():
