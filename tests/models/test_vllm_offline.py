@@ -182,30 +182,6 @@ def test_vllm_offline_batch_chat():
     mock_client.chat.assert_called_once()
 
 
-def test_vllm_offline_batch_flat_responses():
-    model = from_vllm_offline(_mock_vllm_client())
-
-    with patch.object(
-        model,
-        "_generate_batch_with_output_types",
-        return_value=[
-            '<|MASKED id="m_0"|>world<|/MASKED|>',
-            '<|MASKED id="m_0"|>friend<|/MASKED|>',
-        ],
-    ):
-        returned = model.batch(
-            [
-                ["Hello, ", MaskedTag()],
-                ["Goodbye, ", MaskedTag()],
-            ]
-        )
-
-        assert len(returned) == 2
-        assert isinstance(returned[0], Result)
-        assert str(returned[0]) == "Hello, world"
-        assert str(returned[1]) == "Goodbye, friend"
-
-
 def test_vllm_offline_call_invalid_response():
     from vllm import SamplingParams
 

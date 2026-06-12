@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Literal, overload
+from typing import Literal, cast, overload
 
 from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
@@ -202,7 +202,7 @@ def infill_batch_responses(
     queries: Sequence[ContextInput | Query],
     responses: list[str] | list[list[str]],
     json_responses: bool = False,
-) -> list[Any]:
+) -> list[Result] | list[list[Result]]:
     """Infill each query in a batch with its corresponding response(s)."""
     if len(queries) == 0:
         raise ValueError("Batch input list is empty.")
@@ -214,13 +214,22 @@ def infill_batch_responses(
             f"{len(queries)} input(s), {len(responses)} response(s)."
         )
 
-    results = []
-    for query, response in zip(queries, responses, strict=True):
-        if isinstance(response, (str, list)):
-            results.append(infill_responses(query, response, json_responses=json_responses))
-        else:
-            raise TypeError(
-                f"Each batch response must be a string or a list of strings, got {type(response)}"
-            )
+    if all(isinstance(response, str) for response in responses):
+        return [
+            infill_responses(query, cast("str", response), json_responses=json_responses)
+            for query, response in zip(queries, responses, strict=True)
+        ]
 
-    return results
+    if all(isinstance(response, list) for response in responses):
+        return [
+            infill_responses(query, cast("list[str]", response), json_responses=json_responses)
+            for query, response in zip(queries, responses, strict=True)
+        ]
+
+    invalid_response = next(
+        response for response in responses if not isinstance(response, (str, list))
+    )
+    raise TypeError(
+        "Each batch response must be a string or a list of strings, "
+        f"got {type(invalid_response)}"
+    )
