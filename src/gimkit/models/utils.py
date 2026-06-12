@@ -220,8 +220,7 @@ def infill_batch_responses(
             results.append(infill_responses(query, response, json_responses=json_responses))
         else:
             raise TypeError(
-                "Each batch response must be a string or a list of strings, "
-                f"got {type(response)}"
+                f"Each batch response must be a string or a list of strings, got {type(response)}"
             )
 
     return results

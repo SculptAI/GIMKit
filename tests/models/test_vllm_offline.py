@@ -60,9 +60,7 @@ def test_vllm_offline_batch():
     mock_client = _mock_vllm_client()
     mock_client.generate.return_value = [
         _request_output('<|MASKED id="m_0"|>world<|/MASKED|>'),
-        _request_output(
-            '<|MASKED id="m_0"|>dear<|/MASKED|><|MASKED id="m_1"|>friend<|/MASKED|>'
-        ),
+        _request_output('<|MASKED id="m_0"|>dear<|/MASKED|><|MASKED id="m_1"|>friend<|/MASKED|>'),
     ]
     model = from_vllm_offline(mock_client)
 
@@ -81,7 +79,10 @@ def test_vllm_offline_batch():
     mock_client.generate.assert_called_once()
     sampling_params = mock_client.generate.call_args.kwargs["sampling_params"]
     assert len(sampling_params) == 2
-    assert sampling_params[0].structured_outputs.grammar != sampling_params[1].structured_outputs.grammar
+    assert (
+        sampling_params[0].structured_outputs.grammar
+        != sampling_params[1].structured_outputs.grammar
+    )
     assert RESPONSE_SUFFIX in sampling_params[0].stop
     assert RESPONSE_SUFFIX in sampling_params[1].stop
 
@@ -173,7 +174,7 @@ def test_vllm_offline_batch_flat_responses():
         return_value=[
             '<|MASKED id="m_0"|>world<|/MASKED|>',
             '<|MASKED id="m_0"|>friend<|/MASKED|>',
-        ]
+        ],
     ):
         returned = model.batch(
             [
