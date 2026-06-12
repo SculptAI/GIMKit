@@ -1292,11 +1292,19 @@ print(repr(build_cfg(Query(query))))
 <span class=normal>223</span>
 <span class=normal>224</span>
 <span class=normal>225</span>
-<span class=normal>226</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>infill_batch_responses</span><span class=p>(</span>
+<span class=normal>226</span>
+<span class=normal>227</span>
+<span class=normal>228</span>
+<span class=normal>229</span>
+<span class=normal>230</span>
+<span class=normal>231</span>
+<span class=normal>232</span>
+<span class=normal>233</span>
+<span class=normal>234</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>infill_batch_responses</span><span class=p>(</span>
     <span class=n>queries</span><span class=p>:</span> <span class=n>Sequence</span><span class=p>[</span><span class=n>ContextInput</span> <span class=o>|</span> <span class=n>Query</span><span class=p>],</span>
     <span class=n>responses</span><span class=p>:</span> <span class=nb>list</span><span class=p>[</span><span class=nb>str</span><span class=p>]</span> <span class=o>|</span> <span class=nb>list</span><span class=p>[</span><span class=nb>list</span><span class=p>[</span><span class=nb>str</span><span class=p>]],</span>
     <span class=n>json_responses</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>,</span>
-<span class=p>)</span> <span class=o>-&gt;</span> <span class=nb>list</span><span class=p>[</span><span class=n>Any</span><span class=p>]:</span>
+<span class=p>)</span> <span class=o>-&gt;</span> <span class=nb>list</span><span class=p>[</span><span class=n>Result</span><span class=p>]</span> <span class=o>|</span> <span class=nb>list</span><span class=p>[</span><span class=nb>list</span><span class=p>[</span><span class=n>Result</span><span class=p>]]:</span>
 <span class=w>    </span><span class=sd>&quot;&quot;&quot;Infill each query in a batch with its corresponding response(s).&quot;&quot;&quot;</span>
     <span class=k>if</span> <span class=nb>len</span><span class=p>(</span><span class=n>queries</span><span class=p>)</span> <span class=o>==</span> <span class=mi>0</span><span class=p>:</span>
         <span class=k>raise</span> <span class=ne>ValueError</span><span class=p>(</span><span class=s2>&quot;Batch input list is empty.&quot;</span><span class=p>)</span>
@@ -1308,16 +1316,24 @@ print(repr(build_cfg(Query(query))))
             <span class=sa>f</span><span class=s2>&quot;</span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>queries</span><span class=p>)</span><span class=si>}</span><span class=s2> input(s), </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>responses</span><span class=p>)</span><span class=si>}</span><span class=s2> response(s).&quot;</span>
         <span class=p>)</span>
 
-    <span class=n>results</span> <span class=o>=</span> <span class=p>[]</span>
-    <span class=k>for</span> <span class=n>query</span><span class=p>,</span> <span class=n>response</span> <span class=ow>in</span> <span class=nb>zip</span><span class=p>(</span><span class=n>queries</span><span class=p>,</span> <span class=n>responses</span><span class=p>,</span> <span class=n>strict</span><span class=o>=</span><span class=kc>True</span><span class=p>):</span>
-        <span class=k>if</span> <span class=nb>isinstance</span><span class=p>(</span><span class=n>response</span><span class=p>,</span> <span class=p>(</span><span class=nb>str</span><span class=p>,</span> <span class=nb>list</span><span class=p>)):</span>
-            <span class=n>results</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>infill_responses</span><span class=p>(</span><span class=n>query</span><span class=p>,</span> <span class=n>response</span><span class=p>,</span> <span class=n>json_responses</span><span class=o>=</span><span class=n>json_responses</span><span class=p>))</span>
-        <span class=k>else</span><span class=p>:</span>
-            <span class=k>raise</span> <span class=ne>TypeError</span><span class=p>(</span>
-                <span class=sa>f</span><span class=s2>&quot;Each batch response must be a string or a list of strings, got </span><span class=si>{</span><span class=nb>type</span><span class=p>(</span><span class=n>response</span><span class=p>)</span><span class=si>}</span><span class=s2>&quot;</span>
-            <span class=p>)</span>
+    <span class=k>if</span> <span class=nb>all</span><span class=p>(</span><span class=nb>isinstance</span><span class=p>(</span><span class=n>response</span><span class=p>,</span> <span class=nb>str</span><span class=p>)</span> <span class=k>for</span> <span class=n>response</span> <span class=ow>in</span> <span class=n>responses</span><span class=p>):</span>
+        <span class=k>return</span> <span class=p>[</span>
+            <span class=n>infill_responses</span><span class=p>(</span><span class=n>query</span><span class=p>,</span> <span class=n>cast</span><span class=p>(</span><span class=s2>&quot;str&quot;</span><span class=p>,</span> <span class=n>response</span><span class=p>),</span> <span class=n>json_responses</span><span class=o>=</span><span class=n>json_responses</span><span class=p>)</span>
+            <span class=k>for</span> <span class=n>query</span><span class=p>,</span> <span class=n>response</span> <span class=ow>in</span> <span class=nb>zip</span><span class=p>(</span><span class=n>queries</span><span class=p>,</span> <span class=n>responses</span><span class=p>,</span> <span class=n>strict</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+        <span class=p>]</span>
 
-    <span class=k>return</span> <span class=n>results</span>
+    <span class=k>if</span> <span class=nb>all</span><span class=p>(</span><span class=nb>isinstance</span><span class=p>(</span><span class=n>response</span><span class=p>,</span> <span class=nb>list</span><span class=p>)</span> <span class=k>for</span> <span class=n>response</span> <span class=ow>in</span> <span class=n>responses</span><span class=p>):</span>
+        <span class=k>return</span> <span class=p>[</span>
+            <span class=n>infill_responses</span><span class=p>(</span><span class=n>query</span><span class=p>,</span> <span class=n>cast</span><span class=p>(</span><span class=s2>&quot;list[str]&quot;</span><span class=p>,</span> <span class=n>response</span><span class=p>),</span> <span class=n>json_responses</span><span class=o>=</span><span class=n>json_responses</span><span class=p>)</span>
+            <span class=k>for</span> <span class=n>query</span><span class=p>,</span> <span class=n>response</span> <span class=ow>in</span> <span class=nb>zip</span><span class=p>(</span><span class=n>queries</span><span class=p>,</span> <span class=n>responses</span><span class=p>,</span> <span class=n>strict</span><span class=o>=</span><span class=kc>True</span><span class=p>)</span>
+        <span class=p>]</span>
+
+    <span class=n>invalid_response</span> <span class=o>=</span> <span class=nb>next</span><span class=p>(</span>
+        <span class=n>response</span> <span class=k>for</span> <span class=n>response</span> <span class=ow>in</span> <span class=n>responses</span> <span class=k>if</span> <span class=ow>not</span> <span class=nb>isinstance</span><span class=p>(</span><span class=n>response</span><span class=p>,</span> <span class=p>(</span><span class=nb>str</span><span class=p>,</span> <span class=nb>list</span><span class=p>))</span>
+    <span class=p>)</span>
+    <span class=k>raise</span> <span class=ne>TypeError</span><span class=p>(</span>
+        <span class=sa>f</span><span class=s2>&quot;Each batch response must be a string or a list of strings, got </span><span class=si>{</span><span class=nb>type</span><span class=p>(</span><span class=n>invalid_response</span><span class=p>)</span><span class=si>}</span><span class=s2>&quot;</span>
+    <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </details> </div> </div> <div class="doc doc-object doc-function"> <h3 id=gimkit.models.utils.infill_responses class="doc doc-heading"> <code class="highlight language-python"><span class=n>infill_responses</span><span class=p>(</span><span class=n>query</span><span class=p>,</span> <span class=n>responses</span><span class=p>,</span> <span class=n>json_responses</span><span class=o>=</span><span class=kc>False</span><span class=p>)</span></code> </h3> <div class=doc-overloads> <div class="doc-signature highlight"><pre><span></span><code><span class=nf>infill_responses</span><span class=p>(</span><span class=n>query</span><span class=p>:</span> <span class=n>ContextInput</span> <span class=o>|</span> <span class=n>Query</span><span class=p>,</span> <span class=n>responses</span><span class=p>:</span> <span class=nb>str</span><span class=p>,</span> <span class=n>json_responses</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=n>Result</span>
 </code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class=nf>infill_responses</span><span class=p>(</span><span class=n>query</span><span class=p>:</span> <span class=n>ContextInput</span> <span class=o>|</span> <span class=n>Query</span><span class=p>,</span> <span class=n>responses</span><span class=p>:</span> <span class=nb>list</span><span class=p>[</span><span class=nb>str</span><span class=p>],</span> <span class=n>json_responses</span><span class=p>:</span> <span class=nb>bool</span> <span class=o>=</span> <span class=kc>False</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=nb>list</span><span class=p>[</span><span class=n>Result</span><span class=p>]</span>
 </code></pre></div> </div> <div class="doc doc-contents "> <p>Infill the provided query with content from the GIM responses or JSON responses.</p> <details class=mkdocstrings-source> <summary>Source code in <code>src/gimkit/models/utils.py</code></summary> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>164</span>
