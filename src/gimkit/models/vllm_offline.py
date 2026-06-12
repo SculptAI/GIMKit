@@ -1,6 +1,7 @@
 # Adapted from https://github.com/dottxt-ai/outlines/blob/main/outlines/models/vllm_offline.py
 
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from outlines.generator import Generator
@@ -62,7 +63,7 @@ class VLLMOffline(OutlinesVLLMOffline):
 
     def batch(
         self,
-        model_input: list[ContextInput | Query],
+        model_input: Sequence[ContextInput | Query],
         output_type: Literal["cfg", "json"] | None = "cfg",
         backend: str | None = None,
         use_gim_prompt: bool = False,
