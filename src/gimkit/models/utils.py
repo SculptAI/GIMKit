@@ -230,6 +230,5 @@ def infill_batch_responses(
         response for response in responses if not isinstance(response, (str, list))
     )
     raise TypeError(
-        "Each batch response must be a string or a list of strings, "
-        f"got {type(invalid_response)}"
+        f"Each batch response must be a string or a list of strings, got {type(invalid_response)}"
     )
