@@ -37,6 +37,16 @@ result = model(query)
 result_non_gim = model(query, use_gim_prompt=True)
 ```
 
+## Batch inference
+
+`model.batch(...)` wraps Outlines' batch API for vLLM offline.
+Each query can use its own GIM-derived structured output schema.
+
+```python
+batch_results = model.batch([query, query])
+first_result = batch_results[0][0]
+```
+
 ## Output types
 
 ### `output_type="cfg"` (default)

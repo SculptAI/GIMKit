@@ -6,7 +6,9 @@ from outlines.types.dsl import CFG, JsonSchema
 from gimkit.contexts import Query, Result
 from gimkit.models.utils import (
     get_outlines_model_input,
+    get_outlines_model_inputs,
     get_outlines_output_type,
+    infill_batch_responses,
     infill_responses,
     json_responses_to_gim_response,
 )
@@ -75,6 +77,18 @@ def test_get_outlines_output_type():
     assert isinstance(get_outlines_output_type(query, "json"), JsonSchema)
     with pytest.raises(ValueError, match="Invalid output type: xxx"):
         get_outlines_output_type(query, "xxx")
+
+
+def test_get_outlines_model_inputs():
+    queries = [Query("Hello, ", MaskedTag()), Query("Goodbye, ", MaskedTag())]
+    model_inputs = get_outlines_model_inputs(queries, output_type=None, use_gim_prompt=False)
+    assert model_inputs == [
+        '<|GIM_QUERY|>Hello, <|MASKED id="m_0"|><|/MASKED|><|/GIM_QUERY|>',
+        '<|GIM_QUERY|>Goodbye, <|MASKED id="m_0"|><|/MASKED|><|/GIM_QUERY|>',
+    ]
+
+    with pytest.raises(ValueError, match="Batch input list is empty"):
+        get_outlines_model_inputs([], output_type=None, use_gim_prompt=False)
 
 
 def test_json_responses_to_gim_response():
@@ -153,3 +167,43 @@ def test_infill_responses():
     # Test list with non-string items
     with pytest.raises(TypeError, match="All items in the response list must be strings, got"):
         infill_responses(query, ["a", 1])
+
+
+def test_infill_batch_responses():
+    queries = [
+        Query("Hello, ", MaskedTag(id=0)),
+        Query("Goodbye, ", MaskedTag(id=0)),
+    ]
+    responses = [
+        '<|GIM_RESPONSE|><|MASKED id="m_0"|>world<|/MASKED|><|/GIM_RESPONSE|>',
+        '<|GIM_RESPONSE|><|MASKED id="m_0"|>friend<|/MASKED|><|/GIM_RESPONSE|>',
+    ]
+    results = infill_batch_responses(queries, responses)
+    assert isinstance(results[0], Result)
+    assert [str(result) for result in results] == ["Hello, world", "Goodbye, friend"]
+
+    nested_results = infill_batch_responses(queries, [[responses[0]], [responses[1]]])
+    assert isinstance(nested_results[0], list)
+    assert [[str(result) for result in group] for group in nested_results] == [
+        ["Hello, world"],
+        ["Goodbye, friend"],
+    ]
+
+    json_results = infill_batch_responses(
+        queries,
+        ['{"m_0": "world"}', '{"m_0": "friend"}'],
+        json_responses=True,
+    )
+    assert [str(result) for result in json_results] == ["Hello, world", "Goodbye, friend"]
+
+    with pytest.raises(ValueError, match="Batch input list is empty"):
+        infill_batch_responses([], [])
+
+    with pytest.raises(ValueError, match="Mismatched number of batch inputs and responses"):
+        infill_batch_responses(queries, [responses[0]])
+
+    with pytest.raises(TypeError, match="Expected batch responses to be a list"):
+        infill_batch_responses(queries, "response")
+
+    with pytest.raises(TypeError, match="Each batch response must be a string or a list"):
+        infill_batch_responses(queries, [responses[0], object()])
