@@ -38,6 +38,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+llamacpp = [
+    "llama-cpp-python>=0.3.0",
+]
 vllm = [
     "vllm>=0.18.1",
 ]
