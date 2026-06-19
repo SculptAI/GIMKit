@@ -47,6 +47,25 @@ batch_results = model.batch([query, query])
 first_result = batch_results[0][0]
 ```
 
+使用 `error_mode="collect"` 时，batch 始终返回二维
+`list[list[GenerationResult]]`：外层对应 query，内层对应候选。
+
+```python
+generation_groups = model.batch(queries, error_mode="collect")
+
+for generation_group in generation_groups:
+    for generation in generation_group:
+        if generation.ok:
+            print(generation.result)
+        else:
+            print(generation.error_type, generation.error_message)
+            print(generation.raw_response)
+```
+
+单个候选的解析失败不会影响同一 query 的其他候选或其他 query。默认
+`error_mode="raise"` 的返回类型和快速失败行为保持不变。模型生成失败、batch
+形状错误和无效参数仍会作为整个调用异常抛出。
+
 ## 输出类型
 
 ### `output_type="cfg"`（默认）

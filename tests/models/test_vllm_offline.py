@@ -8,6 +8,7 @@ import pytest
 from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
 
 from gimkit.contexts import Result
+from gimkit.models.types import GenerationResult
 from gimkit.models.vllm_offline import VLLMOffline as GIMVLLMOffline
 from gimkit.models.vllm_offline import from_vllm_offline
 from gimkit.schemas import RESPONSE_SUFFIX, MaskedTag
@@ -207,3 +208,58 @@ def test_vllm_offline_call_invalid_response():
         mock_generator.return_value = generator_instance
         with pytest.raises(ValueError, match="Response list is empty"):
             model(MaskedTag())
+
+
+def test_vllm_offline_call_collects_candidate_errors():
+    model = from_vllm_offline(_mock_vllm_client())
+    valid = '<|MASKED id="m_0"|>hi<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
+
+    with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
+        generator_instance = MagicMock(return_value=[valid, invalid])
+        mock_generator.return_value = generator_instance
+
+        returned = model(MaskedTag(), error_mode="collect")
+
+    assert isinstance(returned, list)
+    assert all(isinstance(item, GenerationResult) for item in returned)
+    assert [item.ok for item in returned] == [True, False]
+    assert str(returned[0].result) == "hi"
+    assert returned[1].raw_response == invalid
+
+
+def test_vllm_offline_batch_collects_query_and_candidate_errors():
+    mock_client = _mock_vllm_client()
+    valid_world = '<|MASKED id="m_0"|>world<|/MASKED|>'
+    valid_friend = '<|MASKED id="m_0"|>friend<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
+    mock_client.generate.return_value = [
+        _request_output(valid_world, invalid),
+        _request_output(valid_friend),
+    ]
+    model = from_vllm_offline(mock_client)
+
+    returned = model.batch(
+        [
+            ["Hello, ", MaskedTag()],
+            ["Goodbye, ", MaskedTag()],
+        ],
+        error_mode="collect",
+    )
+
+    assert [[item.ok for item in group] for group in returned] == [[True, False], [True]]
+    assert str(returned[0][0].result) == "Hello, world"
+    assert returned[0][1].raw_response == invalid
+    assert str(returned[1][0].result) == "Goodbye, friend"
+
+    mock_client.generate.return_value = [
+        _request_output(valid_world, invalid),
+        _request_output(valid_friend),
+    ]
+    with pytest.raises(Exception, match="Mismatched or nested masked tags"):
+        model.batch(
+            [
+                ["Hello, ", MaskedTag()],
+                ["Goodbye, ", MaskedTag()],
+            ]
+        )

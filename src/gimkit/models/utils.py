@@ -1,11 +1,12 @@
 from collections.abc import Sequence
-from typing import Literal, cast, overload
+from typing import Any, Literal, cast, overload
 
 from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Response, Result, infill
 from gimkit.dsls import build_cfg, build_json_schema
+from gimkit.models.types import ErrorMode, GenerationResult
 from gimkit.prompts import (
     DEMO_CONVERSATION_MSGS,
     DEMO_CONVERSATION_MSGS_JSON,
@@ -147,6 +148,189 @@ def json_responses_to_gim_response(json_response: str) -> str:
     return str(
         Response([MaskedTag(id=tag_id, content=content) for tag_id, content in validated_items])
     )
+
+
+def validate_error_mode(error_mode: ErrorMode) -> None:
+    if error_mode not in ("raise", "collect"):
+        raise ValueError(f"Invalid error mode: {error_mode}. Expected 'raise' or 'collect'.")
+
+
+@overload
+def parse_generation_response(
+    query: ContextInput | Query,
+    raw_response: str,
+    *,
+    json_response: bool = False,
+    error_mode: Literal["raise"] = "raise",
+) -> Result: ...
+
+
+@overload
+def parse_generation_response(
+    query: ContextInput | Query,
+    raw_response: str,
+    *,
+    json_response: bool = False,
+    error_mode: Literal["collect"],
+) -> GenerationResult: ...
+
+
+def parse_generation_response(
+    query: ContextInput | Query,
+    raw_response: str,
+    *,
+    json_response: bool = False,
+    error_mode: ErrorMode = "raise",
+) -> Result | GenerationResult:
+    """Parse and infill one raw model generation.
+
+    ``collect`` only isolates errors raised while parsing and infilling an
+    already generated string. Model invocation and response-container errors
+    remain whole-call failures.
+    """
+    validate_error_mode(error_mode)
+    if not isinstance(raw_response, str):
+        raise TypeError(f"Expected raw response to be str, got {type(raw_response)}")
+
+    try:
+        result = infill_responses(query, raw_response, json_responses=json_response)
+    except Exception as exc:
+        if error_mode == "raise":
+            raise
+        return GenerationResult(
+            raw_response=raw_response,
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+        )
+
+    if error_mode == "raise":
+        return result
+    return GenerationResult(raw_response=raw_response, result=result)
+
+
+@overload
+def parse_generation_responses(
+    query: ContextInput | Query,
+    raw_responses: str | list[str],
+    *,
+    json_responses: bool = False,
+    error_mode: Literal["raise"] = "raise",
+) -> Result | list[Result]: ...
+
+
+@overload
+def parse_generation_responses(
+    query: ContextInput | Query,
+    raw_responses: str | list[str],
+    *,
+    json_responses: bool = False,
+    error_mode: Literal["collect"],
+) -> GenerationResult | list[GenerationResult]: ...
+
+
+def parse_generation_responses(
+    query: ContextInput | Query,
+    raw_responses: str | list[str],
+    *,
+    json_responses: bool = False,
+    error_mode: ErrorMode = "raise",
+) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
+    """Parse one or more raw generations while preserving their container shape."""
+    validate_error_mode(error_mode)
+    if isinstance(raw_responses, str):
+        return parse_generation_response(
+            query,
+            raw_responses,
+            json_response=json_responses,
+            error_mode=error_mode,
+        )
+    if not isinstance(raw_responses, list):
+        raise TypeError(f"Expected responses to be str or list of str, got {type(raw_responses)}")
+    if len(raw_responses) == 0:
+        raise ValueError("Response list is empty.")
+    if not all(isinstance(response, str) for response in raw_responses):
+        raise TypeError(f"All items in the response list must be strings, got: {raw_responses}")
+
+    parsed = [
+        cast("Any", parse_generation_response)(
+            query,
+            raw_response,
+            json_response=json_responses,
+            error_mode=error_mode,
+        )
+        for raw_response in raw_responses
+    ]
+    return cast("list[Result] | list[GenerationResult]", parsed)
+
+
+@overload
+def parse_batch_generation_responses(
+    queries: Sequence[ContextInput | Query],
+    raw_responses: list[list[str]],
+    *,
+    json_responses: bool = False,
+    error_mode: Literal["raise"] = "raise",
+) -> list[list[Result]]: ...
+
+
+@overload
+def parse_batch_generation_responses(
+    queries: Sequence[ContextInput | Query],
+    raw_responses: list[list[str]],
+    *,
+    json_responses: bool = False,
+    error_mode: Literal["collect"],
+) -> list[list[GenerationResult]]: ...
+
+
+def parse_batch_generation_responses(
+    queries: Sequence[ContextInput | Query],
+    raw_responses: list[list[str]],
+    *,
+    json_responses: bool = False,
+    error_mode: ErrorMode = "raise",
+) -> list[list[Result]] | list[list[GenerationResult]]:
+    """Parse batch generations, preserving query and candidate dimensions."""
+    validate_error_mode(error_mode)
+    if len(queries) == 0:
+        raise ValueError("Batch input list is empty.")
+    if not isinstance(raw_responses, list):
+        raise TypeError(f"Expected batch responses to be a list, got {type(raw_responses)}")
+    if len(queries) != len(raw_responses):
+        raise ValueError(
+            "Mismatched number of batch inputs and responses: "
+            f"{len(queries)} input(s), {len(raw_responses)} response group(s)."
+        )
+    if not all(isinstance(response_group, list) for response_group in raw_responses):
+        invalid_group = next(
+            response_group
+            for response_group in raw_responses
+            if not isinstance(response_group, list)
+        )
+        raise TypeError(
+            f"Each batch response group must be a list of strings, got {type(invalid_group)}"
+        )
+    for response_group in raw_responses:
+        if len(response_group) == 0:
+            raise ValueError("Response list is empty.")
+        if not all(isinstance(response, str) for response in response_group):
+            raise TypeError(
+                f"All items in the response list must be strings, got: {response_group}"
+            )
+
+    parsed = [
+        cast(
+            "list[Result] | list[GenerationResult]",
+            cast("Any", parse_generation_responses)(
+                query,
+                response_group,
+                json_responses=json_responses,
+                error_mode=error_mode,
+            ),
+        )
+        for query, response_group in zip(queries, raw_responses, strict=True)
+    ]
+    return cast("list[list[Result]] | list[list[GenerationResult]]", parsed)
 
 
 @overload

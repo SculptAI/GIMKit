@@ -50,7 +50,17 @@ result = model(query, output_type="cfg")
 result = model(query, output_type="json", use_gim_prompt=True)
 ```
 
+## 逐生成错误收集
+
+多候选生成时，可传入 `error_mode="collect"`，逐条获得
+`GenerationResult`。成功项通过 `.result` 访问，失败项保留 `.raw_response`、
+`.error_type` 和 `.error_message`。默认 `error_mode="raise"` 的行为和返回类型
+保持不变。模型请求、网络和响应容器错误仍会作为整个调用异常抛出。
+
+异步客户端使用相同参数，调用方式为 `await model(...)`。
+
 ## 说明
 
 - GIMKit 会自动添加 `stop="<|/GIM_RESPONSE|>"`，确保更稳定停止。
+- `error_mode` 可设为 `"raise"`（默认）或 `"collect"`。
 - 可通过 `**inference_kwargs` 继续传递生成参数。

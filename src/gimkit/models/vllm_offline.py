@@ -2,7 +2,7 @@
 
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from outlines.generator import Generator
 from outlines.inputs import Chat
@@ -11,12 +11,14 @@ from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result
 from gimkit.log import get_logger
+from gimkit.models.types import ErrorMode, GenerationResult
 from gimkit.models.utils import (
     get_outlines_model_input,
     get_outlines_model_inputs,
     get_outlines_output_type,
-    infill_batch_responses,
-    infill_responses,
+    parse_batch_generation_responses,
+    parse_generation_responses,
+    validate_error_mode,
 )
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput, TagField
 
@@ -34,6 +36,7 @@ VLLMFormattedInput: TypeAlias = str | list[object]
 
 
 class VLLMOffline(OutlinesVLLMOffline):
+    @overload
     def __call__(
         self,
         model_input: ContextInput | Query,
@@ -41,8 +44,36 @@ class VLLMOffline(OutlinesVLLMOffline):
         backend: str | None = None,
         use_gim_prompt: bool = False,
         visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["raise"] = "raise",
         **inference_kwargs: Any,
-    ) -> Result | list[Result]:
+    ) -> Result | list[Result]: ...
+
+    @overload
+    def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["collect"],
+        **inference_kwargs: Any,
+    ) -> GenerationResult | list[GenerationResult]: ...
+
+    def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: ErrorMode = "raise",
+        **inference_kwargs: Any,
+    ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
+        validate_error_mode(error_mode)
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
 
         outlines_model_input = get_outlines_model_input(
@@ -55,11 +86,41 @@ class VLLMOffline(OutlinesVLLMOffline):
         generator = Generator(self, outlines_output_type, backend)
         raw_responses = generator(outlines_model_input, **inference_kwargs)
         logger.debug(f"Raw responses of {self}: {raw_responses}")
-        return infill_responses(
-            model_input,
-            cast("str | list[str]", raw_responses),
-            json_responses=(output_type == "json"),
+        return cast(
+            "Result | list[Result] | GenerationResult | list[GenerationResult]",
+            cast("Any", parse_generation_responses)(
+                model_input,
+                cast("str | list[str]", raw_responses),
+                json_responses=(output_type == "json"),
+                error_mode=error_mode,
+            ),
         )
+
+    @overload
+    def batch(
+        self,
+        model_input: Sequence[ContextInput | Query],
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["raise"] = "raise",
+        **inference_kwargs: Any,
+    ) -> list[list[Result]]: ...
+
+    @overload
+    def batch(
+        self,
+        model_input: Sequence[ContextInput | Query],
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["collect"],
+        **inference_kwargs: Any,
+    ) -> list[list[GenerationResult]]: ...
 
     def batch(
         self,
@@ -68,8 +129,11 @@ class VLLMOffline(OutlinesVLLMOffline):
         backend: str | None = None,
         use_gim_prompt: bool = False,
         visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: ErrorMode = "raise",
         **inference_kwargs: Any,
-    ) -> list[list[Result]]:  # type: ignore[override]
+    ) -> list[list[Result]] | list[list[GenerationResult]]:  # type: ignore[override]
+        validate_error_mode(error_mode)
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
 
         outlines_model_inputs = get_outlines_model_inputs(
@@ -87,13 +151,11 @@ class VLLMOffline(OutlinesVLLMOffline):
             inference_kwargs,
         )
         logger.debug(f"Raw batch responses of {self}: {raw_responses}")
-        return cast(
-            "list[list[Result]]",
-            infill_batch_responses(
-                model_input,
-                raw_responses,
-                json_responses=(output_type == "json"),
-            ),
+        return parse_batch_generation_responses(
+            model_input,
+            raw_responses,
+            json_responses=(output_type == "json"),
+            error_mode=error_mode,
         )
 
     def _generate_batch_with_output_types(
