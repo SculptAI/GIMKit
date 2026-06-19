@@ -313,3 +313,19 @@ def test_parse_generation_response_rejects_invalid_configuration_and_container()
 
     with pytest.raises(ValueError, match="Mismatched number of batch inputs and responses"):
         parse_batch_generation_responses([query], [], error_mode="collect")
+
+    with pytest.raises(TypeError, match="Expected raw response to be str"):
+        parse_generation_response(query, object(), error_mode="collect")
+
+    with pytest.raises(ValueError, match="Batch input list is empty"):
+        parse_batch_generation_responses([], [], error_mode="collect")
+
+    with pytest.raises(TypeError, match="Expected batch responses to be a list"):
+        parse_batch_generation_responses([query], "response", error_mode="collect")
+
+    with pytest.raises(TypeError, match="Each batch response group must be a list of strings"):
+        parse_batch_generation_responses(
+            [query],
+            ["response"],
+            error_mode="collect",
+        )
