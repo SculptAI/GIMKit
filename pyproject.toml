@@ -1,6 +1,6 @@
 [project]
 name = "gimkit"
-version = "0.2.0"
+version = "0.2.1"
 description = "Structured text generation and information extraction toolkit for language models"
 readme = "README.md"
 authors = [
