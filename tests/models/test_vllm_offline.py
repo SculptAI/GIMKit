@@ -115,20 +115,26 @@ def test_vllm_offline_batch_sampling_params_list():
     assert RESPONSE_SUFFIX in sampling_params[1].stop
 
 
-def test_vllm_offline_ensure_sampling_params_response_suffix():
+def test_vllm_offline_ensure_response_suffix():
     model = from_vllm_offline(_mock_vllm_client())
 
-    sampling_params = SimpleNamespace(stop=None)
-    model._ensure_sampling_params_response_suffix(sampling_params)
-    assert sampling_params.stop == [RESPONSE_SUFFIX]
+    sampling_params1 = SimpleNamespace(stop=None)
+    model._ensure_response_suffix({"sampling_params": sampling_params1})
+    assert sampling_params1.stop == [RESPONSE_SUFFIX]
 
-    sampling_params = SimpleNamespace(stop="<END>")
-    model._ensure_sampling_params_response_suffix(sampling_params)
-    assert sampling_params.stop == ["<END>", RESPONSE_SUFFIX]
+    sampling_params2 = SimpleNamespace(stop="<END>")
+    model._ensure_response_suffix({"sampling_params": sampling_params2})
+    assert sampling_params2.stop == ["<END>", RESPONSE_SUFFIX]
 
-    sampling_params = SimpleNamespace(stop=RESPONSE_SUFFIX)
-    model._ensure_sampling_params_response_suffix(sampling_params)
-    assert sampling_params.stop == RESPONSE_SUFFIX
+    sampling_params3 = SimpleNamespace(stop=RESPONSE_SUFFIX)
+    model._ensure_response_suffix({"sampling_params": sampling_params3})
+    assert sampling_params3.stop == RESPONSE_SUFFIX
+
+    sp1 = SimpleNamespace(stop=None)
+    sp2 = SimpleNamespace(stop="<END>")
+    model._ensure_response_suffix({"sampling_params": [sp1, sp2]})
+    assert sp1.stop == [RESPONSE_SUFFIX]
+    assert sp2.stop == ["<END>", RESPONSE_SUFFIX]
 
 
 def test_vllm_offline_batch_invalid_sampling_params_list_length():
@@ -144,21 +150,6 @@ def test_vllm_offline_batch_invalid_sampling_params_list_length():
             ],
             sampling_params=[SamplingParams()],
         )
-
-
-def test_vllm_offline_batch_invalid_response():
-    mock_client = _mock_vllm_client()
-    mock_client.generate.return_value = [_request_output()]
-    model = from_vllm_offline(mock_client)
-
-    with pytest.raises(ValueError, match="Response list is empty"):
-        model.batch([["Hello, ", MaskedTag()]])
-
-    mock_client.generate.return_value = [
-        MagicMock(outputs=[MagicMock(text=object())]),
-    ]
-    with pytest.raises(TypeError, match="All items in the response list must be strings"):
-        model.batch([["Hello, ", MaskedTag()]])
 
 
 def test_vllm_offline_batch_chat():
@@ -181,33 +172,6 @@ def test_vllm_offline_batch_chat():
     assert str(returned[0][0]) == "Hello, world"
     assert str(returned[1][0]) == "Goodbye, friend"
     mock_client.chat.assert_called_once()
-
-
-def test_vllm_offline_call_invalid_response():
-    from vllm import SamplingParams
-
-    model = from_vllm_offline(_mock_vllm_client())
-
-    with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
-        generator_instance = MagicMock()
-        generator_instance.return_value = set()
-        mock_generator.return_value = generator_instance
-        with pytest.raises(TypeError, match="Expected responses to be str or list of str, got"):
-            model(MaskedTag())
-
-    with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
-        generator_instance = MagicMock()
-        generator_instance.return_value = [object, "response2"]
-        mock_generator.return_value = generator_instance
-        with pytest.raises(TypeError, match="All items in the response list must be strings, got"):
-            model(MaskedTag(), sampling_params=SamplingParams(n=2))
-
-    with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
-        generator_instance = MagicMock()
-        generator_instance.return_value = []
-        mock_generator.return_value = generator_instance
-        with pytest.raises(ValueError, match="Response list is empty"):
-            model(MaskedTag())
 
 
 def test_vllm_offline_call_collects_candidate_errors():

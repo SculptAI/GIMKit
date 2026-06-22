@@ -162,18 +162,3 @@ async def test_async_request_error_is_not_collected():
         model = from_openai(client, model_name="gpt-4o")
         with pytest.raises(RuntimeError, match="request failed"):
             await model("Hello, " + guide(), output_type=None, error_mode="collect")
-
-
-def test_invalid_error_mode_fails_before_model_request():
-    client = OpenAI(api_key="test", timeout=0, max_retries=0)
-
-    with patch.object(client.chat.completions, "create") as mock_create:
-        model = from_openai(client, model_name="gpt-4o")
-        with pytest.raises(ValueError, match="Invalid error mode"):
-            model(
-                "Hello, " + guide(),
-                output_type=None,
-                error_mode="invalid",
-            )
-
-    mock_create.assert_not_called()

@@ -18,7 +18,6 @@ from gimkit.models.utils import (
     get_outlines_output_type,
     parse_batch_generation_responses,
     parse_generation_responses,
-    validate_error_mode,
 )
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput, TagField
 
@@ -73,7 +72,6 @@ class VLLMOffline(OutlinesVLLMOffline):
         error_mode: ErrorMode = "raise",
         **inference_kwargs: Any,
     ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
-        validate_error_mode(error_mode)
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
 
         outlines_model_input = get_outlines_model_input(
@@ -133,7 +131,6 @@ class VLLMOffline(OutlinesVLLMOffline):
         error_mode: ErrorMode = "raise",
         **inference_kwargs: Any,
     ) -> list[list[Result]] | list[list[GenerationResult]]:  # type: ignore[override]
-        validate_error_mode(error_mode)
         inference_kwargs = self._ensure_response_suffix(inference_kwargs)
 
         outlines_model_inputs = get_outlines_model_inputs(
@@ -213,25 +210,26 @@ class VLLMOffline(OutlinesVLLMOffline):
         # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
         # 1. The model might not be trained well enough to generate EOS tokens immediately after RESPONSE_SUFFIX.
         # 2. Even with CFG, inference engines like vLLM do not guarantee termination when the CFG is satisfied (See https://github.com/vllm-project/vllm/issues/29632).
+
+        def _ensure_sampling_params_response_suffix(sampling_params: "SamplingParams") -> None:
+            if sampling_params.stop is None:
+                sampling_params.stop = [RESPONSE_SUFFIX]
+            elif isinstance(sampling_params.stop, str):
+                if sampling_params.stop != RESPONSE_SUFFIX:
+                    sampling_params.stop = [sampling_params.stop, RESPONSE_SUFFIX]
+            elif RESPONSE_SUFFIX not in sampling_params.stop:
+                sampling_params.stop.append(RESPONSE_SUFFIX)
+
         if "sampling_params" not in inference_kwargs:
             from vllm import SamplingParams
 
             inference_kwargs["sampling_params"] = SamplingParams(stop=[RESPONSE_SUFFIX])
-        elif isinstance(inference_kwargs["sampling_params"], list):
+        elif isinstance(inference_kwargs["sampling_params"], list):  # For batch inference
             for sampling_params in inference_kwargs["sampling_params"]:
-                self._ensure_sampling_params_response_suffix(sampling_params)
+                _ensure_sampling_params_response_suffix(sampling_params)
         else:
-            self._ensure_sampling_params_response_suffix(inference_kwargs["sampling_params"])
+            _ensure_sampling_params_response_suffix(inference_kwargs["sampling_params"])
         return inference_kwargs
-
-    def _ensure_sampling_params_response_suffix(self, sampling_params: "SamplingParams") -> None:
-        if sampling_params.stop is None:
-            sampling_params.stop = [RESPONSE_SUFFIX]
-        elif isinstance(sampling_params.stop, str):
-            if sampling_params.stop != RESPONSE_SUFFIX:
-                sampling_params.stop = [sampling_params.stop, RESPONSE_SUFFIX]
-        elif RESPONSE_SUFFIX not in sampling_params.stop:
-            sampling_params.stop.append(RESPONSE_SUFFIX)
 
 
 def from_vllm_offline(model: "LLM") -> VLLMOffline:

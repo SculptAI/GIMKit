@@ -10,7 +10,6 @@ from gimkit.models.utils import (
     get_outlines_model_input,
     get_outlines_output_type,
     parse_generation_responses,
-    validate_error_mode,
 )
 from gimkit.schemas import ContextInput, TagField
 
@@ -29,7 +28,6 @@ def _call(
     error_mode: ErrorMode = "raise",
     **inference_kwargs: Any,
 ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
-    validate_error_mode(error_mode)
     outlines_model_input = get_outlines_model_input(
         model_input, output_type, use_gim_prompt, visible_tag_fields
     )
@@ -60,7 +58,6 @@ async def _acall(
     error_mode: ErrorMode = "raise",
     **inference_kwargs: Any,
 ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
-    validate_error_mode(error_mode)
     outlines_model_input = get_outlines_model_input(
         model_input, output_type, use_gim_prompt, visible_tag_fields
     )

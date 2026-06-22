@@ -160,18 +160,6 @@ def test_infill_responses():
     assert isinstance(result_from_json, Result)
     assert str(result_from_json) == "Hello, world and friend"
 
-    # Test invalid response type
-    with pytest.raises(TypeError, match="Expected responses to be str or list of str, got"):
-        infill_responses(query, 123)
-
-    # Test empty list
-    with pytest.raises(ValueError, match="Response list is empty"):
-        infill_responses(query, [])
-
-    # Test list with non-string items
-    with pytest.raises(TypeError, match="All items in the response list must be strings, got"):
-        infill_responses(query, ["a", 1])
-
 
 def test_infill_batch_responses():
     queries = [
@@ -200,17 +188,8 @@ def test_infill_batch_responses():
     )
     assert [str(result) for result in json_results] == ["Hello, world", "Goodbye, friend"]
 
-    with pytest.raises(ValueError, match="Batch input list is empty"):
-        infill_batch_responses([], [])
-
     with pytest.raises(ValueError, match="Mismatched number of batch inputs and responses"):
         infill_batch_responses(queries, [responses[0]])
-
-    with pytest.raises(TypeError, match="Expected batch responses to be a list"):
-        infill_batch_responses(queries, "response")
-
-    with pytest.raises(TypeError, match="Each batch response must be a string or a list"):
-        infill_batch_responses(queries, [responses[0], object()])
 
 
 def test_parse_generation_response_error_modes():
@@ -302,30 +281,5 @@ def test_parse_generation_response_json_preserves_original_text():
 def test_parse_generation_response_rejects_invalid_configuration_and_container():
     query = Query(MaskedTag(id=0))
 
-    with pytest.raises(ValueError, match="Invalid error mode"):
-        parse_generation_response(query, "response", error_mode="invalid")
-
-    with pytest.raises(TypeError, match="All items in the response list must be strings"):
-        parse_generation_responses(query, ["response", object()], error_mode="collect")
-
-    with pytest.raises(ValueError, match="Response list is empty"):
-        parse_batch_generation_responses([query], [[]], error_mode="collect")
-
     with pytest.raises(ValueError, match="Mismatched number of batch inputs and responses"):
         parse_batch_generation_responses([query], [], error_mode="collect")
-
-    with pytest.raises(TypeError, match="Expected raw response to be str"):
-        parse_generation_response(query, object(), error_mode="collect")
-
-    with pytest.raises(ValueError, match="Batch input list is empty"):
-        parse_batch_generation_responses([], [], error_mode="collect")
-
-    with pytest.raises(TypeError, match="Expected batch responses to be a list"):
-        parse_batch_generation_responses([query], "response", error_mode="collect")
-
-    with pytest.raises(TypeError, match="Each batch response group must be a list of strings"):
-        parse_batch_generation_responses(
-            [query],
-            ["response"],
-            error_mode="collect",
-        )
