@@ -349,6 +349,6 @@ def infill_batch_responses(
         )
 
     return [
-        infill_responses(query, response, json_responses=json_responses)
+        infill_responses(query, response, json_responses=json_responses)  # type: ignore[call-overload]
         for query, response in zip(queries, responses, strict=True)
     ]
