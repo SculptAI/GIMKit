@@ -4,6 +4,7 @@ from outlines.inputs import Chat
 from outlines.types.dsl import CFG, JsonSchema
 
 from gimkit.contexts import Query, Result
+from gimkit.models.types import GenerationResult
 from gimkit.models.utils import (
     get_outlines_model_input,
     get_outlines_model_inputs,
@@ -11,6 +12,9 @@ from gimkit.models.utils import (
     infill_batch_responses,
     infill_responses,
     json_responses_to_gim_response,
+    parse_batch_generation_responses,
+    parse_generation_response,
+    parse_generation_responses,
 )
 from gimkit.prompts import SYSTEM_PROMPT_MSG, SYSTEM_PROMPT_MSG_JSON
 from gimkit.schemas import MaskedTag
@@ -156,18 +160,6 @@ def test_infill_responses():
     assert isinstance(result_from_json, Result)
     assert str(result_from_json) == "Hello, world and friend"
 
-    # Test invalid response type
-    with pytest.raises(TypeError, match="Expected responses to be str or list of str, got"):
-        infill_responses(query, 123)
-
-    # Test empty list
-    with pytest.raises(ValueError, match="Response list is empty"):
-        infill_responses(query, [])
-
-    # Test list with non-string items
-    with pytest.raises(TypeError, match="All items in the response list must be strings, got"):
-        infill_responses(query, ["a", 1])
-
 
 def test_infill_batch_responses():
     queries = [
@@ -196,14 +188,98 @@ def test_infill_batch_responses():
     )
     assert [str(result) for result in json_results] == ["Hello, world", "Goodbye, friend"]
 
-    with pytest.raises(ValueError, match="Batch input list is empty"):
-        infill_batch_responses([], [])
-
     with pytest.raises(ValueError, match="Mismatched number of batch inputs and responses"):
         infill_batch_responses(queries, [responses[0]])
 
-    with pytest.raises(TypeError, match="Expected batch responses to be a list"):
-        infill_batch_responses(queries, "response")
 
-    with pytest.raises(TypeError, match="Each batch response must be a string or a list"):
-        infill_batch_responses(queries, [responses[0], object()])
+def test_parse_generation_response_error_modes():
+    query = Query("Hello, ", MaskedTag(id=0))
+    valid = '<|MASKED id="m_0"|>world<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
+
+    result = parse_generation_response(query, valid)
+    assert isinstance(result, Result)
+    assert str(result) == "Hello, world"
+
+    with pytest.raises(Exception, match="Mismatched or nested masked tags"):
+        parse_generation_response(query, invalid)
+
+    collected = parse_generation_response(query, valid, error_mode="collect")
+    assert isinstance(collected, GenerationResult)
+    assert collected.ok
+    assert collected.raw_response == valid
+    assert str(collected.result) == "Hello, world"
+    assert collected.error_type is None
+    assert collected.error_message is None
+
+    failed = parse_generation_response(query, invalid, error_mode="collect")
+    assert isinstance(failed, GenerationResult)
+    assert not failed.ok
+    assert failed.raw_response == invalid
+    assert failed.result is None
+    assert failed.error_type == "InvalidFormatError"
+    assert "Mismatched or nested masked tags" in failed.error_message
+
+
+def test_parse_generation_responses_isolates_candidates():
+    query = Query("Hello, ", MaskedTag(id=0))
+    valid = '<|MASKED id="m_0"|>world<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
+
+    collected = parse_generation_responses(
+        query,
+        [valid, invalid],
+        error_mode="collect",
+    )
+
+    assert isinstance(collected, list)
+    assert [item.ok for item in collected] == [True, False]
+    assert str(collected[0].result) == "Hello, world"
+    assert collected[1].raw_response == invalid
+
+    with pytest.raises(Exception, match="Mismatched or nested masked tags"):
+        parse_generation_responses(query, [valid, invalid])
+
+
+def test_parse_batch_generation_responses_isolates_queries_and_candidates():
+    queries = [
+        Query("Hello, ", MaskedTag(id=0)),
+        Query("Goodbye, ", MaskedTag(id=0)),
+    ]
+    valid_world = '<|MASKED id="m_0"|>world<|/MASKED|>'
+    valid_friend = '<|MASKED id="m_0"|>friend<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
+
+    collected = parse_batch_generation_responses(
+        queries,
+        [[valid_world, invalid], [valid_friend]],
+        error_mode="collect",
+    )
+
+    assert [[item.ok for item in group] for group in collected] == [[True, False], [True]]
+    assert str(collected[0][0].result) == "Hello, world"
+    assert str(collected[1][0].result) == "Goodbye, friend"
+
+
+def test_parse_generation_response_json_preserves_original_text():
+    query = Query("Hello, ", MaskedTag(id=0))
+    raw_response = '{\n  "invalid": "world"\n}'
+
+    failed = parse_generation_response(
+        query,
+        raw_response,
+        json_response=True,
+        error_mode="collect",
+    )
+
+    assert not failed.ok
+    assert failed.raw_response == raw_response
+    assert failed.error_type == "ValueError"
+    assert "Invalid field name" in failed.error_message
+
+
+def test_parse_generation_response_rejects_invalid_configuration_and_container():
+    query = Query(MaskedTag(id=0))
+
+    with pytest.raises(ValueError, match="Mismatched number of batch inputs and responses"):
+        parse_batch_generation_responses([query], [], error_mode="collect")

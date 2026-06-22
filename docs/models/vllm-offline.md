@@ -47,6 +47,27 @@ batch_results = model.batch([query, query])
 first_result = batch_results[0][0]
 ```
 
+With `error_mode="collect"`, batch always returns a two-dimensional
+`list[list[GenerationResult]]`: the outer list maps to queries and the inner list
+maps to candidates.
+
+```python
+generation_groups = model.batch(queries, error_mode="collect")
+
+for generation_group in generation_groups:
+    for generation in generation_group:
+        if generation.ok:
+            print(generation.result)
+        else:
+            print(generation.error_type, generation.error_message)
+            print(generation.raw_response)
+```
+
+A parsing failure for one candidate does not affect other candidates or queries.
+The default `error_mode="raise"` preserves existing return types and fail-fast
+behavior. Generation failures, invalid batch shapes, and invalid arguments still
+fail the whole call.
+
 ## Output types
 
 ### `output_type="cfg"` (default)

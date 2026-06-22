@@ -10,10 +10,12 @@ from outlines.models.vllm import AsyncVLLM as OutlinesAsyncVLLM
 
 from gimkit.contexts import Query, Result
 from gimkit.models.base import _acall, _call
+from gimkit.models.types import ErrorMode, GenerationResult
 from gimkit.schemas import RESPONSE_SUFFIX, ContextInput, TagField
 
 
 class VLLM(OutlinesVLLM):
+    @overload
     def __call__(
         self,
         model_input: ContextInput | Query,
@@ -21,8 +23,35 @@ class VLLM(OutlinesVLLM):
         backend: str | None = None,
         use_gim_prompt: bool = False,
         visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["raise"] = "raise",
         **inference_kwargs: Any,
-    ) -> Result | list[Result]:
+    ) -> Result | list[Result]: ...
+
+    @overload
+    def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["collect"],
+        **inference_kwargs: Any,
+    ) -> GenerationResult | list[GenerationResult]: ...
+
+    def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: ErrorMode = "raise",
+        **inference_kwargs: Any,
+    ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
         # Using `stop=RESPONSE_SUFFIX` is preferred for two reasons:
         # 1. The model might not be trained well enough to generate EOS tokens immediately after RESPONSE_SUFFIX.
         # 2. Even with CFG, inference engines like vLLM do not guarantee termination when the CFG is satisfied (See https://github.com/vllm-project/vllm/issues/29632).
@@ -33,12 +62,14 @@ class VLLM(OutlinesVLLM):
             backend,
             use_gim_prompt,
             visible_tag_fields,
+            error_mode=error_mode,
             stop=RESPONSE_SUFFIX,
             **inference_kwargs,
         )
 
 
 class AsyncVLLM(OutlinesAsyncVLLM):
+    @overload
     async def __call__(
         self,
         model_input: ContextInput | Query,
@@ -46,8 +77,35 @@ class AsyncVLLM(OutlinesAsyncVLLM):
         backend: str | None = None,
         use_gim_prompt: bool = False,
         visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["raise"] = "raise",
         **inference_kwargs: Any,
-    ) -> Result | list[Result]:
+    ) -> Result | list[Result]: ...
+
+    @overload
+    async def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["collect"],
+        **inference_kwargs: Any,
+    ) -> GenerationResult | list[GenerationResult]: ...
+
+    async def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["cfg", "json"] | None = "cfg",
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: ErrorMode = "raise",
+        **inference_kwargs: Any,
+    ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
         return await _acall(
             self,
             model_input,
@@ -56,6 +114,7 @@ class AsyncVLLM(OutlinesAsyncVLLM):
             use_gim_prompt,
             visible_tag_fields,
             stop=RESPONSE_SUFFIX,
+            error_mode=error_mode,
             **inference_kwargs,
         )
 

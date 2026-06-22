@@ -11,10 +11,12 @@ from outlines.models.openai import OpenAI as OutlinesOpenAI
 
 from gimkit.contexts import Query, Result
 from gimkit.models.base import _acall, _call
+from gimkit.models.types import ErrorMode, GenerationResult
 from gimkit.schemas import ContextInput, TagField
 
 
 class OpenAI(OutlinesOpenAI):
+    @overload
     def __call__(
         self,
         model_input: ContextInput | Query,
@@ -22,8 +24,35 @@ class OpenAI(OutlinesOpenAI):
         backend: str | None = None,
         use_gim_prompt: bool = False,
         visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["raise"] = "raise",
         **inference_kwargs: Any,
-    ) -> Result | list[Result]:
+    ) -> Result | list[Result]: ...
+
+    @overload
+    def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["json"] | None = None,
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["collect"],
+        **inference_kwargs: Any,
+    ) -> GenerationResult | list[GenerationResult]: ...
+
+    def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["json"] | None = None,
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: ErrorMode = "raise",
+        **inference_kwargs: Any,
+    ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
         return _call(
             self,
             model_input,
@@ -31,11 +60,13 @@ class OpenAI(OutlinesOpenAI):
             backend,
             use_gim_prompt,
             visible_tag_fields,
+            error_mode=error_mode,
             **inference_kwargs,
         )
 
 
 class AsyncOpenAI(OutlinesAsyncOpenAI):
+    @overload
     async def __call__(
         self,
         model_input: ContextInput | Query,
@@ -43,8 +74,35 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
         backend: str | None = None,
         use_gim_prompt: bool = False,
         visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["raise"] = "raise",
         **inference_kwargs: Any,
-    ) -> Result | list[Result]:
+    ) -> Result | list[Result]: ...
+
+    @overload
+    async def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["json"] | None = None,
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: Literal["collect"],
+        **inference_kwargs: Any,
+    ) -> GenerationResult | list[GenerationResult]: ...
+
+    async def __call__(
+        self,
+        model_input: ContextInput | Query,
+        output_type: Literal["json"] | None = None,
+        backend: str | None = None,
+        use_gim_prompt: bool = False,
+        visible_tag_fields: list[TagField] | None = None,
+        *,
+        error_mode: ErrorMode = "raise",
+        **inference_kwargs: Any,
+    ) -> Result | list[Result] | GenerationResult | list[GenerationResult]:
         return await _acall(
             self,
             model_input,
@@ -53,6 +111,7 @@ class AsyncOpenAI(OutlinesAsyncOpenAI):
             use_gim_prompt,
             visible_tag_fields,
             **inference_kwargs,
+            error_mode=error_mode,
         )
 
 

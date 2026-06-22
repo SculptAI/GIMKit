@@ -53,8 +53,30 @@ result = model(query, output_type=None, use_gim_prompt=True)
 print(result.tags["email"].content)
 ```
 
+## Per-generation error collection
+
+The default `error_mode="raise"` preserves fail-fast behavior. For multiple
+candidates, use `error_mode="collect"` to parse each raw response independently:
+
+```python
+generations = model(query, n=2, error_mode="collect")
+
+for generation in generations:
+    if generation.ok:
+        print(generation.result)
+    else:
+        print(generation.error_type, generation.error_message)
+        print(generation.raw_response)
+```
+
+`collect` only captures parsing and infill errors after raw text has been
+generated. Network, authentication, timeout, model request, and invalid response
+container errors still fail the whole call. Async models use the same parameter
+through `await model(...)`.
+
 ## Advanced options
 
 - `visible_tag_fields`: control which `MaskedTag` fields are visible to the model (e.g. `["id", "name", "desc", "content", "regex"]`). Defaults to `None` (basic fields only: `["id", "desc", "content"]`).
 - `backend`: pass through to Outlines generator backend selection.
+- `error_mode`: `"raise"` (default) or `"collect"`.
 - `**inference_kwargs`: forwarded to the underlying OpenAI call.

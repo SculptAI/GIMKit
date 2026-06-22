@@ -8,6 +8,7 @@ import pytest
 from outlines.models.vllm_offline import VLLMOffline as OutlinesVLLMOffline
 
 from gimkit.contexts import Result
+from gimkit.models.types import GenerationResult
 from gimkit.models.vllm_offline import VLLMOffline as GIMVLLMOffline
 from gimkit.models.vllm_offline import from_vllm_offline
 from gimkit.schemas import RESPONSE_SUFFIX, MaskedTag
@@ -114,20 +115,26 @@ def test_vllm_offline_batch_sampling_params_list():
     assert RESPONSE_SUFFIX in sampling_params[1].stop
 
 
-def test_vllm_offline_ensure_sampling_params_response_suffix():
+def test_vllm_offline_ensure_response_suffix():
     model = from_vllm_offline(_mock_vllm_client())
 
-    sampling_params = SimpleNamespace(stop=None)
-    model._ensure_sampling_params_response_suffix(sampling_params)
-    assert sampling_params.stop == [RESPONSE_SUFFIX]
+    sampling_params1 = SimpleNamespace(stop=None)
+    model._ensure_response_suffix({"sampling_params": sampling_params1})
+    assert sampling_params1.stop == [RESPONSE_SUFFIX]
 
-    sampling_params = SimpleNamespace(stop="<END>")
-    model._ensure_sampling_params_response_suffix(sampling_params)
-    assert sampling_params.stop == ["<END>", RESPONSE_SUFFIX]
+    sampling_params2 = SimpleNamespace(stop="<END>")
+    model._ensure_response_suffix({"sampling_params": sampling_params2})
+    assert sampling_params2.stop == ["<END>", RESPONSE_SUFFIX]
 
-    sampling_params = SimpleNamespace(stop=RESPONSE_SUFFIX)
-    model._ensure_sampling_params_response_suffix(sampling_params)
-    assert sampling_params.stop == RESPONSE_SUFFIX
+    sampling_params3 = SimpleNamespace(stop=RESPONSE_SUFFIX)
+    model._ensure_response_suffix({"sampling_params": sampling_params3})
+    assert sampling_params3.stop == RESPONSE_SUFFIX
+
+    sp1 = SimpleNamespace(stop=None)
+    sp2 = SimpleNamespace(stop="<END>")
+    model._ensure_response_suffix({"sampling_params": [sp1, sp2]})
+    assert sp1.stop == [RESPONSE_SUFFIX]
+    assert sp2.stop == ["<END>", RESPONSE_SUFFIX]
 
 
 def test_vllm_offline_batch_invalid_sampling_params_list_length():
@@ -143,21 +150,6 @@ def test_vllm_offline_batch_invalid_sampling_params_list_length():
             ],
             sampling_params=[SamplingParams()],
         )
-
-
-def test_vllm_offline_batch_invalid_response():
-    mock_client = _mock_vllm_client()
-    mock_client.generate.return_value = [_request_output()]
-    model = from_vllm_offline(mock_client)
-
-    with pytest.raises(ValueError, match="Response list is empty"):
-        model.batch([["Hello, ", MaskedTag()]])
-
-    mock_client.generate.return_value = [
-        MagicMock(outputs=[MagicMock(text=object())]),
-    ]
-    with pytest.raises(TypeError, match="All items in the response list must be strings"):
-        model.batch([["Hello, ", MaskedTag()]])
 
 
 def test_vllm_offline_batch_chat():
@@ -182,28 +174,56 @@ def test_vllm_offline_batch_chat():
     mock_client.chat.assert_called_once()
 
 
-def test_vllm_offline_call_invalid_response():
-    from vllm import SamplingParams
-
+def test_vllm_offline_call_collects_candidate_errors():
     model = from_vllm_offline(_mock_vllm_client())
+    valid = '<|MASKED id="m_0"|>hi<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
 
     with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
-        generator_instance = MagicMock()
-        generator_instance.return_value = set()
+        generator_instance = MagicMock(return_value=[valid, invalid])
         mock_generator.return_value = generator_instance
-        with pytest.raises(TypeError, match="Expected responses to be str or list of str, got"):
-            model(MaskedTag())
 
-    with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
-        generator_instance = MagicMock()
-        generator_instance.return_value = [object, "response2"]
-        mock_generator.return_value = generator_instance
-        with pytest.raises(TypeError, match="All items in the response list must be strings, got"):
-            model(MaskedTag(), sampling_params=SamplingParams(n=2))
+        returned = model(MaskedTag(), error_mode="collect")
 
-    with patch("gimkit.models.vllm_offline.Generator") as mock_generator:
-        generator_instance = MagicMock()
-        generator_instance.return_value = []
-        mock_generator.return_value = generator_instance
-        with pytest.raises(ValueError, match="Response list is empty"):
-            model(MaskedTag())
+    assert isinstance(returned, list)
+    assert all(isinstance(item, GenerationResult) for item in returned)
+    assert [item.ok for item in returned] == [True, False]
+    assert str(returned[0].result) == "hi"
+    assert returned[1].raw_response == invalid
+
+
+def test_vllm_offline_batch_collects_query_and_candidate_errors():
+    mock_client = _mock_vllm_client()
+    valid_world = '<|MASKED id="m_0"|>world<|/MASKED|>'
+    valid_friend = '<|MASKED id="m_0"|>friend<|/MASKED|>'
+    invalid = '<|MASKED id="m_0"|><|MASKED id="m_1"|>nested<|/MASKED|><|/MASKED|>'
+    mock_client.generate.return_value = [
+        _request_output(valid_world, invalid),
+        _request_output(valid_friend),
+    ]
+    model = from_vllm_offline(mock_client)
+
+    returned = model.batch(
+        [
+            ["Hello, ", MaskedTag()],
+            ["Goodbye, ", MaskedTag()],
+        ],
+        error_mode="collect",
+    )
+
+    assert [[item.ok for item in group] for group in returned] == [[True, False], [True]]
+    assert str(returned[0][0].result) == "Hello, world"
+    assert returned[0][1].raw_response == invalid
+    assert str(returned[1][0].result) == "Goodbye, friend"
+
+    mock_client.generate.return_value = [
+        _request_output(valid_world, invalid),
+        _request_output(valid_friend),
+    ]
+    with pytest.raises(Exception, match="Mismatched or nested masked tags"):
+        model.batch(
+            [
+                ["Hello, ", MaskedTag()],
+                ["Goodbye, ", MaskedTag()],
+            ]
+        )
