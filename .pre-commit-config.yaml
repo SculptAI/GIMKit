@@ -14,12 +14,12 @@ repos:
       - id: check-docstring-first
 
   - repo: https://github.com/pre-commit/pre-commit
-    rev: v4.6.0
+    rev: v4.6.2
     hooks:
       - id: validate_manifest
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.16
+    rev: v0.16.6
     hooks:
       - id: ruff
         args: [ --fix, --config=./pyproject.toml ]
@@ -28,6 +28,6 @@ repos:
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.11.19
+    rev: 0.12.10
     hooks:
       - id: uv-lock
