@@ -56,9 +56,7 @@ result = model(query, use_gim_prompt=True)
 ## 24 点问答
 
 ```python
-question = """24 = 24 {} 24 {} 24 {} 0""".format(
-	*[g(desc="一个数学运算符") for _ in range(3)]
-)
+question = """24 = 24 {} 24 {} 24 {} 0""".format(*[g(desc="一个数学运算符") for _ in range(3)])
 
 result = model(question, use_gim_prompt=True)
 ```
@@ -115,9 +113,9 @@ result = model(question, use_gim_prompt=True)
 
 ```python
 question = "On a screen, mixing #{} and #{} results in the color #{}.".format(
-	g(desc="红色十六进制色值", regex=r"[0-9a-fA-F]{6}"),
-	g(desc="绿色十六进制色值", regex=r"[0-9a-fA-F]{6}"),
-	g(desc="混合后的十六进制色值", regex=r"[0-9a-fA-F]{6}"),
+    g(desc="红色十六进制色值", regex=r"[0-9a-fA-F]{6}"),
+    g(desc="绿色十六进制色值", regex=r"[0-9a-fA-F]{6}"),
+    g(desc="混合后的十六进制色值", regex=r"[0-9a-fA-F]{6}"),
 )
 
 result = model(question, use_gim_prompt=True)
