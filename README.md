@@ -27,7 +27,7 @@ Name: {g.person_name(name="name")}
 Email: {g.e_mail(name="email")}"""
 
 result = model(query, use_gim_prompt=True)
-result.tags["name"].content   # → "John Smith"
+result.tags["name"].content  # → "John Smith"
 result.tags["email"].content  # → "john@gmail.com"
 ```
 
