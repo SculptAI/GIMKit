@@ -39,7 +39,7 @@ result = model(query, use_gim_prompt=True)
 ## 4. 访问结果
 
 ```python
-print(result.tags["name"].content)   # 例如 Alice
+print(result.tags["name"].content)  # 例如 Alice
 print(result.tags["email"].content)  # 例如 alice@example.com
 print(result.tags["color"].content)  # red | green | blue
 ```
