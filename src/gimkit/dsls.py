@@ -3,13 +3,62 @@
 - `build_cfg` constructs a context-free grammar (CFG) using LLGuidance syntax
 - `build_json_schema` constructs a JSON schema representing the response structure."""
 
+import re
+
 from gimkit.contexts import Query
 from gimkit.schemas import (
+    MAGIC_STRINGS,
     RESPONSE_PREFIX,
     RESPONSE_SUFFIX,
     TAG_END,
     TAG_OPEN_LEFT,
     TAG_OPEN_RIGHT,
+)
+
+
+# Characters that keep their backslash when translating a Python regex to llguidance.
+# Escaped ASCII letters/digits (\d, \w, 一, ...) and these metacharacters mean the
+# same thing in Python `re` and in llguidance's Rust `regex` syntax.
+_KEEP_ESCAPED = frozenset(r"\.+*?()|[]{}^$#&-~")
+
+
+def to_llguidance_regex(regex: str) -> str:
+    """Translate a Python `re` pattern into the body of an llguidance `/.../` regex literal.
+
+    - Python treats an escaped non-alphanumeric character (`\\<`, `\\>`, `\\"`, or an escaped
+      non-ASCII character such as a fullwidth parenthesis) as a literal, while Rust `regex`
+      rejects escaped non-ASCII characters and reads `\\<`/`\\>` as word boundaries.
+      These escapes are replaced by the bare literal character.
+    - `/` would end the lark regex literal early, so it is always written as `\\/`.
+    """
+    out: list[str] = []
+    i = 0
+    while i < len(regex):
+        char = regex[i]
+        if char == "\\" and i + 1 < len(regex):
+            escaped = regex[i + 1]
+            if (escaped.isascii() and escaped.isalnum()) or escaped in _KEEP_ESCAPED:
+                out.append(char + escaped)
+            elif escaped == "/":
+                out.append("\\/")
+            else:
+                out.append(escaped)
+            i += 2
+            continue
+        out.append("\\/" if char == "/" else char)
+        i += 1
+    return "".join(out)
+
+
+# The parser treats every magic string except TAG_OPEN_RIGHT as structure, so a slot's
+# content must never contain one (see MaskedTag.__post_init__). The GIM tags are plain
+# text tokens, so without this terminal a slot regex such as /.*/ or a negated class can absorb
+# "<|/MASKED|>" and the following tags as content whenever the regex is not yet satisfied.
+_NO_MAGIC_TERMINAL = "NO_MAGIC"
+_NO_MAGIC_DEFINITION = (
+    f"{_NO_MAGIC_TERMINAL}: ~/(?s:.*)(?:"
+    + "|".join(to_llguidance_regex(re.escape(s)) for s in MAGIC_STRINGS if s != TAG_OPEN_RIGHT)
+    + ")(?s:.*)/"
 )
 
 
@@ -47,7 +96,7 @@ def build_cfg(query: Query) -> str:
     ```python
     query = '<|GIM_QUERY|>The capital of <|MASKED desc="single word" regex="中国|法国"|><|/MASKED|> is Beijing<|MASKED desc="punctuation mark" regex="\\."|><|/MASKED|><|/GIM_QUERY|>'
     print(repr(build_cfg(Query(query))))
-    >>> '%llguidance {}\nstart: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|MASKED id=\\"m_1\\"|>" m_1 REGEX "<|/GIM_RESPONSE|>"\nREGEX: /\\s*/\nm_0[capture, suffix="<|/MASKED|>"]: T_0\nm_1[capture, suffix="<|/MASKED|>"]: T_1\nT_0: /中国|法国/\nT_1: /\\./\n'
+    >>> '%llguidance {}\nstart: "<|GIM_RESPONSE|>" REGEX "<|MASKED id=\\"m_0\\"|>" m_0 REGEX "<|MASKED id=\\"m_1\\"|>" m_1 REGEX "<|/GIM_RESPONSE|>"\nREGEX: /\\s*/\nm_0[capture, suffix="<|/MASKED|>"]: T_0\nm_1[capture, suffix="<|/MASKED|>"]: T_1\nT_0: /中国|法国/ & NO_MAGIC\nT_1: /\\./ & NO_MAGIC\nNO_MAGIC: ~/(?s:.*)(?:<\\|GIM_QUERY\\|>|<\\|\\/GIM_QUERY\\|>|<\\|GIM_RESPONSE\\|>|<\\|\\/GIM_RESPONSE\\|>|<\\|MASKED|<\\|\\/MASKED\\|>)(?s:.*)/\n'
     ```
     """
     num_tags = len(query.tags)
@@ -87,14 +136,15 @@ def build_cfg(query: Query) -> str:
 
     for i, tag in enumerate(query.tags):
         # Note: When used with suffix, using greedy match /(?s:.*)/ instead of /(?s:.)*?/ is correct and legal.
-        pattern = f"/{tag.regex}/" if tag.regex else "/(?s:.*)/"
+        pattern = f"/{to_llguidance_regex(tag.regex)}/" if tag.regex else "/(?s:.*)/"
 
         # Get or create a shared terminal for this pattern
         if pattern not in unique_pattern_terminals:
             # Create a new terminal name for this unique pattern
             terminal_name = f"T_{len(unique_pattern_terminals)}"
             unique_pattern_terminals[pattern] = terminal_name
-            terminal_definitions.append(f"{terminal_name}: {pattern}")
+            # Intersect with NO_MAGIC so the content cannot run past its own end tag.
+            terminal_definitions.append(f"{terminal_name}: {pattern} & {_NO_MAGIC_TERMINAL}")
 
         terminal_name = unique_pattern_terminals[pattern]
 
@@ -106,6 +156,7 @@ def build_cfg(query: Query) -> str:
 
     # 5. Add all unique terminal definitions
     lines.extend(terminal_definitions)
+    lines.append(_NO_MAGIC_DEFINITION)
 
     # 6. Assemble final string
     grammar = "\n".join(lines) + "\n"
