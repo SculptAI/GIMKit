@@ -5,7 +5,9 @@ These examples are practical domain use cases beyond classic IE tasks.
 ## Resume and CV Parsing
 
 ```python
-text = "Dr. Sarah Chen, PhD in Computer Science from MIT. 10 years of experience in machine learning."
+text = (
+    "Dr. Sarah Chen, PhD in Computer Science from MIT. 10 years of experience in machine learning."
+)
 
 query = f"""Parse the resume information:
 
@@ -23,7 +25,9 @@ result = model(query, use_gim_prompt=True)
 ## Product Review Extraction
 
 ```python
-text = "The iPhone 15 Pro costs $999. It has an amazing camera but the battery life could be better."
+text = (
+    "The iPhone 15 Pro costs $999. It has an amazing camera but the battery life could be better."
+)
 
 query = f"""Extract product review information:
 
@@ -57,7 +61,7 @@ result = model(query, use_gim_prompt=True)
 
 ```python
 question = """24 = 24 {} 24 {} 24 {} 0""".format(
-	*[g(desc="a single math operator") for _ in range(3)]
+    *[g(desc="a single math operator") for _ in range(3)]
 )
 
 result = model(question, use_gim_prompt=True)
@@ -115,9 +119,9 @@ result = model(question, use_gim_prompt=True)
 
 ```python
 question = "On a screen, mixing #{} and #{} results in the color #{}.".format(
-	g(desc="Hex color of Red", regex=r"[0-9a-fA-F]{6}"),
-	g(desc="Hex color of Green", regex=r"[0-9a-fA-F]{6}"),
-	g(desc="Hex color after mixing", regex=r"[0-9a-fA-F]{6}"),
+    g(desc="Hex color of Red", regex=r"[0-9a-fA-F]{6}"),
+    g(desc="Hex color of Green", regex=r"[0-9a-fA-F]{6}"),
+    g(desc="Hex color after mixing", regex=r"[0-9a-fA-F]{6}"),
 )
 
 result = model(question, use_gim_prompt=True)
