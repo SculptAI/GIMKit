@@ -39,7 +39,7 @@ result = model(query, use_gim_prompt=True)
 ## 4. Access results
 
 ```python
-print(result.tags["name"].content)   # e.g. Alice
+print(result.tags["name"].content)  # e.g. Alice
 print(result.tags["email"].content)  # e.g. alice@example.com
 print(result.tags["color"].content)  # red | green | blue
 ```
